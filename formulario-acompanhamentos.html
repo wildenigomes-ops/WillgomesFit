@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WillgomesFit – Anamnese de Acompanhamento</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--black:#080808;--dark:#111;--card:#161616;--border:#252525;--orange:#ff6a00;--orange2:#ff8c00;--white:#f2f2f2;--muted:#777;--font-d:'Bebas Neue',sans-serif;--font-b:'Inter',sans-serif}
+body{background:var(--black);color:var(--white);font-family:var(--font-b);font-size:16px;line-height:1.6;min-height:100vh}
+header{background:rgba(8,8,8,.98);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:14px}
+.logo{font-family:var(--font-d);font-size:1.4rem;letter-spacing:3px;color:var(--white)}.logo span{color:var(--orange)}
+.header-tag{font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-left:1px solid var(--border);padding-left:14px}
+.container{max-width:620px;margin:0 auto;padding:48px 24px 80px}
+.step-indicator{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--orange)}.step-dot.inactive{background:var(--border)}
+.step-label{font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange)}
+h1{font-family:var(--font-d);font-size:2.4rem;line-height:1;margin-bottom:10px}
+.form-desc{font-size:.9rem;color:var(--muted);line-height:1.7;margin-bottom:28px}
+.plan-badge{display:inline-block;background:#1a1a1a;border:1px solid var(--orange);color:var(--orange);font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 14px;border-radius:3px;margin-bottom:28px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.form-group label .req{color:var(--orange)}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:#141414;border:1px solid var(--border);border-radius:4px;color:var(--white);font-family:var(--font-b);font-size:.95rem;padding:13px 16px;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--orange)}
+.form-group select option{background:#141414}.form-group textarea{resize:vertical;min-height:90px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-hint{font-size:.74rem;color:var(--muted);margin-top:5px;line-height:1.5}
+.divider{border:none;border-top:1px solid var(--border);margin:28px 0}
+.section-label{font-size:.68rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--orange);margin-bottom:16px}
+.btn-submit{width:100%;background:var(--orange);color:#fff;border:none;font-family:var(--font-b);font-weight:700;font-size:1rem;padding:17px;border-radius:4px;cursor:pointer;transition:background .2s;margin-top:8px}
+.btn-submit:hover{background:var(--orange2)}.btn-submit:disabled{background:#333;color:var(--muted);cursor:not-allowed}
+.security-note{font-size:.74rem;color:var(--muted);text-align:center;margin-top:12px}
+.success-screen{display:none;text-align:center;padding:40px 0}
+.success-icon{font-size:3.5rem;margin-bottom:20px}
+.success-title{font-family:var(--font-d);font-size:2.4rem;margin-bottom:12px}
+.success-body{font-size:.9rem;color:var(--muted);line-height:1.75;margin-bottom:32px;max-width:420px;margin-left:auto;margin-right:auto}
+.btn-payment{display:block;background:var(--orange);color:#fff;font-weight:700;font-size:1rem;padding:17px;border-radius:4px;text-decoration:none;transition:background .2s;margin-bottom:12px}
+.btn-payment:hover{background:var(--orange2)}.payment-note{font-size:.78rem;color:var(--muted);line-height:1.6}
+@media(max-width:560px){.form-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">WILL<span>GOMES</span>FIT</div>
+  <div class="header-tag">Anamnese · Acompanhamento</div>
+</header>
+<div class="container">
+  <div id="form-screen">
+    <div class="step-indicator">
+      <div class="step-dot"></div><div class="step-dot inactive"></div><div class="step-dot inactive"></div>
+      <span class="step-label">Passo 1 de 3 — Anamnese</span>
+    </div>
+    <h1>SUA ANAMNESE</h1>
+    <p class="form-desc">Preencha com atenção e honestidade. Estas informações são a base do seu acompanhamento personalizado.</p>
+    <div class="plan-badge" id="plan-badge">Acompanhamento Personalizado</div>
+    <form id="main-form">
+
+      <div class="section-label">1. Dados pessoais</div>
+      <div class="form-group"><label>Nome completo <span class="req">*</span></label><input type="text" id="nome" required placeholder="Seu nome completo"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>E-mail <span class="req">*</span></label><input type="email" id="email" required placeholder="seu@email.com"/></div>
+        <div class="form-group"><label>WhatsApp <span class="req">*</span></label><input type="tel" id="whatsapp" required placeholder="(85) 99999-9999"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Idade <span class="req">*</span></label><input type="number" id="idade" required placeholder="Ex: 28"/></div>
+        <div class="form-group"><label>Sexo <span class="req">*</span></label>
+          <select id="sexo" required><option value="">Selecione...</option><option>Masculino</option><option>Feminino</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Profissão</label><input type="text" id="profissao" placeholder="Ex: professor, vendedor, advogado..."/></div>
+      <div class="form-group"><label>Contato de emergência (nome e telefone)</label><input type="text" id="emergencia" placeholder="Ex: Maria Silva – (85) 99888-7777"/></div>
+      <div class="form-group"><label>Qual plano você escolheu? <span class="req">*</span></label>
+        <select id="plano" required>
+          <option value="">Selecione...</option>
+          <option value="Acompanhamento Start – R$ 79,90">Acompanhamento Start – R$ 79,90</option>
+          <option value="Acompanhamento Performance – R$ 119,90">Acompanhamento Performance – R$ 119,90</option>
+          <option value="Acompanhamento Elite – R$ 169,90">Acompanhamento Elite – R$ 169,90</option>
+          <option value="Performance Trimestral – R$ 249,90">Performance Trimestral – R$ 249,90</option>
+          <option value="Performance Semestral – R$ 499,90">Performance Semestral – R$ 499,90</option>
+        </select>
+      </div>
+
+      <hr class="divider"/>
+      <div class="section-label">2. Dados físicos e antropométricos</div>
+      <div class="form-row">
+        <div class="form-group"><label>Peso atual (kg) <span class="req">*</span></label><input type="number" step="0.1" id="peso" required placeholder="Ex: 75"/></div>
+        <div class="form-group"><label>Altura (cm) <span class="req">*</span></label><input type="number" id="altura" required placeholder="Ex: 175"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Circunferência da cintura (cm)</label><input type="number" id="cintura" placeholder="Ex: 82"/><div class="form-hint">Meça na parte mais estreita do abdômen.</div></div>
+        <div class="form-group"><label>Circunferência do quadril (cm)</label><input type="number" id="quadril" placeholder="Ex: 96"/><div class="form-hint">Meça na parte mais larga do quadril.</div></div>
+      </div>
+
+      <hr class="divider"/>
+      <div class="section-label">3. Objetivo e histórico de treino</div>
+      <div class="form-group"><label>Objetivo principal <span class="req">*</span></label>
+        <select id="objetivo" required><option value="">Selecione...</option><option>Emagrecimento / perda de gordura</option><option>Hipertrofia / ganho de massa muscular</option><option>Condicionamento físico geral</option><option>Performance esportiva</option><option>Jiu-Jítsu / corrida</option><option>Saúde e qualidade de vida</option><option>Reabilitação / retorno ao treino</option></select>
+      </div>
+      <div class="form-group"><label>Descreva seu objetivo com mais detalhes</label><textarea id="objetivo_detalhe" placeholder="Ex: quero perder 10kg até dezembro, melhorar meu rendimento no jiu-jítsu, ganhar massa no trem superior..."></textarea></div>
+      <div class="form-group"><label>Nível atual de treino <span class="req">*</span></label>
+        <select id="nivel" required><option value="">Selecione...</option><option>Iniciante – menos de 6 meses</option><option>Intermediário – 6 meses a 2 anos</option><option>Avançado – mais de 2 anos</option><option>Retornando após pausa longa</option></select>
+      </div>
+      <div class="form-group"><label>Já praticou atividade física antes? <span class="req">*</span></label>
+        <select id="historico" required><option value="">Selecione...</option><option>Não, nunca pratiquei</option><option>Sim, musculação</option><option>Sim, esportes coletivos</option><option>Sim, corrida / cardio</option><option>Sim, artes marciais / luta</option><option>Sim, várias modalidades</option></select>
+      </div>
+      <div class="form-group"><label>Já fez acompanhamento com personal trainer antes? <span class="req">*</span></label>
+        <select id="personal" required><option value="">Selecione...</option><option>Não, é minha primeira vez</option><option>Sim, presencialmente</option><option>Sim, online</option></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Dias disponíveis por semana <span class="req">*</span></label>
+          <select id="dias" required><option value="">Selecione...</option><option>2 dias</option><option>3 dias</option><option>4 dias</option><option>5 dias</option><option>6 dias</option></select>
+        </div>
+        <div class="form-group"><label>Tempo disponível por sessão <span class="req">*</span></label>
+          <select id="tempo_sessao" required><option value="">Selecione...</option><option>Até 30 minutos</option><option>30 a 45 minutos</option><option>45 a 60 minutos</option><option>60 a 90 minutos</option><option>Mais de 90 minutos</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Onde vai treinar <span class="req">*</span></label>
+        <select id="local" required><option value="">Selecione...</option><option>Academia completa</option><option>Casa com equipamentos</option><option>Casa sem equipamentos</option><option>Ao ar livre</option></select>
+      </div>
+      <div class="form-group"><label>Qual é o seu maior desafio hoje nos treinos?</label><textarea id="desafio" placeholder="Ex: falta de constância, não ver resultado, dificuldade técnica, motivação..."></textarea></div>
+      <div class="form-group"><label>Tem alguma preferência ou aversão a exercícios?</label><textarea id="preferencia_exercicio" placeholder="Ex: não gosto de esteira, prefiro treino funcional..."></textarea></div>
+
+      <hr class="divider"/>
+      <div class="section-label">4. Saúde e histórico médico</div>
+      <div class="form-group"><label>Tem alguma doença ou condição de saúde diagnosticada? <span class="req">*</span></label>
+        <select id="doenca" required><option value="">Selecione...</option><option>Não tenho nenhuma condição</option><option>Hipertensão</option><option>Diabetes tipo 1 ou 2</option><option>Problemas cardíacos</option><option>Hipotireoidismo / hipertireoidismo</option><option>Colesterol / triglicérides altos</option><option>Outras (descreva abaixo)</option></select>
+      </div>
+      <div class="form-group"><label>Tem alguma lesão ou restrição física? <span class="req">*</span></label><textarea id="lesao" placeholder="Ex: hérnia de disco, tendinite, cirurgia no joelho... Se não tiver, escreva 'Nenhuma'."></textarea></div>
+      <div class="form-group"><label>Sente alguma dessas sensações durante exercícios?</label>
+        <select id="sensacoes"><option value="">Selecione...</option><option>Não sinto nada anormal</option><option>Tontura</option><option>Enjoo ou náusea</option><option>Falta de ar excessiva</option><option>Dor no peito</option><option>Mal-estar geral</option><option>Mais de uma das opções acima</option></select>
+      </div>
+      <div class="form-group"><label>Faz uso de algum medicamento contínuo?</label><textarea id="medicamento" placeholder="Ex: losartana, metformina... Se não usar, deixe em branco."></textarea></div>
+      <div class="form-group"><label>Tem histórico familiar de doenças?</label><textarea id="historico_familiar" placeholder="Ex: pai com diabetes, histórico cardíaco na família..."></textarea></div>
+      <div class="form-group"><label>Já fez alguma cirurgia?</label><input type="text" id="cirurgia" placeholder="Ex: joelho em 2019... Se não, deixe em branco."/></div>
+      <div class="form-group"><label>Já realizou avaliação física (bioimpedância, dobras cutâneas)?</label>
+        <select id="avaliacao_fisica"><option value="">Selecione...</option><option>Não</option><option>Sim, recentemente (menos de 6 meses)</option><option>Sim, mas faz mais de 6 meses</option></select>
+      </div>
+
+      <hr class="divider"/>
+      <div class="section-label">5. Estilo de vida e hábitos</div>
+      <div class="form-row">
+        <div class="form-group"><label>Qualidade do sono <span class="req">*</span></label>
+          <select id="sono" required><option value="">Selecione...</option><option>Durmo bem (7-9h)</option><option>Durmo pouco (menos de 6h)</option><option>Sono irregular</option><option>Tenho insônia</option></select>
+        </div>
+        <div class="form-group"><label>Nível de estresse diário <span class="req">*</span></label>
+          <select id="estresse" required><option value="">Selecione...</option><option>Baixo</option><option>Moderado</option><option>Alto</option><option>Muito alto</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Consome bebida alcoólica? <span class="req">*</span></label>
+          <select id="alcool" required><option value="">Selecione...</option><option>Não consumo</option><option>Raramente</option><option>Finais de semana</option><option>Frequentemente</option></select>
+        </div>
+        <div class="form-group"><label>Fuma? <span class="req">*</span></label>
+          <select id="fuma" required><option value="">Selecione...</option><option>Não</option><option>Sim, cigarro</option><option>Sim, cigarro eletrônico</option><option>Ex-fumante</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Hidratação diária</label>
+          <select id="hidratacao"><option value="">Selecione...</option><option>Menos de 1 litro</option><option>1 a 2 litros</option><option>2 a 3 litros</option><option>Mais de 3 litros</option></select>
+        </div>
+        <div class="form-group"><label>Refeições por dia</label>
+          <select id="refeicoes"><option value="">Selecione...</option><option>1 a 2</option><option>3</option><option>4 a 5</option><option>6 ou mais</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Melhor horário para a vídeo chamada de anamnese <span class="req">*</span></label><input type="text" id="horario_chamada" required placeholder="Ex: manhãs na semana, sábados à tarde..."/></div>
+
+      <hr class="divider"/>
+      <div class="section-label">6. Informações adicionais</div>
+      <div class="form-group"><label>Usa algum suplemento atualmente?</label><textarea id="suplemento" placeholder="Ex: whey, creatina, cafeína... Se não usar, deixe em branco."></textarea></div>
+      <div class="form-group"><label>Alguma observação adicional?</label><textarea id="obs" placeholder="Qualquer informação que considere importante para o seu acompanhamento."></textarea></div>
+
+      <button type="submit" class="btn-submit" id="btn-enviar">Enviar e ir para o pagamento →</button>
+      <p class="security-note">🔒 Suas informações são confidenciais e usadas exclusivamente para personalizar seu acompanhamento.</p>
+    </form>
+  </div>
+
+  <div class="success-screen" id="success-screen">
+    <div class="step-indicator" style="justify-content:center;margin-bottom:28px">
+      <div class="step-dot inactive"></div><div class="step-dot inactive"></div><div class="step-dot"></div>
+      <span class="step-label">Passo 3 de 3 — Pagamento</span>
+    </div>
+    <div class="success-icon">✅</div>
+    <div class="success-title">ANAMNESE ENVIADA!</div>
+    <p class="success-body">Suas informações chegaram para o Will. Finalize o pagamento e envie o comprovante pelo WhatsApp para iniciar seu acompanhamento.</p>
+    <a href="#" id="payment-link" class="btn-payment" target="_blank">Ir para o pagamento →</a>
+    <p class="payment-note">Após o pagamento, envie o comprovante pelo WhatsApp.<br/>Will entrará em contato para agendar a vídeo chamada.</p>
+  </div>
+</div>
+<script>
+const payLinks = {
+  'Acompanhamento Start – R$ 79,90': 'https://link.infinitepay.io/wildeni-gomes/VC1DLTQtSQ-ON7S4g8ueW-79,90',
+  'Acompanhamento Performance – R$ 119,90': 'https://link.infinitepay.io/wildeni-gomes/VC1DLTQtSQ-hgkMgPidIJ-119,90',
+  'Acompanhamento Elite – R$ 169,90': 'https://link.infinitepay.io/wildeni-gomes/VC1DLTQtSQ-lj1TjohZzf-169,90',
+  'Performance Trimestral – R$ 249,90': 'https://link.infinitepay.io/wildeni-gomes/VC1DLTQtSQ-cAuH0lDsnm-249,90',
+  'Performance Semestral – R$ 499,90': 'https://link.infinitepay.io/wildeni-gomes/VC1DLTQtSQ-jDRu0n8w6F-499,90',
+};
+const params = new URLSearchParams(window.location.search);
+const planParam = params.get('plano');
+if (planParam) {
+  const sel = document.getElementById('plano');
+  for (let o of sel.options) { if (o.value.toLowerCase().includes(planParam.toLowerCase())) { o.selected = true; document.getElementById('plan-badge').textContent = o.value; break; } }
+}
+document.getElementById('plano').addEventListener('change', function() { document.getElementById('plan-badge').textContent = this.value || 'Acompanhamento Personalizado'; });
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycby3l-F9cQqgcrpZCppDoxW8vAVe79Z4cNWr4_tw7mwX0phvkdsX8Y4rclzzmrAchwxW/exec';
+document.getElementById('main-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const plano = document.getElementById('plano').value;
+  const data = {
+    tipo: 'Acompanhamento', plano,
+    nome: document.getElementById('nome').value, email: document.getElementById('email').value,
+    whatsapp: document.getElementById('whatsapp').value, idade: document.getElementById('idade').value,
+    sexo: document.getElementById('sexo').value, profissao: document.getElementById('profissao').value || '—',
+    emergencia: document.getElementById('emergencia').value || '—',
+    peso: document.getElementById('peso').value, altura: document.getElementById('altura').value,
+    cintura: document.getElementById('cintura').value || '—', quadril: document.getElementById('quadril').value || '—',
+    objetivo: document.getElementById('objetivo').value, objetivo_detalhe: document.getElementById('objetivo_detalhe').value || '—',
+    nivel: document.getElementById('nivel').value, historico: document.getElementById('historico').value,
+    personal: document.getElementById('personal').value, dias: document.getElementById('dias').value,
+    tempo_sessao: document.getElementById('tempo_sessao').value, local: document.getElementById('local').value,
+    desafio: document.getElementById('desafio').value || '—', preferencia_exercicio: document.getElementById('preferencia_exercicio').value || '—',
+    doenca: document.getElementById('doenca').value, lesao: document.getElementById('lesao').value || '—',
+    sensacoes: document.getElementById('sensacoes').value || '—', medicamento: document.getElementById('medicamento').value || '—',
+    historico_familiar: document.getElementById('historico_familiar').value || '—', cirurgia: document.getElementById('cirurgia').value || '—',
+    avaliacao_fisica: document.getElementById('avaliacao_fisica').value || '—',
+    sono: document.getElementById('sono').value, estresse: document.getElementById('estresse').value,
+    alcool: document.getElementById('alcool').value, fuma: document.getElementById('fuma').value,
+    hidratacao: document.getElementById('hidratacao').value || '—', refeicoes: document.getElementById('refeicoes').value || '—',
+    horario_chamada: document.getElementById('horario_chamada').value,
+    suplemento: document.getElementById('suplemento').value || '—', obs: document.getElementById('obs').value || '—',
+    data_envio: new Date().toLocaleString('pt-BR'),
+  };
+  try { await fetch(SHEET_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); } catch(err) {}
+  document.getElementById('form-screen').style.display = 'none';
+  document.getElementById('success-screen').style.display = 'block';
+  document.getElementById('payment-link').href = payLinks[plano] || '#';
+  window.scrollTo(0,0);
+});
+</script>
+</body>
+</html>

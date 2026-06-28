@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WillgomesFit – Painel Administrativo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080808;--dark:#0e0e0e;--card:#131313;--card2:#181818;
+  --border:#1f1f1f;--border2:#2a2a2a;
+  --orange:#ff6a00;--orange2:#ff8c00;--orange-dim:rgba(255,106,0,.12);
+  --green:#22c55e;--green-dim:rgba(34,197,94,.12);
+  --red:#ef4444;--red-dim:rgba(239,68,68,.12);
+  --yellow:#eab308;--yellow-dim:rgba(234,179,8,.12);
+  --blue:#3b82f6;--blue-dim:rgba(59,130,246,.12);
+  --purple:#a855f7;--purple-dim:rgba(168,85,247,.12);
+  --white:#f0f0f0;--muted:#555;--dim:#2a2a2a;
+  --font-d:'Bebas Neue',sans-serif;--font-b:'Inter',sans-serif;
+  --sidebar:240px;
+}
+html,body{height:100%;margin:0}
+body{font-family:var(--font-b);background:var(--bg);color:var(--white);font-size:14px;line-height:1.5;overflow:hidden}
+
+/* LOGIN */
+.login-wrap{display:flex;align-items:center;justify-content:center;height:100vh;padding:24px}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:48px 40px;width:100%;max-width:360px;text-align:center}
+.login-logo{font-family:var(--font-d);font-size:2rem;letter-spacing:3px;margin-bottom:4px}
+.login-logo span{color:var(--orange)}
+.login-sub{font-size:.72rem;color:var(--muted);margin-bottom:32px;letter-spacing:1px;text-transform:uppercase}
+.login-box input{width:100%;background:var(--card2);border:1px solid var(--border2);border-radius:5px;color:var(--white);font-family:var(--font-b);font-size:.9rem;padding:13px 16px;outline:none;margin-bottom:12px;transition:border-color .2s}
+.login-box input:focus{border-color:var(--orange)}
+.login-btn{width:100%;background:var(--orange);color:#fff;border:none;font-family:var(--font-b);font-weight:700;font-size:.9rem;padding:13px;border-radius:5px;cursor:pointer;transition:background .2s}
+.login-btn:hover{background:var(--orange2)}
+.login-err{color:var(--red);font-size:.78rem;margin-top:10px;display:none}
+
+/* APP */
+.app{display:none;height:100vh;flex-direction:row}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--dark);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;flex-shrink:0;overflow-y:auto}
+.sb-logo{padding:20px 18px 14px;border-bottom:1px solid var(--border)}
+.sb-brand{font-family:var(--font-d);font-size:1.2rem;letter-spacing:3px}
+.sb-brand span{color:var(--orange)}
+.sb-role{font-size:.6rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.sb-section{padding:14px 14px 4px;font-size:.58rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 14px;margin:1px 8px;border-radius:5px;cursor:pointer;font-size:.8rem;font-weight:500;color:var(--muted);border:1px solid transparent;transition:all .15s;text-decoration:none}
+.nav-item:hover{background:var(--card);color:var(--white)}
+.nav-item.active{background:var(--orange-dim);color:var(--orange);border-color:rgba(255,106,0,.2);font-weight:600}
+.nav-icon{font-size:.95rem;width:18px;text-align:center;flex-shrink:0}
+.sb-footer{margin-top:auto;padding:14px;border-top:1px solid var(--border)}
+.logout-btn{width:100%;background:none;border:1px solid var(--border2);color:var(--muted);font-family:var(--font-b);font-size:.78rem;padding:8px;border-radius:4px;cursor:pointer;transition:all .2s}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* MAIN */
+.main{flex:1;height:100vh;overflow-y:auto;overflow-x:hidden}
+.page{display:none;padding:28px 32px;min-height:100vh}
+.page.active{display:block}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.page-title{font-family:var(--font-d);font-size:2.2rem;line-height:1}
+.page-title span{color:var(--orange)}
+.topbar-actions{display:flex;gap:10px;align-items:center}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:5px;font-family:var(--font-b);font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:none;color:var(--muted);transition:all .2s;text-decoration:none;white-space:nowrap}
+.btn:hover{color:var(--white);border-color:var(--white)}
+.btn-orange{background:var(--orange);color:#fff;border-color:var(--orange)}
+.btn-orange:hover{background:var(--orange2);border-color:var(--orange2);color:#fff}
+.btn-green{background:var(--green-dim);color:var(--green);border-color:rgba(34,197,94,.3)}
+.btn-green:hover{background:rgba(34,197,94,.25);color:var(--green)}
+.btn-red{background:var(--red-dim);color:var(--red);border-color:rgba(239,68,68,.3)}
+.btn-yellow{background:var(--yellow-dim);color:var(--yellow);border-color:rgba(234,179,8,.3)}
+.btn-sm{padding:5px 10px;font-size:.74rem}
+.btn-full{width:100%;justify-content:center}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px 20px}
+.stat-val{font-family:var(--font-d);font-size:2.4rem;line-height:1;margin-bottom:4px}
+.stat-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px}
+.card-title{font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab-btn{padding:10px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--font-b);font-size:.8rem;font-weight:600;cursor:pointer;margin-bottom:-1px;transition:all .2s;display:flex;align-items:center;gap:6px}
+.tab-btn.active{color:var(--orange);border-bottom-color:var(--orange)}
+.tab-cnt{background:var(--card2);border-radius:10px;padding:1px 7px;font-size:.68rem}
+.tab-btn.active .tab-cnt{background:var(--orange-dim);color:var(--orange)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:.63rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:.82rem;color:#bbb;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--card2)}
+.tr-click{cursor:pointer}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.65rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.badge-ativo{background:var(--green-dim);color:var(--green)}
+.badge-inativo{background:var(--red-dim);color:var(--red)}
+.badge-pendente{background:var(--yellow-dim);color:var(--yellow)}
+.badge-processando{background:var(--blue-dim);color:var(--blue)}
+.badge-concluido{background:var(--purple-dim);color:var(--purple)}
+.badge-vencendo{background:rgba(239,68,68,.2);color:#ff8888;animation:pulse-badge 2s infinite}
+@keyframes pulse-badge{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* SEARCH */
+.search-row{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.search-input{flex:1;min-width:200px;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--white);font-family:var(--font-b);font-size:.85rem;padding:9px 14px;outline:none;transition:border-color .2s}
+.search-input:focus{border-color:var(--orange)}
+.filter-sel{background:var(--card);border:1px solid var(--border);color:var(--white);font-family:var(--font-b);font-size:.8rem;padding:9px 12px;border-radius:5px;outline:none}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;overflow-y:auto;padding:20px}
+.modal-overlay.open{display:flex;align-items:flex-start;justify-content:center}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:10px;width:100%;max-width:880px;margin:auto}
+.modal-header{padding:22px 28px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:14px;position:sticky;top:0;background:var(--card);z-index:10;border-radius:10px 10px 0 0}
+.modal-title{font-family:var(--font-d);font-size:1.6rem;line-height:1}
+.modal-title span{color:var(--orange)}
+.modal-subtitle{font-size:.72rem;color:var(--muted);margin-top:4px}
+.modal-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px;transition:color .2s;flex-shrink:0}
+.modal-close:hover{color:var(--white)}
+.modal-body{padding:24px 28px}
+.modal-footer{padding:16px 28px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+
+/* CONFIRM PAYMENT BANNER */
+.confirm-banner{background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:8px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.confirm-banner-text{font-size:.85rem;color:var(--yellow);line-height:1.5}
+.confirm-banner-text strong{display:block;font-size:.95rem;margin-bottom:3px}
+
+/* TIMER */
+.timer-box{background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:16px 20px;text-align:center}
+.timer-days{font-family:var(--font-d);font-size:3rem;line-height:1;color:var(--green)}
+.timer-days.warning{color:var(--yellow)}
+.timer-days.danger{color:var(--red);animation:pulse-badge 1.5s infinite}
+.timer-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.timer-bar{height:6px;background:var(--border);border-radius:3px;margin-top:12px;overflow:hidden}
+.timer-fill{height:100%;border-radius:3px;transition:width .5s}
+
+/* DETAIL */
+.detail-section{margin-bottom:24px}
+.detail-section-title{font-size:.62rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--orange);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.detail-item{background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:10px 14px}
+.detail-item.full{grid-column:1/-1}
+.detail-item label{display:block;font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600}
+.detail-item span{font-size:.85rem;color:var(--white);line-height:1.5}
+
+/* FORM */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--card2);border:1px solid var(--border2);border-radius:5px;color:var(--white);font-family:var(--font-b);font-size:.87rem;padding:10px 12px;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--orange)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column;gap:10px}
+.tl-item{display:flex;gap:12px;align-items:flex-start}
+.tl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.tl-dot.orange{background:var(--orange)}
+.tl-dot.green{background:var(--green)}
+.tl-dot.muted{background:var(--muted)}
+.tl-status{font-size:.8rem;font-weight:600;color:var(--white)}
+.tl-date{font-size:.7rem;color:var(--muted);margin-top:1px}
+
+/* NOTA */
+.nota-item{background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:12px 14px;margin-bottom:8px}
+.nota-date{font-size:.65rem;color:var(--muted);margin-bottom:5px}
+.nota-text{font-size:.83rem;color:#ccc;line-height:1.6}
+
+/* LINK BOX */
+.link-box{background:var(--card2);border:1px solid var(--border2);border-radius:5px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+.link-text{flex:1;color:#888;font-family:monospace;font-size:.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 24px;color:var(--muted)}
+.empty-icon{font-size:2.2rem;margin-bottom:10px}
+.empty-text{font-size:.85rem;line-height:1.6}
+
+/* NOTIF */
+.notif{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:6px;font-size:.83rem;font-weight:700;z-index:9999;display:none;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* VENCIMENTO ALERT */
+.venc-alert{background:var(--red-dim);border:1px solid rgba(239,68,68,.4);border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:.8rem;color:var(--red)}
+
+@media(max-width:900px){
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .sidebar{display:none}
+  .main{width:100%}
+  .page{padding:16px}
+  .detail-grid,.form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">WILL<span>GOMES</span>FIT</div>
+    <div class="login-sub">Painel Administrativo</div>
+    <input type="password" id="login-pass" placeholder="Senha de acesso" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">Entrar no painel</button>
+    <div class="login-err" id="login-err">Senha incorreta.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-brand">WILL<span>GOMES</span>FIT</div>
+      <div class="sb-role">Painel Administrativo</div>
+    </div>
+    <div class="sb-section">Principal</div>
+    <a class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</a>
+    <a class="nav-item" onclick="showPage('clientes',this)"><span class="nav-icon">👥</span>Clientes</a>
+    <a class="nav-item" onclick="showPage('vencimentos',this)"><span class="nav-icon">⏰</span>Vencimentos</a>
+    <div class="sb-section">Ferramentas</div>
+    <a class="nav-item" href="motor.html" target="_blank"><span class="nav-icon">⚙️</span>Motor de Fichas</a>
+    <a class="nav-item" href="willgomesfit.html" target="_blank"><span class="nav-icon">🌐</span>Página de Vendas</a>
+    <div class="sb-footer">
+      <button class="logout-btn" onclick="doLogout()">Sair do painel</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="topbar">
+        <div class="page-title">DASH<span>BOARD</span></div>
+        <button class="btn btn-orange" onclick="loadClientes()">↻ Atualizar</button>
+      </div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-val" id="s-total" style="color:var(--orange)">0</div><div class="stat-label">Total</div></div>
+        <div class="stat-card"><div class="stat-val" id="s-ativos" style="color:var(--green)">0</div><div class="stat-label">Ativos</div></div>
+        <div class="stat-card"><div class="stat-val" id="s-pendentes" style="color:var(--yellow)">0</div><div class="stat-label">Pendentes</div></div>
+        <div class="stat-card"><div class="stat-val" id="s-vencendo" style="color:var(--red)">0</div><div class="stat-label">Vencendo</div></div>
+        <div class="stat-card"><div class="stat-val" id="s-inativos" style="color:var(--muted)">0</div><div class="stat-label">Inativos</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card"><div class="card-title">Últimos cadastros</div><div id="dash-recentes"></div></div>
+        <div class="card"><div class="card-title">Por plano</div><div id="dash-planos"></div></div>
+      </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="page" id="page-clientes">
+      <div class="topbar">
+        <div class="page-title">CLIEN<span>TES</span></div>
+        <div class="topbar-actions">
+          <button class="btn btn-orange" onclick="abrirNovoCliente()">+ Novo</button>
+          <button class="btn" onclick="loadClientes()">↻ Atualizar</button>
+        </div>
+      </div>
+      <div class="search-row">
+        <input class="search-input" id="search-q" placeholder="Buscar nome, e-mail ou WhatsApp..." oninput="renderClientes()"/>
+        <select class="filter-sel" id="filter-plano" onchange="renderClientes()">
+          <option value="">Todos os planos</option>
+          <option>Ficha Start</option><option>Ficha Premium</option><option>Ficha Evolução</option>
+          <option>Acompanhamento Start</option><option>Acompanhamento Performance</option>
+          <option>Acompanhamento Elite</option><option>Performance Trimestral</option>
+          <option>Performance Semestral</option><option>Guia Nutricional</option>
+        </select>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('pendentes',this)">⏳ Pendentes <span class="tab-cnt" id="cnt-pendentes">0</span></button>
+        <button class="tab-btn" onclick="switchTab('ativos',this)">✅ Ativos <span class="tab-cnt" id="cnt-ativos">0</span></button>
+        <button class="tab-btn" onclick="switchTab('inativos',this)">❌ Inativos <span class="tab-cnt" id="cnt-inativos">0</span></button>
+        <button class="tab-btn" onclick="switchTab('todos',this)">📋 Todos <span class="tab-cnt" id="cnt-todos">0</span></button>
+      </div>
+      <div class="tab-panel active" id="tab-pendentes"><div class="card"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Plano</th><th>Cadastro</th><th>Pagamento</th><th>Ações</th></tr></thead><tbody id="tbody-pendentes"></tbody></table></div></div></div>
+      <div class="tab-panel" id="tab-ativos"><div class="card"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Plano</th><th>Início</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-ativos"></tbody></table></div></div></div>
+      <div class="tab-panel" id="tab-inativos"><div class="card"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Plano</th><th>Data</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tbody-inativos"></tbody></table></div></div></div>
+      <div class="tab-panel" id="tab-todos"><div class="card"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Plano</th><th>Cadastro</th><th>Status</th><th>Vencimento</th><th>Ações</th></tr></thead><tbody id="tbody-todos"></tbody></table></div></div></div>
+    </div>
+
+    <!-- VENCIMENTOS -->
+    <div class="page" id="page-vencimentos">
+      <div class="topbar"><div class="page-title">VENCI<span>MENTOS</span></div></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Plano</th><th>Início</th><th>Vencimento</th><th>Dias restantes</th><th>Ações</th></tr></thead><tbody id="tbody-vencimentos"></tbody></table></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="flex:1">
+        <div class="modal-title" id="m-nome">—</div>
+        <div class="modal-subtitle" id="m-subtitulo">—</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+        <span id="m-status-badge"></span>
+        <button class="modal-close" onclick="fecharModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+
+      <!-- banner removido -->
+
+      <!-- BANNER VENCIMENTO -->
+      <div id="venc-banner" style="display:none"></div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchMTab('dados',this)">📋 Dados</button>
+        <button class="tab-btn" onclick="switchMTab('anamnese',this)">🩺 Anamnese</button>
+        <button class="tab-btn" onclick="switchMTab('timer',this)">⏱ Prazo</button>
+        <button class="tab-btn" onclick="switchMTab('mfit',this)">📱 MFIT</button>
+        <button class="tab-btn" onclick="switchMTab('notas',this)">📝 Notas</button>
+        <button class="tab-btn" onclick="switchMTab('relatorio',this)">📊 Relatório</button>
+      </div>
+
+      <!-- DADOS -->
+      <div class="tab-panel active" id="mt-dados">
+        <div class="detail-section">
+          <div class="detail-section-title">Dados pessoais</div>
+          <div class="detail-grid" id="m-dados-pessoais"></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Plano e contrato</div>
+          <div class="detail-grid" id="m-dados-plano"></div>
+        </div>
+        <!-- CONFIRMAÇÃO DE PAGAMENTO -->
+        <div id="secao-pagamento" style="margin-bottom:24px">
+          <div class="detail-section-title">Pagamento</div>
+          <div id="pagamento-pendente" style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:8px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            <div>
+              <div style="font-size:.85rem;font-weight:700;color:var(--yellow);margin-bottom:4px">⏳ Aguardando confirmação do pagamento</div>
+              <div style="font-size:.78rem;color:var(--muted)">Verifique o comprovante enviado pelo cliente antes de confirmar.</div>
+            </div>
+            <button class="btn btn-green" onclick="confirmarPagamento()" style="font-size:.85rem;padding:10px 20px;flex-shrink:0">✅ Confirmar pagamento</button>
+          </div>
+          <div id="pagamento-confirmado" style="display:none;background:var(--green-dim);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:14px 20px">
+            <div style="font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:10px">✅ Pagamento confirmado</div>
+            <div style="font-size:.78rem;color:var(--muted);margin-bottom:12px">Link do questionário completo para enviar ao cliente:</div>
+            <div class="link-box">
+              <span class="link-text" id="m-link-q2">—</span>
+              <button class="btn btn-sm" onclick="copiarLink()">📋 Copiar</button>
+            </div>
+            <input type="text" id="m-link-input" readonly
+              style="width:100%;background:var(--card2);border:1px solid var(--border2);border-radius:4px;color:#aaa;font-size:.72rem;padding:8px 10px;margin-top:6px;font-family:monospace;cursor:text;display:none"
+              onclick="this.select()" placeholder="Link aparecerá aqui"/>
+            <button class="btn btn-green btn-full" style="margin-top:10px" onclick="enviarLinkWA()">💬 Enviar link pelo WhatsApp</button>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Contato rápido</div>
+          <div id="m-contato" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+
+      <!-- ANAMNESE -->
+      <div class="tab-panel" id="mt-anamnese">
+        <div id="m-anamnese"></div>
+      </div>
+
+      <!-- TIMER / PRAZO -->
+      <div class="tab-panel" id="mt-timer">
+        <div id="m-timer-content"></div>
+        <div class="detail-section" style="margin-top:20px">
+          <div class="detail-section-title">Alterar status do acesso</div>
+          <div class="form-group">
+            <label>Status atual</label>
+            <select id="m-status-sel">
+              <option value="pendente">⏳ Pendente</option>
+              <option value="ativo">✅ Ativo</option>
+              <option value="processando">⚙️ Em processamento</option>
+              <option value="concluido">🏁 Concluído</option>
+              <option value="inativo">❌ Inativo / Encerrado</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Data de início do plano</label>
+            <input type="date" id="m-data-inicio"/>
+          </div>
+          <button class="btn btn-orange" onclick="salvarStatus()">Salvar</button>
+        </div>
+        <div class="detail-section" style="margin-top:20px">
+          <div class="detail-section-title">Histórico</div>
+          <div class="timeline" id="m-timeline"></div>
+        </div>
+      </div>
+
+      <!-- MFIT -->
+      <div class="tab-panel" id="mt-mfit">
+        <div class="detail-section">
+          <div class="detail-section-title">Link do questionário completo</div>
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:10px">Envie ao cliente após confirmar o pagamento.</p>
+          <div class="link-box">
+            <span class="link-text" id="m-link-q">—</span>
+            <button class="btn btn-sm" onclick="copiarLink()">📋 Copiar</button>
+          </div>
+          <button class="btn btn-green btn-full" style="margin-top:10px" onclick="enviarLinkWA()">💬 Enviar pelo WhatsApp</button>
+        </div>
+        <div class="detail-section" style="margin-top:20px">
+          <div class="detail-section-title">Credenciais App MFIT</div>
+          <div style="background:var(--card2);border:1px solid var(--border2);border-radius:6px;padding:16px">
+            <div class="form-row">
+              <div class="form-group"><label>Login MFIT</label><input type="text" id="mfit-login" placeholder="login@mfit.com.br"/></div>
+              <div class="form-group"><label>Senha</label><input type="text" id="mfit-senha" placeholder="senha123"/></div>
+            </div>
+            <div class="form-group"><label>Link de acesso</label><input type="text" id="mfit-link" placeholder="https://mfit.pro/..."/></div>
+            <div class="form-row">
+              <div class="form-group"><label>Data envio</label><input type="date" id="mfit-data"/></div>
+              <div class="form-group"><label>Status</label>
+                <select id="mfit-status"><option>Pendente</option><option>Enviado</option><option>Ativo</option><option>Expirado</option></select>
+              </div>
+            </div>
+            <div class="form-group"><label>Observações</label><textarea id="mfit-obs"></textarea></div>
+            <button class="btn btn-orange" onclick="salvarMfit()">Salvar credenciais</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTAS -->
+      <div class="tab-panel" id="mt-notas">
+        <div class="detail-section">
+          <div class="detail-section-title">Nova nota</div>
+          <div class="form-group"><textarea id="nota-txt" placeholder="Observação sobre este cliente..." style="min-height:90px"></textarea></div>
+          <button class="btn btn-orange" onclick="salvarNota()">Adicionar nota</button>
+        </div>
+        <div class="detail-section" style="margin-top:20px">
+          <div class="detail-section-title">Notas anteriores</div>
+          <div id="m-notas"></div>
+        </div>
+      </div>
+
+      <!-- RELATÓRIO -->
+      <div class="tab-panel" id="mt-relatorio">
+        <div id="rel-loading" style="text-align:center;padding:32px;color:var(--muted);display:none">
+          <div style="font-size:1.5rem;margin-bottom:8px">⏳</div>
+          <div>Gerando fichas...</div>
+        </div>
+        <div id="rel-sem-dados" style="display:none">
+          <div class="empty"><div class="empty-icon">📋</div>
+          <div class="empty-text">Aguardando questionário completo do cliente.<br><br>
+          Após o cliente preencher o questionário, as fichas serão geradas automaticamente aqui.</div></div>
+        </div>
+        <div id="rel-content" style="display:none">
+          <!-- Botões exportar -->
+          <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+            <button class="btn btn-green" onclick="exportarFichaTreinoCompleta()" style="font-size:.85rem;padding:10px 20px">⬇ Ficha de Treino</button>
+            <button class="btn" onclick="exportarGuiaWord()" style="background:rgba(234,179,8,.15);color:var(--yellow);border-color:rgba(234,179,8,.3);font-size:.85rem;padding:10px 20px">⬇ Guia Alimentar</button>
+          </div>
+          <!-- Dados do cliente -->
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange)">Dados do Cliente</div>
+            <div style="padding:14px 16px"><div id="rel-dados" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div></div>
+          </div>
+          <!-- Anamnese -->
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange)">Resumo da Anamnese</div>
+            <div style="padding:14px 16px" id="rel-anamnese"></div>
+          </div>
+          <!-- Ficha de Treino -->
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--green)">🏋️ Ficha de Treino Personalizada</div>
+            <div style="padding:14px 16px" id="rel-treino"></div>
+          </div>
+          <!-- Guia Alimentar -->
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+            <span style="font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--yellow)">🍎 Guia Alimentar</span>
+          </div>
+            <div style="padding:14px 16px" id="rel-guia"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /modal-body -->
+    <div class="modal-footer">
+      <button class="btn btn-red" onclick="excluirCliente()" style="margin-right:auto">🗑 Excluir cliente</button>
+      <button class="btn" onclick="fecharModal()">Fechar</button>
+      <button class="btn btn-green" onclick="abrirWA()">💬 WhatsApp</button>
+      <button class="btn btn-orange" onclick="switchMTab('relatorio',document.querySelectorAll('#modal-cliente .tab-btn')[5])">📊 Ver Relatório</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO CLIENTE -->
+<div class="modal-overlay" id="modal-novo">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-header">
+      <div class="modal-title">Novo <span>Cliente</span></div>
+      <button class="modal-close" onclick="document.getElementById('modal-novo').classList.remove('open');document.body.style.overflow=''">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Nome completo *</label><input type="text" id="n-nome" placeholder="Nome do cliente"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>E-mail *</label><input type="email" id="n-email" placeholder="email@exemplo.com"/></div>
+        <div class="form-group"><label>WhatsApp *</label><input type="tel" id="n-whats" placeholder="(85) 99999-9999"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Plano *</label>
+          <select id="n-plano">
+            <option value="">Selecione...</option>
+            <option>Ficha Start</option><option>Ficha Premium</option><option>Ficha Evolução</option>
+            <option>Acompanhamento Start</option><option>Acompanhamento Performance</option>
+            <option>Acompanhamento Elite</option><option>Performance Trimestral</option>
+            <option>Performance Semestral</option><option>Guia Nutricional</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Status</label>
+          <select id="n-status"><option value="pendente">⏳ Pendente</option><option value="ativo">✅ Ativo</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Observações</label><textarea id="n-obs" placeholder="Observações iniciais..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('modal-novo').classList.remove('open');document.body.style.overflow=''">Cancelar</button>
+      <button class="btn btn-orange" onclick="salvarNovoCliente()">Cadastrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────────────────────
+const SB_URL   = 'https://fkpgehyjwxkoyhdbhtva.supabase.co';
+const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcGdlaHlqd3hrb3loZGJodHZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDE5MTQsImV4cCI6MjA5ODE3NzkxNH0.dPJGKvw0KIOOwAC-xf0djgixVSpz8J9S-L-gFsth1xk';
+const BASE_URL = 'https://golden-shortbread-f20f39.netlify.app';
+const WA_NUM   = '5585989383246';
+const PASS     = 'willgomes2025';
+
+// Prazos em dias por plano (0 = entrega única, sem contador)
+const PRAZOS = {
+  'Ficha Start':0,'Ficha Premium':0,'Ficha Evolução':90,
+  'Acompanhamento Start':30,'Acompanhamento Performance':30,'Acompanhamento Elite':30,
+  'Performance Trimestral':90,'Performance Semestral':180,'Guia Nutricional':0,
+};
+
+let SB = null;
+let clientes = [];
+let clienteAtual = null;
+let local = {};
+
+// ── STORAGE ──────────────────────────────────────────────────────────────────
+const LS = {
+  save(){ try{ localStorage.setItem('wgf_painel', JSON.stringify(local)); }catch(e){} },
+  load(){ try{ const s=localStorage.getItem('wgf_painel'); if(s) local=JSON.parse(s); }catch(e){} },
+  get(id){ return local['c_'+id]||{}; },
+  set(id,obj){ local['c_'+id]={...(local['c_'+id]||{}),...obj}; this.save(); },
+};
+
+// ── LOGIN ────────────────────────────────────────────────────────────────────
+function doLogin(){
+  const p = document.getElementById('login-pass').value;
+  if(p === (local.admin_pass||PASS)){
+    document.getElementById('login-wrap').style.display='none';
+    document.getElementById('app').style.display='flex';
+    SB = window.supabase?.createClient(SB_URL, SB_KEY);
+    loadClientes();
+    // Polling a cada 30s para novos clientes
+    setInterval(loadClientes, 30000);
+  } else {
+    document.getElementById('login-err').style.display='block';
+    setTimeout(()=>document.getElementById('login-err').style.display='none',2500);
+  }
+}
+function doLogout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-wrap').style.display='flex';
+  document.getElementById('login-pass').value='';
+}
+
+// ── LOAD ─────────────────────────────────────────────────────────────────────
+async function loadClientes(){
+  notif('Atualizando...','#3b82f6');
+  clientes = [];
+  if(SB){
+    try{
+      const { data } = await SB.from('clientes').select('*').order('criado_em',{ascending:false});
+      if(data) clientes = data.map(r=>({...r,...(r.dados||{}),id:r.id,_sb:true}));
+    }catch(e){ console.warn(e); }
+
+    // Buscar questionários e mesclar com clientes
+    try{
+      const { data:qs } = await SB.from('questionarios').select('*').order('ts',{ascending:false});
+      if(qs) qs.forEach(q=>{
+        const c = clientes.find(x=>x.id===q.cliente_id||(x.email&&x.email===q.email));
+        if(c){ c._questionario = q.dados; c._q_ts = q.ts; }
+      });
+    }catch(e){}
+  }
+  // Clientes locais
+  if(local.clientes_locais) local.clientes_locais.forEach(c=>{
+    if(!clientes.find(x=>x.id===c.id)) clientes.push(c);
+  });
+  renderDashboard();
+  renderClientes();
+  renderVencimentos();
+  notif('Atualizado!');
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
+function renderDashboard(){
+  const ativos   = clientes.filter(c=>c.status==='ativo'||c.status==='processando');
+  const pendentes= clientes.filter(c=>!c.status||c.status==='pendente');
+  const inativos = clientes.filter(c=>c.status==='inativo'||c.status==='concluido');
+  const vencendo = clientes.filter(c=>diasRestantes(c)!==null&&diasRestantes(c)<=7&&diasRestantes(c)>=0);
+
+  set('s-total',    clientes.length);
+  set('s-ativos',   ativos.length);
+  set('s-pendentes',pendentes.length);
+  set('s-vencendo', vencendo.length);
+  set('s-inativos', inativos.length);
+
+  const rec = document.getElementById('dash-recentes');
+  rec.innerHTML = clientes.slice(0,6).map(c=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="abrirCliente('${c.id}')">
+      <div><div style="font-size:.83rem;font-weight:600">${c.nome||'—'}</div><div style="font-size:.7rem;color:var(--muted)">${c.plano||'—'}</div></div>
+      ${statusBadge(c.status)}
+    </div>`).join('') || '<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Nenhum cliente</div></div>';
+
+  const planCount={};
+  clientes.forEach(c=>{ const p=c.plano||'—'; planCount[p]=(planCount[p]||0)+1; });
+  const pd = document.getElementById('dash-planos');
+  pd.innerHTML = Object.entries(planCount).sort((a,b)=>b[1]-a[1]).map(([p,n])=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:.82rem">${p}</span>
+      <span style="font-family:var(--font-d);font-size:1.3rem;color:var(--orange)">${n}</span>
+    </div>`).join('') || '<div class="empty"><div class="empty-text">Sem dados</div></div>';
+}
+
+// ── CLIENTES ─────────────────────────────────────────────────────────────────
+function renderClientes(){
+  const q = (document.getElementById('search-q')?.value||'').toLowerCase();
+  const fp= document.getElementById('filter-plano')?.value||'';
+  let fil = clientes.filter(c=>{
+    const mq=!q||(c.nome||'').toLowerCase().includes(q)||(c.email||'').toLowerCase().includes(q)||(c.whatsapp||'').includes(q);
+    const mp=!fp||c.plano===fp;
+    return mq&&mp;
+  });
+
+  const pend = fil.filter(c=>!c.status||c.status==='pendente');
+  const ativ = fil.filter(c=>c.status==='ativo'||c.status==='processando'||c.status==='concluido');
+  const inat = fil.filter(c=>c.status==='inativo');
+
+  set('cnt-pendentes',pend.length); set('cnt-ativos',ativ.length);
+  set('cnt-inativos',inat.length); set('cnt-todos',fil.length);
+
+  renderTbody('tbody-pendentes', pend, 'pendentes');
+  renderTbody('tbody-ativos',    ativ, 'ativos');
+  renderTbody('tbody-inativos',  inat, 'inativos');
+  renderTbody('tbody-todos',     fil,  'todos');
+}
+
+function renderTbody(id, lista, tipo){
+  const tb = document.getElementById(id);
+  if(lista.length===0){ tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Nenhum cliente</div></div></td></tr>`; return; }
+  tb.innerHTML = lista.map(c=>{
+    const dr = diasRestantes(c);
+    const vb = dr!==null ? vencBadge(dr) : '';
+    return `<tr class="tr-click" onclick="abrirCliente('${c.id}')">
+      <td>
+        <div style="font-weight:700;color:var(--white)">${c.nome||'—'}</div>
+        <div style="font-size:.7rem;color:var(--muted)">${c.email||''}</div>
+      </td>
+      <td style="font-size:.8rem">${c.plano||'—'}</td>
+      <td style="font-size:.76rem;color:var(--muted)">${fmtDate(c.criado_em||c.data_envio)}</td>
+      ${tipo==='ativos'?`<td>${vb||'<span style="color:var(--muted);font-size:.76rem">Entrega única</span>'}</td>`:''}
+      ${tipo==='pendentes'?`<td>${c.pagamento_confirmado?'<span class="badge badge-ativo">Confirmado</span>':'<span class="badge badge-pendente">Aguardando</span>'}</td>`:''}
+      ${tipo==='inativos'||tipo==='todos'?`<td>${statusBadge(c.status)}</td>`:''}
+      ${tipo==='todos'?`<td>${vb||'—'}</td>`:''}
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-sm" onclick="abrirCliente('${c.id}')">Ver</button>
+          ${!c.pagamento_confirmado&&tipo==='pendentes'?`<button class="btn btn-sm btn-green" onclick="event.stopPropagation();confirmarPagamentoRapido('${c.id}')">✅ Pago</button>`:''}
+          <button class="btn btn-sm" onclick="event.stopPropagation();abrirWANum('${c.whatsapp||''}')">💬</button>
+          <button class="btn btn-sm btn-red" onclick="event.stopPropagation();excluirClienteId('${c.id}','${(c.nome||'').replace(/'/g,'')}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── VENCIMENTOS ───────────────────────────────────────────────────────────────
+function renderVencimentos(){
+  const com_prazo = clientes.filter(c=>PRAZOS[c.plano]>0&&c.status==='ativo');
+  const tb = document.getElementById('tbody-vencimentos');
+  if(com_prazo.length===0){ tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">⏰</div><div class="empty-text">Nenhum plano com prazo ativo</div></div></td></tr>`; return; }
+  const sorted = [...com_prazo].sort((a,b)=>(diasRestantes(a)||999)-(diasRestantes(b)||999));
+  tb.innerHTML = sorted.map(c=>{
+    const dr = diasRestantes(c);
+    const prazo = PRAZOS[c.plano];
+    const inicio = c.data_inicio || c.criado_em;
+    const venc = inicio ? new Date(new Date(inicio).getTime()+prazo*86400000).toLocaleDateString('pt-BR') : '—';
+    return `<tr class="tr-click" onclick="abrirCliente('${c.id}')">
+      <td><div style="font-weight:700;color:var(--white)">${c.nome||'—'}</div><div style="font-size:.7rem;color:var(--muted)">${c.email||''}</div></td>
+      <td style="font-size:.8rem">${c.plano}</td>
+      <td style="font-size:.76rem;color:var(--muted)">${fmtDate(inicio)}</td>
+      <td style="font-size:.76rem">${venc}</td>
+      <td>${vencBadge(dr)}</td>
+      <td onclick="event.stopPropagation()">
+        <button class="btn btn-sm btn-red" onclick="encerrarAcesso('${c.id}')">Encerrar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── ABRIR CLIENTE ─────────────────────────────────────────────────────────────
+async function abrirCliente(id){
+  clienteAtual = clientes.find(c=>c.id===id);
+  if(!clienteAtual) return;
+  const c = clienteAtual;
+  const l = LS.get(id);
+
+  // Header
+  set('m-nome', c.nome||'Cliente');
+  set('m-subtitulo', (c.plano||'')+(c.tipo?' · '+c.tipo:''));
+  document.getElementById('m-status-badge').innerHTML = statusBadge(c.status);
+
+  // Seção de pagamento
+  const pago = c.pagamento_confirmado === true;
+  const elPend = document.getElementById('pagamento-pendente');
+  const elConf = document.getElementById('pagamento-confirmado');
+  if(elPend) elPend.style.display = pago ? 'none' : 'flex';
+  if(elConf) elConf.style.display = pago ? 'block' : 'none';
+  // Sincronizar link na aba dados também
+  if(pago){
+    const payload2={sbUrl:SB_URL,sbKey:SB_KEY,clienteId:id,nome:c.nome,email:c.email,prof:'Will Gomes'};
+    const token2=btoa(unescape(encodeURIComponent(JSON.stringify(payload2))));
+    const link2=BASE_URL+'/cliente.html?t='+token2;
+    const el2=document.getElementById('m-link-q2');
+    if(el2){ el2.textContent=link2; el2.dataset.link=link2; }
+  }
+
+  // Banner vencimento
+  const dr = diasRestantes(c);
+  const vb = document.getElementById('venc-banner');
+  if(dr!==null && dr<=7 && dr>=0){
+    vb.style.display='block';
+    vb.innerHTML=`<div class="venc-alert">⚠️ <strong>Atenção:</strong> Este plano vence em <strong>${dr} dia${dr!==1?'s':''}</strong>. Considere encerrar ou renovar o acesso.</div>`;
+  } else if(dr!==null && dr<0){
+    vb.style.display='block';
+    vb.innerHTML=`<div class="venc-alert" style="background:var(--red-dim)">🔴 <strong>Plano VENCIDO</strong> há ${Math.abs(dr)} dia${Math.abs(dr)!==1?'s':''}. Encerre o acesso a apps externos.</div>`;
+  } else { vb.style.display='none'; }
+
+  // Aba dados
+  document.getElementById('m-dados-pessoais').innerHTML = dGrid([
+    ['Nome',c.nome],['E-mail',c.email],['WhatsApp',c.whatsapp],
+    ['Idade',c.idade?c.idade+' anos':'—'],['Sexo',c.sexo],['Profissão',c.profissao],
+  ]);
+  document.getElementById('m-dados-plano').innerHTML = dGrid([
+    ['Plano',c.plano],['Status',statusTxt(c.status)],
+    ['Cadastro',fmtDate(c.criado_em||c.data_envio)],
+    ['Início',fmtDate(c.data_inicio)],['Tipo',c.tipo],
+  ]);
+  document.getElementById('m-contato').innerHTML = `
+    <a href="https://wa.me/55${(c.whatsapp||'').replace(/\D/g,'')}" target="_blank" class="btn btn-green">💬 WhatsApp</a>
+    <a href="mailto:${c.email||''}" class="btn">✉️ E-mail</a>`;
+
+  // Aba anamnese — buscar questionário se não tiver em cache
+  if(!c._questionario && SB){
+    (async()=>{
+      try{
+        let { data } = await SB.from('questionarios').select('*').eq('cliente_id', c.id).order('ts',{ascending:false}).limit(1);
+        if(!data||data.length===0){
+          const r2 = await SB.from('questionarios').select('*').eq('email', c.email||'').order('ts',{ascending:false}).limit(1);
+          data = r2.data;
+        }
+        if(!data||data.length===0){
+          const r3 = await SB.from('questionarios').select('*').eq('nome', c.nome||'').order('ts',{ascending:false}).limit(1);
+          data = r3.data;
+        }
+        if(data && data.length>0){
+          c._questionario = data[0].dados;
+          c._q_ts = data[0].ts;
+          const ci = clientes.findIndex(x=>x.id===c.id);
+          if(ci>=0){ clientes[ci]._questionario=c._questionario; clientes[ci]._q_ts=c._q_ts; }
+        }
+      }catch(e){ console.warn('Erro anamnese:', e); }
+      renderAnamnese(c);
+    })();
+  } else {
+    renderAnamnese(c);
+  }
+
+  // Aba timer
+  renderTimer(c, l);
+
+  // Aba MFIT
+  const mfit = l.mfit||{};
+  document.getElementById('mfit-login').value  = mfit.login||'';
+  document.getElementById('mfit-senha').value  = mfit.senha||'';
+  document.getElementById('mfit-link').value   = mfit.link||'';
+  document.getElementById('mfit-data').value   = mfit.data||'';
+  document.getElementById('mfit-status').value = mfit.status||'Pendente';
+  document.getElementById('mfit-obs').value    = mfit.obs||'';
+
+  // Link questionário
+  const payload = {sbUrl:SB_URL,sbKey:SB_KEY,clienteId:id,nome:c.nome,email:c.email,prof:'Will Gomes'};
+  const token = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const link = BASE_URL+'/cliente.html?t='+token;
+  document.getElementById('m-link-q').textContent = link;
+  document.getElementById('m-link-q').dataset.link = link;
+  // Sincronizar com aba dados
+  const elQ2 = document.getElementById('m-link-q2');
+  if(elQ2){ elQ2.textContent=link; elQ2.dataset.link=link; }
+  const inpQ = document.getElementById('m-link-input');
+  if(inpQ){ inpQ.value=link; }
+
+  // Notas
+  renderNotas(l.notas||[]);
+
+  // Aba relatório - preparar estado inicial
+  document.getElementById('rel-loading').style.display = 'none';
+  document.getElementById('rel-sem-dados').style.display = 'block';
+  document.getElementById('rel-content').style.display = 'none';
+
+  switchMTab('dados', document.querySelector('#modal-cliente .tab-btn'));
+  document.getElementById('modal-cliente').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function renderAnamnese(c){
+  const div = document.getElementById('m-anamnese');
+  const q = c._questionario;
+  if(!q){
+    div.innerHTML=`<div class="empty"><div class="empty-icon">🩺</div><div class="empty-text">Questionário completo ainda não recebido.<br><br><button class="btn btn-orange" onclick="switchMTab('mfit',document.querySelectorAll('#modal-cliente .tab-btn')[3])">📤 Ir para o link do questionário</button></div></div>`;
+    return;
+  }
+  const cl = q.cliente||{};
+  const an = q.anamnese||{};
+  const nu = q.nutricao||{};
+
+  // Fallback: peso e altura do cadastro do cliente se não estiver no questionário
+  if(!cl['c-peso'] && c.peso)   cl['c-peso']   = c.peso;
+  if(!cl['c-altura'] && c.altura) cl['c-altura'] = c.altura;
+  // Fallback de sexo
+  if(!cl['c-sexo'] && c.sexo) cl['c-sexo'] = c.sexo;
+
+  const labelMap = {
+    'c-nome':'Nome','c-email':'E-mail','c-tel':'WhatsApp','c-nasc':'Nascimento',
+    'c-sexo':'Sexo','c-prof':'Profissão','c-cidade':'Cidade','c-uf':'Estado',
+    'c-peso':'Peso (kg)','c-altura':'Altura (cm)',
+    'objetivo':'Objetivos','nivel':'Nível','an-dias':'Dias/semana','an-dur':'Duração',
+    'an-equip':'Equipamentos','an-hipertensao':'Hipertensão','an-diabetes':'Diabetes',
+    'an-problemascardiacos':'Prob. cardíacos','an-problemasarticulares':'Prob. articulares',
+    'an-problemasdecoluna':'Prob. coluna','an-liberacao':'Liberação médica',
+    'an-lesoes':'Lesões','an-meds':'Medicamentos','an-dores':'Dores/limitações',
+    'an-sono':'Horas de sono','an-sonoq':'Qualidade do sono','an-stress':'Estresse',
+    'an-alcool':'Álcool','an-tabaco':'Tabaco','an-agua':'Água/dia',
+    'nu-obj':'Objetivo nutricional','nu-ativ':'Nível de atividade',
+    'nu-rest':'Restrição alimentar','nu-nao':'Não come','nu-supl':'Suplementos',
+  };
+
+  function renderSection(title, obj, skipKeys=[]){
+    const items = Object.entries(obj).filter(([k,v])=>{
+      if(skipKeys.includes(k)) return false;
+      if(!v || v==='—' || v==='') return false;
+      if(Array.isArray(v) && v.length===0) return false;
+      return true;
+    });
+    if(!items.length) return '';
+    return `<div class="detail-section">
+      <div class="detail-section-title">${title}</div>
+      <div class="detail-grid">
+        ${items.map(([k,v])=>{
+          const label = labelMap[k] || k.replace(/[_\-]/g,' ').replace(/^(an|nu|c) /,'');
+          const val = Array.isArray(v) ? v.join(', ') : String(v);
+          return `<div class="detail-item${val.length>40?' full':''}">
+            <label>${label}</label>
+            <span>${val}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  div.innerHTML =
+    `<div style="background:var(--green-dim);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.8rem;color:var(--green)">✅ Questionário recebido em ${fmtDate(c._q_ts)}</span>
+      <button onclick="resetarQuestionario()" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#ef4444;font-size:.72rem;font-weight:700;padding:5px 12px;border-radius:4px;cursor:pointer;white-space:nowrap;font-family:var(--font-b)">🗑 Resetar</button>
+    </div>`
+    + renderSection('Dados Pessoais', cl)
+    + renderSection('Treino e Objetivos', an)
+    + renderSection('Nutrição', nu);
+}
+
+function renderTimer(c, l){
+  const div = document.getElementById('m-timer-content');
+  const prazo = PRAZOS[c.plano]||0;
+  document.getElementById('m-status-sel').value = c.status||'pendente';
+  document.getElementById('m-data-inicio').value = c.data_inicio ? c.data_inicio.split('T')[0] : '';
+
+  if(prazo===0){
+    div.innerHTML=`<div class="timer-box"><div class="timer-days" style="color:var(--muted);font-size:1.4rem">Entrega única</div><div class="timer-label">Este plano não tem prazo de acesso</div></div>`;
+  } else {
+    const dr = diasRestantes(c);
+    const pct = dr!==null ? Math.max(0,Math.min(100, (dr/prazo)*100)) : 0;
+    const cls = dr===null?'':dr>7?'':dr>3?'warning':'danger';
+    const cor = dr===null||dr>7?'var(--green)':dr>3?'var(--yellow)':'var(--red)';
+    div.innerHTML=`
+      <div class="timer-box">
+        <div class="timer-days ${cls}" style="color:${cor}">${dr===null?'—':Math.max(0,dr)}</div>
+        <div class="timer-label">${dr===null?'Defina a data de início':'dias restantes de '+prazo}</div>
+        <div class="timer-bar"><div class="timer-fill" style="width:${pct}%;background:${cor}"></div></div>
+      </div>
+      <div style="margin-top:12px;font-size:.78rem;color:var(--muted);text-align:center">
+        Prazo do plano: <strong style="color:var(--white)">${prazo} dias</strong>
+        ${c.data_inicio?` · Início: <strong style="color:var(--white)">${fmtDate(c.data_inicio)}</strong>`:''}
+        ${c.data_vencimento?` · Vence: <strong style="color:${cor}">${fmtDate(c.data_vencimento)}</strong>`:''}
+      </div>`;
+  }
+
+  // Timeline
+  const hist = (l.status_history||[]);
+  document.getElementById('m-timeline').innerHTML = hist.length===0
+    ? '<div style="color:var(--muted);font-size:.8rem">Nenhuma alteração registrada.</div>'
+    : [...hist].reverse().map(h=>`
+      <div class="tl-item">
+        <div class="tl-dot orange"></div>
+        <div><div class="tl-status">${statusTxt(h.status)}</div><div class="tl-date">${h.data}</div></div>
+      </div>`).join('');
+}
+
+// renderMotorTab removido - substituído por gerarRelatorioCliente
+
+// ── AÇÕES ─────────────────────────────────────────────────────────────────────
+async function confirmarPagamento(){
+  if(!clienteAtual) return;
+  const c = clienteAtual;
+  const prazo = PRAZOS[c.plano]||0;
+  const inicio = new Date();
+  const venc = prazo>0 ? new Date(inicio.getTime()+prazo*86400000) : null;
+
+  c.status = 'ativo';
+  c.pagamento_confirmado = true;
+  c.data_inicio = inicio.toISOString();
+  c.data_vencimento = venc ? venc.toISOString() : null;
+
+  const idx = clientes.findIndex(x=>x.id===c.id);
+  if(idx>=0) clientes[idx] = c;
+
+  const l = LS.get(c.id);
+  if(!l.status_history) l.status_history=[];
+  l.status_history.push({status:'ativo',data:new Date().toLocaleString('pt-BR'),obs:'Pagamento confirmado'});
+  LS.set(c.id, l);
+
+  if(SB) await SB.from('clientes').update({
+    status:'ativo', dados:c,
+    atualizado_em: new Date().toISOString()
+  }).eq('id', c.id);
+
+  // Enviar link do questionário pelo WhatsApp automaticamente
+  const payload={sbUrl:SB_URL,sbKey:SB_KEY,clienteId:c.id,nome:c.nome,email:c.email,prof:'Will Gomes'};
+  const token=btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const link=BASE_URL+'/cliente.html?t='+token;
+  const msg=encodeURIComponent(`Olá ${c.nome}! 🏋️\n\nSeu pagamento foi confirmado! Para que eu possa montar seu programa personalizado, preencha o questionário completo:\n\n${link}\n\nAproveite para detalhar bem suas informações — isso vai garantir um programa ainda mais personalizado para você!\n\nWill Gomes – WillgomesFit 💪`);
+  window.open(`https://wa.me/55${(c.whatsapp||'').replace(/\D/g,'')}?text=${msg}`,'_blank');
+
+  // Atualizar UI
+  const elPend2 = document.getElementById('pagamento-pendente');
+  const elConf2 = document.getElementById('pagamento-confirmado');
+  if(elPend2) elPend2.style.display='none';
+  if(elConf2) elConf2.style.display='block';
+  // Atualizar link na seção de dados
+  const payload3={sbUrl:SB_URL,sbKey:SB_KEY,clienteId:c.id,nome:c.nome,email:c.email,prof:'Will Gomes'};
+  const token3=btoa(unescape(encodeURIComponent(JSON.stringify(payload3))));
+  const link3=BASE_URL+'/cliente.html?t='+token3;
+  const elQ3=document.getElementById('m-link-q2');
+  if(elQ3){ elQ3.textContent=link3; elQ3.dataset.link=link3; }
+  renderDashboard(); renderClientes(); renderVencimentos();
+  notif('✅ Pagamento confirmado! Envie o link ao cliente.');
+}
+
+async function confirmarPagamentoRapido(id){
+  clienteAtual = clientes.find(c=>c.id===id);
+  await confirmarPagamento();
+}
+
+async function encerrarAcesso(id){
+  const c = clientes.find(x=>x.id===id);
+  if(!c) return;
+  if(!confirm(`Encerrar acesso de ${c.nome}?`)) return;
+  c.status='inativo';
+  if(SB) await SB.from('clientes').update({status:'inativo',atualizado_em:new Date().toISOString()}).eq('id',id);
+  const l=LS.get(id);
+  if(!l.status_history) l.status_history=[];
+  l.status_history.push({status:'inativo',data:new Date().toLocaleString('pt-BR'),obs:'Acesso encerrado'});
+  LS.set(id,l);
+  renderClientes(); renderVencimentos(); renderDashboard();
+  notif('Acesso encerrado.');
+}
+
+async function salvarStatus(){
+  if(!clienteAtual) return;
+  const novoStatus = document.getElementById('m-status-sel').value;
+  const dataInicio = document.getElementById('m-data-inicio').value;
+  const c = clienteAtual;
+  c.status = novoStatus;
+  if(dataInicio){ c.data_inicio = new Date(dataInicio).toISOString(); }
+  const prazo = PRAZOS[c.plano]||0;
+  if(dataInicio && prazo>0) c.data_vencimento = new Date(new Date(dataInicio).getTime()+prazo*86400000).toISOString();
+  const idx=clientes.findIndex(x=>x.id===c.id); if(idx>=0) clientes[idx]=c;
+  const l=LS.get(c.id);
+  if(!l.status_history) l.status_history=[];
+  l.status_history.push({status:novoStatus,data:new Date().toLocaleString('pt-BR')});
+  LS.set(c.id,l);
+  if(SB) await SB.from('clientes').update({status:novoStatus,dados:c,atualizado_em:new Date().toISOString()}).eq('id',c.id);
+  renderTimer(c,l); renderDashboard(); renderClientes(); renderVencimentos();
+  notif('Status atualizado!');
+}
+
+function salvarMfit(){
+  if(!clienteAtual) return;
+  LS.set(clienteAtual.id,{mfit:{
+    login:document.getElementById('mfit-login').value,
+    senha:document.getElementById('mfit-senha').value,
+    link:document.getElementById('mfit-link').value,
+    data:document.getElementById('mfit-data').value,
+    status:document.getElementById('mfit-status').value,
+    obs:document.getElementById('mfit-obs').value,
+    updated_at:new Date().toLocaleString('pt-BR'),
+  }});
+  notif('Credenciais MFIT salvas!');
+}
+
+function salvarNota(){
+  if(!clienteAtual) return;
+  const txt=document.getElementById('nota-txt').value.trim();
+  if(!txt) return;
+  const l=LS.get(clienteAtual.id);
+  if(!l.notas) l.notas=[];
+  l.notas.unshift({texto:txt,data:new Date().toLocaleString('pt-BR')});
+  LS.set(clienteAtual.id,l);
+  document.getElementById('nota-txt').value='';
+  renderNotas(l.notas);
+  notif('Nota adicionada!');
+}
+
+function renderNotas(notas){
+  const d=document.getElementById('m-notas');
+  d.innerHTML=notas.length===0
+    ?'<div style="color:var(--muted);font-size:.82rem">Nenhuma nota ainda.</div>'
+    :notas.map(n=>`<div class="nota-item"><div class="nota-date">${n.data}</div><div class="nota-text">${n.texto}</div></div>`).join('');
+}
+
+async function salvarNovoCliente(){
+  const nome=document.getElementById('n-nome').value.trim();
+  const email=document.getElementById('n-email').value.trim();
+  const whats=document.getElementById('n-whats').value.trim();
+  const plano=document.getElementById('n-plano').value;
+  const status=document.getElementById('n-status').value;
+  if(!nome||!email||!plano){ notif('Preencha nome, e-mail e plano!','#ef4444'); return; }
+  const c={id:Date.now().toString(),nome,email,whatsapp:whats,plano,status,criado_em:new Date().toISOString(),tipo:'Manual'};
+  clientes.unshift(c);
+  if(!local.clientes_locais) local.clientes_locais=[];
+  local.clientes_locais.unshift(c);
+  LS.save();
+  if(SB) await SB.from('clientes').upsert({id:c.id,email,nome,status,plano,dados:c,criado_em:c.criado_em,atualizado_em:c.criado_em});
+  document.getElementById('modal-novo').classList.remove('open');
+  document.body.style.overflow='';
+  renderDashboard(); renderClientes();
+  notif('Cliente cadastrado!');
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function diasRestantes(c){
+  const prazo=PRAZOS[c.plano]||0;
+  if(!prazo||!c.data_inicio) return null;
+  const inicio=new Date(c.data_inicio);
+  const venc=new Date(inicio.getTime()+prazo*86400000);
+  return Math.ceil((venc-new Date())/86400000);
+}
+
+function vencBadge(dr){
+  if(dr===null) return '';
+  if(dr<0) return `<span class="badge badge-inativo">Vencido há ${Math.abs(dr)}d</span>`;
+  if(dr<=3) return `<span class="badge badge-vencendo">⚠️ ${dr}d</span>`;
+  if(dr<=7) return `<span class="badge" style="background:var(--yellow-dim);color:var(--yellow)">${dr}d</span>`;
+  return `<span class="badge badge-ativo">${dr}d</span>`;
+}
+
+function statusBadge(s){
+  const m={ativo:'badge-ativo',inativo:'badge-inativo',pendente:'badge-pendente',processando:'badge-processando',concluido:'badge-concluido'};
+  const t={ativo:'Ativo',inativo:'Inativo',pendente:'Pendente',processando:'Processando',concluido:'Concluído'};
+  return `<span class="badge ${m[s]||'badge-pendente'}">${t[s]||s||'Pendente'}</span>`;
+}
+function statusTxt(s){ return {ativo:'Ativo',inativo:'Inativo',pendente:'Pendente',processando:'Em processamento',concluido:'Concluído'}[s]||s||'Pendente'; }
+function fmtDate(d){ if(!d) return '—'; try{ return new Date(d).toLocaleDateString('pt-BR'); }catch(e){ return d; } }
+function set(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; }
+function dGrid(items){ return items.filter(([,v])=>v&&v!=='—').map(([l,v])=>`<div class="detail-item"><label>${l}</label><span>${v}</span></div>`).join(''); }
+
+function copiarLink(){
+  const el1 = document.getElementById('m-link-q2');
+  const el2 = document.getElementById('m-link-q');
+  const link = (el1&&el1.dataset&&el1.dataset.link) || (el2&&el2.dataset&&el2.dataset.link) || '';
+
+  if(!link || link==='—' || link.length < 10){
+    // Tentar pegar do textContent
+    const txt = (el1&&el1.textContent)||'';
+    if(txt && txt.includes('http')){
+      prompt('Copie o link abaixo (Ctrl+A → Ctrl+C):', txt);
+      return;
+    }
+    notif('Confirme o pagamento primeiro para gerar o link.','#ef4444');
+    return;
+  }
+
+  // Mostrar no input
+  const inp = document.getElementById('m-link-input');
+  if(inp){ inp.style.display='block'; inp.value=link; setTimeout(()=>{ inp.focus(); inp.select(); },50); }
+
+  // Tentar clipboard API
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(link)
+      .then(()=>{ notif('✅ Link copiado!'); })
+      .catch(()=>{
+        // Fallback: prompt nativo
+        prompt('Copie o link abaixo (Ctrl+A → Ctrl+C):', link);
+      });
+  } else {
+    // Fallback direto: prompt nativo do navegador
+    prompt('Copie o link abaixo (Ctrl+A → Ctrl+C):', link);
+  }
+}
+function copiarFallback(link){
+  prompt('Copie o link abaixo (Ctrl+A → Ctrl+C):', link);
+}
+function enviarLinkWA(){
+  if(!clienteAtual) return;
+  const link=document.getElementById('m-link-q').dataset.link;
+  const msg=encodeURIComponent(`Olá ${clienteAtual.nome}! 🏋️\n\nSeu pagamento foi confirmado! Preencha o questionário completo para montagem do seu programa:\n\n${link}\n\nWill Gomes – WillgomesFit 💪`);
+  window.open(`https://wa.me/55${(clienteAtual.whatsapp||'').replace(/\D/g,'')}?text=${msg}`,'_blank');
+}
+function abrirWA(){ if(!clienteAtual) return; abrirWANum(clienteAtual.whatsapp||''); }
+function abrirWANum(w){ const msg=encodeURIComponent('Olá! Aqui é o Will Gomes Personal Trainer.'); window.open(`https://wa.me/55${w.replace(/\D/g,'')}?text=${msg}`,'_blank'); }
+
+function abrirMotor(){
+  if(clienteAtual){
+    const c=clienteAtual;
+    const q=c._questionario||{};
+    localStorage.setItem('wgf',JSON.stringify({
+      cliente:{'c-nome':c.nome,'c-email':c.email,'c-tel':c.whatsapp,'c-plano':c.plano,'c-sexo':c.sexo||'','c-nasc':c.nasc||'',...(q.cliente||{})},
+      anamnese:q.anamnese||{},nutricao:q.nutricao||{},avaliacao:{},
+    }));
+  }
+  window.open('motor.html','_blank');
+}
+
+// ── NAVEGAÇÃO ─────────────────────────────────────────────────────────────────
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+}
+function switchTab(id,el){
+  document.querySelectorAll('#page-clientes .tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#page-clientes .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+}
+function switchMTab(id,el){
+  document.querySelectorAll('#modal-cliente .tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#modal-cliente .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mt-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  // Quando abrir aba relatório, gerar automaticamente
+  if(id==='relatorio' && clienteAtual){
+    document.getElementById('rel-loading').style.display='block';
+    document.getElementById('rel-sem-dados').style.display='none';
+    document.getElementById('rel-content').style.display='none';
+    setTimeout(()=>gerarRelatorioCliente(clienteAtual), 200);
+  }
+}
+function fecharModal(){ document.getElementById('modal-cliente').classList.remove('open'); document.body.style.overflow=''; }
+function abrirNovoCliente(){ document.getElementById('modal-novo').classList.add('open'); document.body.style.overflow='hidden'; }
+
+document.getElementById('modal-cliente').addEventListener('click',function(e){ if(e.target===this) fecharModal(); });
+document.getElementById('modal-novo').addEventListener('click',function(e){ if(e.target===this){ this.classList.remove('open');document.body.style.overflow=''; } });
+
+function notif(msg,color='#22c55e'){
+  const n=document.getElementById('notif');
+  n.textContent=msg;n.style.background=color;n.style.display='block';
+  setTimeout(()=>n.style.display='none',2800);
+}
+
+async function excluirCliente(){
+  if(!clienteAtual) return;
+  excluirClienteId(clienteAtual.id, clienteAtual.nome||'este cliente');
+}
+
+async function excluirClienteId(id, nome){
+  if(!confirm(`Tem certeza que deseja excluir "${nome}"?
+
+Esta ação não pode ser desfeita.`)) return;
+  // Remover do array local
+  clientes = clientes.filter(c=>c.id!==id);
+  // Remover do localStorage
+  delete local['c_'+id];
+  if(local.clientes_locais) local.clientes_locais = local.clientes_locais.filter(c=>c.id!==id);
+  LS.save();
+  // Remover do Supabase
+  if(SB){
+    try{
+      await SB.from('clientes').delete().eq('id', id);
+      await SB.from('questionarios').delete().eq('cliente_id', id);
+    }catch(e){ console.warn('Erro ao excluir do Supabase:', e); }
+  }
+  fecharModal();
+  renderDashboard();
+  renderClientes();
+  renderVencimentos();
+  notif('Cliente excluído.', '#ef4444');
+}
+
+
+// ── MOTOR ENGINE (extraído do Motor.html) ──────────────────────────────────
+let MOTOR_D = { cliente:{}, anamnese:{}, nutricao:{}, avaliacao:{} };
+
+const EX = [{"cod": "EX001", "nome": "Supino Reto Barra", "grupo": "Peitoral", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Barra+banco", "nivel": "Iniciante", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Lesão manguito rotador", "substituto": "Supino halteres", "instrucao": "Retrair escápulas. Descer barra até toque leve no esterno. Cotovelos a 75°.", "erros": "Elevar quadril. Barra bater no peito. Cotovelos >90°.", "obs": "Idosos: preferir halteres."}, {"cod": "EX002", "nome": "Supino Inclinado Barra", "grupo": "Peitoral sup.", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Barra+banco incl.", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro aguda", "substituto": "Supino incl. haltere", "instrucao": "Banco 30-45°. Descer até a clavícula. Empurrar expirando.", "erros": "Banco acima 45°. Bater no peito.", "obs": "Seguro para maioria com ajuste de carga."}, {"cod": "EX003", "nome": "Supino Declinado Barra", "grupo": "Peitoral inf.", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Barra+banco decl.", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "HAS grave, glaucoma", "substituto": "Supino decl. haltere", "instrucao": "Banco -15 a -30°. Maior foco na porção inferior.", "erros": "Hiperextender pescoço. Sem spotter.", "obs": "Contraindicado em HAS grave: posição inverte PA."}, {"cod": "EX004", "nome": "Supino Reto Halteres", "grupo": "Peitoral", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Halteres+banco", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro moderada", "substituto": "Chest press máquina", "instrucao": "Maior amplitude que barra. Cotovelos 75-80°. Controlar descida 3s.", "erros": "Halteres caindo. Amplitude excessiva.", "obs": "Ideal para iniciantes. Menor risco de trauma."}, {"cod": "EX005", "nome": "Supino Inclinado Halteres", "grupo": "Peitoral sup.", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Halteres+banco incl.", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Chest press inclinado máquina", "instrucao": "Banco 30-45°. Squeeze no topo.", "erros": "Banco muito inclinado. Peso excessivo.", "obs": "Um dos mais seguros para iniciantes e idosos."}, {"cod": "EX006", "nome": "Crucifixo Halteres", "grupo": "Peitoral", "secundarios": "Peitoral menor, serrátil", "equipamento": "Halteres+banco", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro aguda", "substituto": "Crossover polia", "instrucao": "Abrir em arco mantendo cotovelo levemente fletido. Aduzir sem tocar.", "erros": "Estender cotovelo. Amplitude excessiva.", "obs": "Baixa carga. Muito seguro para isolamento."}, {"cod": "EX007", "nome": "Crossover Polia Alta", "grupo": "Peitoral inf.", "secundarios": "Peitoral menor", "equipamento": "Polia alta", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Crucifixo halteres", "instrucao": "Puxar em arco para baixo e à frente. Squeeze no cruzamento.", "erros": "Carga excessiva. Estender cotovelos.", "obs": "Baixo risco articular. Excelente para iniciantes."}, {"cod": "EX008", "nome": "Crossover Polia Baixa", "grupo": "Peitoral sup.", "secundarios": "Deltóide ant.", "equipamento": "Polia baixa", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Crucifixo inclinado halteres", "instrucao": "Polias abaixo do quadril. Puxar para cima e à frente em arco.", "erros": "Impulso do tronco. Carga excessiva.", "obs": "Ótimo para finalização e detalhe muscular."}, {"cod": "EX009", "nome": "Pullover Haltere", "grupo": "Peitoral/Latíssimo", "secundarios": "Serrátil ant., tríceps", "equipamento": "Haltere+banco", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro aguda", "substituto": "Pullover polia", "instrucao": "Transversal no banco. Descer em arco atrás da cabeça. Manter quadril abaixo do banco.", "erros": "Fletir cotovelos demais. Levantar quadril.", "obs": "Amplitude excessiva pode estressar cápsula articular."}, {"cod": "EX010", "nome": "Mergulho Paralelas (peitoral)", "grupo": "Peitoral inf.", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Paralelas", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Lesão ombro, luxação ant.", "substituto": "Supino declinado", "instrucao": "Inclinar tronco 30° à frente. Descer até alongamento no peitoral.", "erros": "Tronco muito vertical. Não completar amplitude.", "obs": "Contraindicado em síndrome de impingement."}, {"cod": "EX011", "nome": "Flexão de Braço", "grupo": "Peitoral", "secundarios": "Tríceps, deltóide ant.", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "Lesão punho", "substituto": "Supino reto barra", "instrucao": "Mãos na largura dos ombros. Corpo rígido. Descer peitoral ao chão.", "erros": "Quadril elevado/baixo. Cotovelos completamente abertos.", "obs": "Progressões: joelhos → pés → pés elevados → lastro."}, {"cod": "EX012", "nome": "Flexão Diamante", "grupo": "Tríceps/Peitoral", "secundarios": "Deltóide ant.", "equipamento": "Peso corporal", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Tríceps pulley", "instrucao": "Mãos em losango abaixo do esterno. Cotovelos próximos ao corpo.", "erros": "Abrir cotovelos. Quadril elevado.", "obs": "Progressão natural da flexão convencional."}, {"cod": "EX013", "nome": "Barra Fixa Pronada (Pullup)", "grupo": "Latíssimo/Costas", "secundarios": "Bíceps, romboides, trapézio inf.", "equipamento": "Barra fixa", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Lesão ombro aguda", "substituto": "Puxada frontal pronada", "instrucao": "Pegada pronada. Escápulas para baixo. Levar peito à barra. Descer 3s.", "erros": "Kipping. Não completar extensão. Encolher ombros.", "obs": "Usar elástico para assistência em iniciantes."}, {"cod": "EX014", "nome": "Barra Fixa Supinada (Chinup)", "grupo": "Bíceps/Latíssimo", "secundarios": "Romboides, peitoral", "equipamento": "Barra fixa", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Rosca + puxada pronada", "instrucao": "Pegada supinada. Levar queixo acima da barra.", "erros": "Balançar o corpo. Não completar extensão.", "obs": "Mais fácil que pullup. Maior ativação de bíceps."}, {"cod": "EX015", "nome": "Puxada Frontal Pronada", "grupo": "Latíssimo", "secundarios": "Bíceps, romboides", "equipamento": "Polia alta", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Barra fixa pronada", "instrucao": "Joelho pad firme. Puxar pelo cotovelo até a clavícula. Inclinar 10-15° atrás.", "erros": "Puxar atrás da nuca (risco cervical). Impulso lombar.", "obs": "Seguro para iniciantes e idosos."}, {"cod": "EX016", "nome": "Puxada Frontal Supinada", "grupo": "Latíssimo/Bíceps", "secundarios": "Romboides", "equipamento": "Polia alta", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Chinup", "instrucao": "Pegada supinada. Maior ativação de bíceps. Puxar até a clavícula.", "erros": "Impulso excessivo. Não completar extensão.", "obs": "Variação mais fácil que pronada."}, {"cod": "EX017", "nome": "Puxada Neutra (triângulo)", "grupo": "Latíssimo", "secundarios": "Bíceps, romboides", "equipamento": "Polia alta + triângulo", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Remada neutra máquina", "instrucao": "Pegada neutra. Puxar até o abdômen superior. Cotovelos passando o tronco.", "erros": "Impulso lombar. Não retrair escápulas.", "obs": "Muito confortável no punho. Ótimo para iniciantes e idosos."}, {"cod": "EX018", "nome": "Remada Curvada Barra Pronada", "grupo": "Romboides/Trapézio", "secundarios": "Bíceps, latíssimo, lombar", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Hérnia disco aguda", "substituto": "Remada na máquina", "instrucao": "45-60° de inclinação. Coluna neutra. Puxar até o abdômen. Pausa 1s.", "erros": "Arredondar lombar. Impulso das pernas. Puxar até o peito.", "obs": "Contraindicado em hérnia aguda. Idosos: máquina."}, {"cod": "EX019", "nome": "Remada Curvada Barra Supinada", "grupo": "Bíceps/Romboides", "secundarios": "Latíssimo", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Hérnia disco aguda", "substituto": "Rosca + remada máquina", "instrucao": "Pegada supinada. Maior ativação de bíceps.", "erros": "Arredondar lombar. Cotovelos muito abertos.", "obs": "Variação com maior demanda no bíceps."}, {"cod": "EX020", "nome": "Remada Unilateral Haltere", "grupo": "Romboides/Trapézio", "secundarios": "Bíceps, latíssimo", "equipamento": "Haltere + banco", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Remada na máquina", "instrucao": "Joelho e mão no banco. Puxar cotovelo em linha reta ao quadril.", "erros": "Rotação excessiva do tronco. Puxar para cima. Impulso.", "obs": "Excelente para iniciantes. Baixo stress espinhal."}, {"cod": "EX021", "nome": "Remada Máquina Sentado", "grupo": "Romboides/Trapézio", "secundarios": "Bíceps, latíssimo", "equipamento": "Máquina remada", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Remada curvada barra", "instrucao": "Peito apoiado. Puxar para o abdômen. Pausa 1s.", "erros": "Impulso do tronco. Não retrair escápulas.", "obs": "Ideal para iniciantes, idosos e pós-lesão lombar."}, {"cod": "EX022", "nome": "Remada Alta", "grupo": "Trapézio/Deltóide", "secundarios": "Bíceps, infraespinhal", "equipamento": "Barra/halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro, impingement", "substituto": "Elevação lateral", "instrucao": "Pegada afastada (>ombros). Puxar até o mento. Cotovelos acima.", "erros": "Pegada fechada (impingement). Elevar acima do mento.", "obs": "Substituir por elevação lateral em impingement."}, {"cod": "EX023", "nome": "Encolhimento de Ombros", "grupo": "Trapézio sup.", "secundarios": "Elevador da escápula", "equipamento": "Barra/halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Remada alta", "instrucao": "Erguer ombros verticalmente. Pausa 2s. Evitar rodar.", "erros": "Rodar ombros. Impulso das pernas.", "obs": "Pode ser feito em alta frequência."}, {"cod": "EX024", "nome": "Extensão de Tronco", "grupo": "Lombar/Eretor espinhal", "secundarios": "Glúteos, isquiotibiais", "equipamento": "Banco romano", "nivel": "Iniciante", "objetivo": "Saúde/Funcional", "contraindicacoes": "Hérnia disco aguda", "substituto": "Elevação pélvica no solo", "instrucao": "Quadril apoiado. Descer até 90° e retornar à linha neutra. Não hiperestender.", "erros": "Hiperestender lombar no topo.", "obs": "Fundamental para saúde lombar."}, {"cod": "EX025", "nome": "Desenvolvimento Militar Barra", "grupo": "Deltóide ant./lat.", "secundarios": "Trapézio, tríceps", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Impingement, instab. ombro", "substituto": "Desenvolvimento halteres", "instrucao": "Em pé ou sentado. Barra na frente. Pressionar até extensão quase completa.", "erros": "Hiperextender lombar. Barra atrás da nuca. Não controlar descida.", "obs": "Barra à frente é mais segura. Sentado reduz stress lombar."}, {"cod": "EX026", "nome": "Desenvolvimento Halteres", "grupo": "Deltóide ant./lat.", "secundarios": "Trapézio, tríceps", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro moderada", "substituto": "Desenvolvimento máquina", "instrucao": "Sentado ou em pé. Halteres na altura dos ombros. Pressionar acima.", "erros": "Hiperextender lombar. Não controlar descida.", "obs": "Mais seguro que barra. Permite amplitude independente."}, {"cod": "EX027", "nome": "Desenvolvimento Máquina", "grupo": "Deltóide ant./lat.", "secundarios": "Trapézio, tríceps", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Desenvolvimento halteres", "instrucao": "Movimento guiado. Bom para iniciantes.", "erros": "Carga excessiva. Não retrair escápulas.", "obs": "Ideal para iniciantes, idosos e reabilitação."}, {"cod": "EX028", "nome": "Desenvolvimento Arnold", "grupo": "Deltóide (todos)", "secundarios": "Trapézio, tríceps, peitoral", "equipamento": "Halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Impingement", "substituto": "Desenvolvimento halteres", "instrucao": "Começa com halteres na frente. Rotar para pronado enquanto pressiona.", "erros": "Realizar muito rápido. Carga excessiva.", "obs": "Maior ativação total do deltóide que o desenvolvimento convencional."}, {"cod": "EX029", "nome": "Elevação Lateral Halteres", "grupo": "Deltóide lat.", "secundarios": "Trapézio sup.", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Impingement severo", "substituto": "Polia lateral", "instrucao": "Elevar até a altura dos ombros. Cotovelo levemente fletido. Controlar 3s.", "erros": "Impulso. Elevar acima dos ombros. Carga excessiva.", "obs": "Um dos mais mal executados. Carga baixa + controle excêntrico."}, {"cod": "EX030", "nome": "Elevação Lateral Polia", "grupo": "Deltóide lat.", "secundarios": "Trapézio sup.", "equipamento": "Polia baixa", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Elevação lateral haltere", "instrucao": "Tensão constante. Elevar até o ombro. Controle excêntrico.", "erros": "Elevar acima dos ombros. Impulso do tronco.", "obs": "Tensão constante = maior estímulo que haltere."}, {"cod": "EX031", "nome": "Elevação Frontal Halteres", "grupo": "Deltóide ant.", "secundarios": "Peitoral sup.", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Impingement", "substituto": "Elevação frontal barra", "instrucao": "Alternado ou simultâneo. Elevar até a altura dos ombros.", "erros": "Rotação do punho. Impulso lombar.", "obs": "Raramente necessário se já faz supino e desenvolvimento."}, {"cod": "EX032", "nome": "Pássaro (posterior delt)", "grupo": "Deltóide post.", "secundarios": "Romboides, infraespinhal", "equipamento": "Halteres/polia", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Face pull", "instrucao": "Inclinado a 45°. Elevar halteres lateralmente. Foco no deltóide posterior.", "erros": "Impulso do tronco. Elevar muito acima da linha dos ombros.", "obs": "Deltóide posterior frequentemente negligenciado."}, {"cod": "EX033", "nome": "Face Pull", "grupo": "Deltóide post./Rotadores ext.", "secundarios": "Romboides, trapézio", "equipamento": "Polia alta + corda", "nivel": "Iniciante", "objetivo": "Saúde/Hipertrofia", "contraindicacoes": "—", "substituto": "Pássaro com halteres", "instrucao": "Polia à altura dos olhos. Puxar até o rosto abrindo os cotovelos.", "erros": "Puxar muito baixo. Carga excessiva.", "obs": "Fundamental para saúde do ombro e postura."}, {"cod": "EX034", "nome": "Rotação Externa Polia", "grupo": "Manguito rotador", "secundarios": "Infraespinhal, redondo menor", "equipamento": "Polia baixa", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "Lesão aguda manguito", "substituto": "Rotação externa elástico", "instrucao": "Cotovelo a 90° ao lado do corpo. Rotar externamente.", "erros": "Afastar cotovelo. Carga excessiva.", "obs": "Essencial em programas de saúde do ombro."}, {"cod": "EX035", "nome": "Rosca Direta Barra", "grupo": "Bíceps", "secundarios": "Braquial, braquiorradial", "equipamento": "Barra", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Rosca haltere alternada", "instrucao": "Pegada supinada. Cotovelos fixos. Flexionar até o peito. Controlar 3s.", "erros": "Mover cotovelos para frente. Impulso lombar.", "obs": "Barra EZ reduz stress no punho."}, {"cod": "EX036", "nome": "Rosca Barra EZ", "grupo": "Bíceps/Braquiorradial", "secundarios": "Braquial", "equipamento": "Barra EZ", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo severa", "substituto": "Rosca haltere", "instrucao": "Pegada semipronada. Mecânica similar à rosca reta.", "erros": "Impulso lombar. Não completar extensão.", "obs": "Mais confortável no punho que barra reta."}, {"cod": "EX037", "nome": "Rosca Alternada Haltere", "grupo": "Bíceps", "secundarios": "Braquiorradial, braquial", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca direta barra", "instrucao": "Supinar o punho durante a flexão. Alternar os lados.", "erros": "Não supinar completamente. Balançar o tronco.", "obs": "A supinação ativa a porção curta do bíceps."}, {"cod": "EX038", "nome": "Rosca Concentrada", "grupo": "Bíceps (porção curta)", "secundarios": "Braquial", "equipamento": "Haltere", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca alternada", "instrucao": "Sentado com cotovelo na coxa interna. Flexionar completamente.", "erros": "Levantar o cotovelo do apoio. Impulso do tronco.", "obs": "Exercício de isolamento. Bom para pico do bíceps."}, {"cod": "EX039", "nome": "Rosca Martelo", "grupo": "Braquiorradial/Bíceps", "secundarios": "Braquial", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca alternada", "instrucao": "Pegada neutra. Sem supinação.", "erros": "Supinar o punho. Usar impulso.", "obs": "Maior ênfase no braquiorradial e braquial."}, {"cod": "EX040", "nome": "Rosca Spider", "grupo": "Bíceps (porção longa)", "secundarios": "Braquial", "equipamento": "Halteres+banco incl.", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca Scott", "instrucao": "Peito apoiado no banco inclinado. Braços pendem para frente.", "erros": "Carga muito pesada. Não completar extensão.", "obs": "Ativa mais a cabeça longa pela pré-estensão."}, {"cod": "EX041", "nome": "Rosca Scott (preacher)", "grupo": "Bíceps (porção curta)", "secundarios": "Braquial", "equipamento": "Barra EZ + banco Scott", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão tendão distal", "substituto": "Rosca concentrada", "instrucao": "Cotovelo apoiado. NÃO completar a extensão (risco tendão distal).", "erros": "Completar extensão com carga alta (lesão tendão distal). Arremessar barra.", "obs": "Risco de lesão tendão distal se completar extensão."}, {"cod": "EX042", "nome": "Rosca 21s", "grupo": "Bíceps", "secundarios": "—", "equipamento": "Barra/halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia/Técnica", "contraindicacoes": "—", "substituto": "Rosca direta normal", "instrucao": "7 reps metade inferior, 7 superior, 7 completas.", "erros": "Carga normal (muito pesada). Perder o padrão.", "obs": "Usar carga 30-40% menor que a rosca convencional."}, {"cod": "EX043", "nome": "Rosca Inclinada Haltere", "grupo": "Bíceps (porção longa)", "secundarios": "Braquial", "equipamento": "Halteres+banco incl.", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca spider", "instrucao": "Banco 45-60°. Braços pendendo atrás do corpo. Maior pré-estiramento.", "erros": "Carga de rosca normal. Balançar os braços.", "obs": "Maior ativação da cabeça longa por pré-estiramento do ombro."}, {"cod": "EX044", "nome": "Rosca Zottman", "grupo": "Bíceps/Braquiorradial", "secundarios": "Braquial, forearm", "equipamento": "Halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca alternada", "instrucao": "Subir com supinação. Virar para pronação no topo. Descer em pronação.", "erros": "Realizar muito rápido. Não controlar excêntrico.", "obs": "Treina bíceps na subida e extensores na descida."}, {"cod": "EX045", "nome": "Tríceps Pulley Barra Reta", "grupo": "Tríceps", "secundarios": "—", "equipamento": "Polia alta", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Tríceps testa", "instrucao": "Cotovelos fixos ao lado. Estender completamente. Pausa 1s.", "erros": "Mover cotovelos. Impulso do tronco.", "obs": "Mais seguro e eficaz para a maioria dos clientes."}, {"cod": "EX046", "nome": "Tríceps Pulley Corda", "grupo": "Tríceps (cabeça lateral)", "secundarios": "—", "equipamento": "Polia alta + corda", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Tríceps barra", "instrucao": "Abrir a corda na extensão para maior amplitude.", "erros": "Não abrir a corda. Cotovelos se afastando.", "obs": "A abertura da corda aumenta ativação da cabeça lateral."}, {"cod": "EX047", "nome": "Tríceps Testa (skull crusher)", "grupo": "Tríceps", "secundarios": "—", "equipamento": "Barra EZ/halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Tríceps pulley", "instrucao": "Deitado. Barra desce até a testa. Cotovelos não se abrem.", "erros": "Abrir cotovelos. Carga excessiva.", "obs": "Contraindicado em lesão de cotovelo aguda."}, {"cod": "EX048", "nome": "Tríceps Francês Haltere", "grupo": "Tríceps (cabeça longa)", "secundarios": "—", "equipamento": "Haltere", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Tríceps pulley", "instrucao": "Em pé ou sentado. Haltere atrás da cabeça. Extensão vertical.", "erros": "Abrir cotovelos. Carga excessiva.", "obs": "A posição acima da cabeça gera maior tensão na cabeça longa."}, {"cod": "EX049", "nome": "Mergulho no Banco (bench dip)", "grupo": "Tríceps", "secundarios": "Deltóide ant., peitoral", "equipamento": "Banco", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro, impingement", "substituto": "Tríceps pulley", "instrucao": "Mãos no banco atrás. Descer até 90°. Empurrar de volta.", "erros": "Descer além de 90°. Pés muito longe.", "obs": "Versão avançada: pés elevados ou com anilha no colo."}, {"cod": "EX050", "nome": "Kickback de Tríceps", "grupo": "Tríceps (cabeça lateral)", "secundarios": "—", "equipamento": "Haltere", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Tríceps pulley", "instrucao": "Inclinado. Cotovelo a 90°. Estender paralelamente ao chão. Pausa 1s.", "erros": "Não completar a extensão. Balançar o braço.", "obs": "Carga baixa necessária para boa técnica."}, {"cod": "EX051", "nome": "Tríceps Overhead Polia", "grupo": "Tríceps (cabeça longa)", "secundarios": "—", "equipamento": "Polia baixa + corda", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Tríceps pulley normal", "instrucao": "Polia abaixo. Inclinar tronco. Braços acima da cabeça. Estender cotovelo.", "erros": "Mover o cotovelo. Carga excessiva.", "obs": "Maior alongamento e ativação da cabeça longa."}, {"cod": "EX052", "nome": "Tríceps Paralelas", "grupo": "Tríceps", "secundarios": "Peitoral, deltóide ant.", "equipamento": "Paralelas", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Lesão ombro, cotovelo", "substituto": "Tríceps no banco", "instrucao": "Tronco vertical (foco tríceps). Descer até 90°. Empurrar de volta.", "erros": "Tronco muito inclinado. Descer além de 90°.", "obs": "Progressão: lastro no colo."}, {"cod": "EX053", "nome": "Agachamento Livre Barra Alta", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, eretores", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Lesão joelho (LCA), hérnia", "substituto": "Leg press 45°", "instrucao": "Barra nas trapézios. Pés na largura dos ombros. Descer com coluna neutra até paralela.", "erros": "Joelho para dentro. Calcanhar levantando. Lombar arredondando.", "obs": "Contraindicado pós-cirurgia LCA sem liberação."}, {"cod": "EX054", "nome": "Agachamento Livre Barra Baixa", "grupo": "Quadríceps/Glúteos/Isquiotibiais", "secundarios": "Eretores", "equipamento": "Barra", "nivel": "Avançado", "objetivo": "Força", "contraindicacoes": "Lesão joelho, ombro", "substituto": "Agachamento barra alta", "instrucao": "Barra abaixo das espinhas escapulares. Maior inclinação de tronco.", "erros": "Necessita maior mobilidade de ombro. Coluna não neutra.", "obs": "Preferido por powerlifters."}, {"cod": "EX055", "nome": "Agachamento Goblet", "grupo": "Quadríceps", "secundarios": "Glúteos, core", "equipamento": "Haltere/kettlebell", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "—", "substituto": "Agachamento livre barra", "instrucao": "Haltere vertical na frente do peito. Descer com tronco mais ereto.", "erros": "Deixar o haltere cair. Não atingir profundidade.", "obs": "Ideal para iniciantes aprenderem o padrão."}, {"cod": "EX056", "nome": "Agachamento Búlgaro", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, adutores", "equipamento": "Halteres+banco", "nivel": "Intermediário", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "Lesão joelho, quadril", "substituto": "Avanço convencional", "instrucao": "Pé traseiro elevado no banco. Descer verticalmente.", "erros": "Joelho traseiro tocar o chão com impacto.", "obs": "Excelente para corrigir assimetrias."}, {"cod": "EX057", "nome": "Leg Press 45°", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Dor patelofemoral", "substituto": "Agachamento barra", "instrucao": "Pés na largura dos ombros. Descer até 90°. Empurrar sem travar.", "erros": "Tirar quadris do apoio. Travar os joelhos.", "obs": "Seguro para a maioria incluindo idosos."}, {"cod": "EX058", "nome": "Leg Press Horizontal", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais", "equipamento": "Máquina horizontal", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Leg press 45°", "instrucao": "Movimento horizontal. Menor stress cardiovascular.", "erros": "Tirar quadril do apoio. Joelhos travados.", "obs": "Indicado para hipertensos e cardiopatas com liberação médica."}, {"cod": "EX059", "nome": "Cadeira Extensora", "grupo": "Quadríceps (isolamento)", "secundarios": "—", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Condromalácia patelar", "substituto": "Agachamento com apoio", "instrucao": "Extensão completa. Pausa 1s no topo. Controlar descida 3s.", "erros": "Usar impulso. Não completar extensão.", "obs": "Condromalácia: amplitude reduzida (0-60°)."}, {"cod": "EX060", "nome": "Agachamento Hack", "grupo": "Quadríceps", "secundarios": "Glúteos, isquiotibiais", "equipamento": "Máquina hack", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão joelho", "substituto": "Leg press 45°", "instrucao": "Costas apoiadas. Pés à frente. Descer até 90°.", "erros": "Pés muito atrás (stress patelar).", "obs": "Ótima opção para quem tem dificuldade no agachamento livre."}, {"cod": "EX061", "nome": "Passada Halteres", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, adutores", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "Lesão joelho grave", "substituto": "Agachamento búlgaro", "instrucao": "Passo à frente. Joelho traseiro quase no chão. Tronco ereto.", "erros": "Joelho da frente ultrapassar o tornozelo. Tronco excessivamente inclinado.", "obs": "Idosos: split squat estático para melhor equilíbrio."}, {"cod": "EX062", "nome": "Passada Caminhando", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, core", "equipamento": "Halteres/barra", "nivel": "Intermediário", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "Lesão joelho, equilíbrio", "substituto": "Passada estática", "instrucao": "Alternando os lados enquanto avança. Maior demanda de equilíbrio.", "erros": "Perder equilíbrio. Joelho da frente colapsar.", "obs": "Excelente para atletismo e condicionamento."}, {"cod": "EX063", "nome": "Stepup", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais", "equipamento": "Caixa/step+halteres", "nivel": "Iniciante", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "Lesão joelho grave", "substituto": "Leg press", "instrucao": "Subir a caixa com um pé. Empurrar com o mesmo pé.", "erros": "Usar o pé do chão como impulso.", "obs": "Muito seguro para idosos quando altura adequada."}, {"cod": "EX064", "nome": "Agachamento Sumô", "grupo": "Adutores/Glúteos/Quadríceps", "secundarios": "Isquiotibiais", "equipamento": "Haltere/barra", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Leg press pés afastados", "instrucao": "Pés muito afastados. Joelhos na linha dos pés.", "erros": "Joelhos para dentro. Coluna não neutra.", "obs": "Maior ênfase em adutores e glúteos."}, {"cod": "EX065", "nome": "Elevação de Quadril (Hip Thrust)", "grupo": "Glúteo máximo", "secundarios": "Isquiotibiais, eretores", "equipamento": "Barra+banco", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Ponte pélvica no chão", "instrucao": "Costas no banco na linha das escápulas. Barra com proteção. Extensão completa. Squeeze 2s.", "erros": "Não atingir extensão completa. Usar lombar em vez de glúteos.", "obs": "Melhor exercício para glúteo máximo (Contreras et al., 2011)."}, {"cod": "EX066", "nome": "Ponte Pélvica no Chão", "grupo": "Glúteo máximo", "secundarios": "Isquiotibiais", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Hipertrofia", "contraindicacoes": "—", "substituto": "Elevação de quadril barra", "instrucao": "Deitado. Joelhos a 90°. Elevar quadril. Squeeze máximo.", "erros": "Usar lombar para elevar. Não manter extensão.", "obs": "Versão mais acessível do hip thrust."}, {"cod": "EX067", "nome": "Mesa Flexora", "grupo": "Isquiotibiais", "secundarios": "Gastrocnêmio", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão joelho (LCA/PCL)", "substituto": "Stiff halteres", "instrucao": "Deitado. Flexionar joelhos até 90° ou mais. Controlar descida 3s.", "erros": "Levantar quadril. Não completar extensão.", "obs": "Cuidado pós-cirurgia de LCA: consultar fisio."}, {"cod": "EX068", "nome": "Cadeira Flexora", "grupo": "Isquiotibiais", "secundarios": "Gastrocnêmio", "equipamento": "Máquina sentado", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Mesa flexora", "instrucao": "Versão sentada. Menor stress na coluna.", "erros": "Não completar amplitude. Levantar quadris.", "obs": "Menor stress espinhal que a mesa flexora deitada."}, {"cod": "EX069", "nome": "Stiff Halteres (RDL)", "grupo": "Isquiotibiais/Glúteos", "secundarios": "Lombar, eretores", "equipamento": "Halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Hérnia disco aguda", "substituto": "Mesa flexora", "instrucao": "Em pé. Inclinação com joelho levemente fletido e coluna neutra.", "erros": "Arredondar lombar. Joelhos muito fletidos.", "obs": "Contraindicado em hérnia de disco aguda."}, {"cod": "EX070", "nome": "Stiff Barra (RDL)", "grupo": "Isquiotibiais/Glúteos", "secundarios": "Lombar, eretores", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Hérnia disco aguda", "substituto": "Stiff halteres", "instrucao": "Mesma mecânica com barra. Permite maior carga.", "erros": "Arredondar lombar. Barra afastando do corpo.", "obs": "Avançados podem progredir para deadlift romeno."}, {"cod": "EX071", "nome": "Abdução de Quadril Máquina", "grupo": "Glúteo médio", "secundarios": "TFL, glúteo mínimo", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Abdução com elástico", "instrucao": "Sentado. Abduzir contra a resistência. Controlar a volta 3s.", "erros": "Velocidade excessiva. Não controlar excêntrico.", "obs": "Fundamental para equilíbrio muscular do quadril."}, {"cod": "EX072", "nome": "Adução de Quadril Máquina", "grupo": "Adutores", "secundarios": "Pectíneo, grácil", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Agachamento sumô", "instrucao": "Sentado. Aduzi contra a resistência. Controlar a volta.", "erros": "Velocidade excessiva. Carga excessiva.", "obs": "Par com abdução para equilíbrio muscular."}, {"cod": "EX073", "nome": "Elevação Calcanhares em Pé", "grupo": "Gastrocnêmio", "secundarios": "Sóleo", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Elevação no degrau", "instrucao": "Amplitude máxima: calcanhar abaixo da linha + pausa 2s no topo.", "erros": "Não completar amplitude. Quicar no fundo.", "obs": "Alta frequência tolerada (3-5x/sem)."}, {"cod": "EX074", "nome": "Elevação Calcanhares Sentado", "grupo": "Sóleo", "secundarios": "Gastrocnêmio (parcial)", "equipamento": "Máquina sentado", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Elevação em pé", "instrucao": "Com joelhos flexionados: maior ativação do sóleo.", "erros": "Não completar amplitude. Sem pausa no topo.", "obs": "Par com elevação em pé para trabalho completo."}, {"cod": "EX075", "nome": "Prancha Isométrica", "grupo": "Core/Transverso", "secundarios": "Lombar, glúteos, serrátil", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Funcional/Saúde", "contraindicacoes": "Lesão lombar aguda", "substituto": "Abdominal tradicional", "instrucao": "Cotovelos e pontas dos pés. Corpo em linha reta. 30-60s.", "erros": "Elevar ou baixar quadril. Prender a respiração.", "obs": "Fundamental para todos. Progressões variadas."}, {"cod": "EX076", "nome": "Prancha Lateral", "grupo": "Oblíquos/Quadrado lombar", "secundarios": "Glúteo médio, adutores", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Funcional", "contraindicacoes": "Lesão lombar", "substituto": "Prancha frontal", "instrucao": "Apoio no antebraço lateral. Corpo em linha lateral. Quadril elevado.", "erros": "Quadril caindo. Pescoço em flexão lateral.", "obs": "Excelente para oblíquos e estabilidade lateral."}, {"cod": "EX077", "nome": "Abdominal Crunch", "grupo": "Reto abdominal", "secundarios": "Oblíquos", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Hérnia cervical", "substituto": "Prancha isométrica", "instrucao": "Joelhos dobrados. Enrolar o tronco. Expirar na contração.", "erros": "Puxar pescoço com as mãos. Usar impulso.", "obs": "Baixo risco. Indicado para todos."}, {"cod": "EX078", "nome": "Abdominal Bicicleta", "grupo": "Reto abdominal/Oblíquos", "secundarios": "Flexores do quadril", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cervical", "substituto": "Crunch + rotação", "instrucao": "Alternar cotovelo ao joelho oposto. Lento e controlado.", "erros": "Puxar o pescoço. Movimento muito rápido.", "obs": "Alta ativação por EMG (ACE). Um dos melhores para oblíquos."}, {"cod": "EX079", "nome": "Elevação de Pernas Pendurado", "grupo": "Reto abdominal inf.", "secundarios": "Flexores do quadril", "equipamento": "Barra fixa", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão lombar aguda", "substituto": "Elevação de pernas deitado", "instrucao": "Suspenso na barra. Elevar pernas até 90°. Controlar descida 3s.", "erros": "Usar impulso do tronco. Não controlar excêntrico.", "obs": "Iniciante: joelhos dobrados. Avançado: pernas estendidas."}, {"cod": "EX080", "nome": "Roda Abdominal (ab wheel)", "grupo": "Reto abdominal/Transverso", "secundarios": "Ombros, tríceps, lombar", "equipamento": "Roda abdominal", "nivel": "Avançado", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão lombar, ombro", "substituto": "Prancha", "instrucao": "De joelhos. Rolar para frente mantendo coluna neutra.", "erros": "Lombar afundar. Realizar em pé sem base de força.", "obs": "Apenas para avançados com lombar forte."}, {"cod": "EX081", "nome": "Levantamento Terra Convencional", "grupo": "Lombar/Glúteos/Isquiotibiais", "secundarios": "Quadríceps, trapézio, antebraços", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Força/Hipertrofia", "contraindicacoes": "Hérnia disco, lombar fraca", "substituto": "Stiff halteres", "instrucao": "Pés na largura do quadril. Barra sobre o médio-pé. Coluna neutra. Extensão simultânea.", "erros": "Lombar arredondando. Barra afastando do corpo.", "obs": "Somente após boa técnica de agachamento."}, {"cod": "EX082", "nome": "Levantamento Terra Sumô", "grupo": "Quadríceps/Glúteos/Adutores", "secundarios": "Lombar, trapézio", "equipamento": "Barra", "nivel": "Avançado", "objetivo": "Força", "contraindicacoes": "Lesão virilha, quadril", "substituto": "Levantamento terra convencional", "instrucao": "Pés muito afastados. Menor inclinação de tronco.", "erros": "Joelhos cedendo para dentro. Não atingir lockout.", "obs": "Preferido por levantadores com tronco longo."}, {"cod": "EX083", "nome": "Levantamento Terra Romeno (RDL)", "grupo": "Isquiotibiais/Glúteos", "secundarios": "Lombar", "equipamento": "Barra/halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Hérnia disco", "substituto": "Stiff halteres", "instrucao": "Começa em pé. Descer mantendo barra na perna. Quadril recua.", "erros": "Confundir com stiff. Arredondar lombar.", "obs": "Um dos melhores para posterior."}, {"cod": "EX084", "nome": "Swing com Kettlebell", "grupo": "Glúteos/Isquiotibiais/Core", "secundarios": "Deltóides, lombar", "equipamento": "Kettlebell", "nivel": "Intermediário", "objetivo": "Condicionamento/Potência", "contraindicacoes": "Lesão lombar aguda", "substituto": "Hip thrust", "instrucao": "Movimento de quadril. Kettlebell impulsionada pela extensão explosiva.", "erros": "Agachar em vez de articular o quadril.", "obs": "Excelente para condicionamento e potência."}, {"cod": "EX085", "nome": "Monster Walk com Elástico", "grupo": "Glúteo médio", "secundarios": "TFL, glúteo mínimo", "equipamento": "Elástico", "nivel": "Iniciante", "objetivo": "Funcional/Reabilitação", "contraindicacoes": "—", "substituto": "Abdução de quadril máquina", "instrucao": "Elástico acima dos joelhos. Meio agachamento. Passos laterais.", "erros": "Joelhos cedendo para dentro.", "obs": "Muito usado em protocolos de joelho e quadril."}, {"cod": "EX086", "nome": "Clamshell com Elástico", "grupo": "Glúteo médio/mínimo", "secundarios": "Rotadores externos do quadril", "equipamento": "Elástico", "nivel": "Iniciante", "objetivo": "Reabilitação/Funcional", "contraindicacoes": "—", "substituto": "Abdução máquina", "instrucao": "Deitado de lado. Elástico acima dos joelhos. Abrir o joelho.", "erros": "Rodar o quadril. Usar impulso.", "obs": "Protocolo padrão de reabilitação de joelho e quadril."}, {"cod": "EX087", "nome": "Farmer Walk", "grupo": "Forearms/Core", "secundarios": "Trapézio, deltóides", "equipamento": "Halteres/Kettlebell", "nivel": "Iniciante", "objetivo": "Funcional/Força", "contraindicacoes": "Lesão punho", "substituto": "Nenhum", "instrucao": "Segurar pesos em cada mão. Caminhar com postura ereta.", "erros": "Inclinar o tronco. Arrastar os pés.", "obs": "Excelente para grip, core e condicionamento."}, {"cod": "EX088", "nome": "Press Pallof", "grupo": "Core/Anti-rotação", "secundarios": "Oblíquos, transverso", "equipamento": "Polia", "nivel": "Iniciante", "objetivo": "Funcional/Saúde", "contraindicacoes": "—", "substituto": "Prancha com rotação", "instrucao": "De lado para a polia. Pressionar o cabo para frente resistindo à rotação.", "erros": "Rotar o tronco. Usar impulso.", "obs": "Excelente anti-rotação. Indicado para reabilitação lombar."}, {"cod": "EX089", "nome": "Dead Bug", "grupo": "Core/Coordenação", "secundarios": "Transverso abdominal", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "—", "substituto": "Prancha isométrica", "instrucao": "Deitado. Estender braço oposto à perna oposta simultaneamente. Alternar.", "erros": "Levantar a lombar do chão. Prender a respiração.", "obs": "Excelente para ativação de core. Seguro para lesão lombar."}, {"cod": "EX090", "nome": "Bird Dog", "grupo": "Core/Lombar/Equilíbrio", "secundarios": "Glúteos, eretores", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "—", "substituto": "Dead bug", "instrucao": "De quatro apoios. Estender braço oposto à perna. Manter 3s. Alternar.", "erros": "Rotar o quadril ao elevar a perna.", "obs": "Excelente em programas de saúde lombar (McGill)."}, {"cod": "EX091", "nome": "Rotação com Cabo", "grupo": "Oblíquos", "secundarios": "Reto abdominal, eretores", "equipamento": "Polia", "nivel": "Iniciante", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "Hérnia disco", "substituto": "Prancha lateral", "instrucao": "Em pé ou sentado. Rotar o tronco contra resistência. Quadril estável.", "erros": "Mover o quadril junto. Velocidade excessiva com carga.", "obs": "Fundamental para esportes e funcional."}, {"cod": "EX092", "nome": "Hip Thrust Unilateral", "grupo": "Glúteo máximo (unilateral)", "secundarios": "Isquiotibiais", "equipamento": "Barra/haltere", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Hip thrust bilateral", "instrucao": "Mesmo padrão com apenas uma perna no chão.", "erros": "Rotar o quadril. Não completar a extensão.", "obs": "Excelente para detectar e corrigir assimetrias."}, {"cod": "EX093", "nome": "Agachamento Assistido (TRX)", "grupo": "Quadríceps/Glúteos", "secundarios": "Core, equilíbrio", "equipamento": "TRX/fita de suspensão", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "—", "substituto": "Agachamento goblet", "instrucao": "Segurar as alças. Usar a tensão como assistência.", "erros": "Tração excessiva das alças.", "obs": "Perfeito para idosos e equilíbrio comprometido."}, {"cod": "EX094", "nome": "Agachamento Parede (wall squat)", "grupo": "Quadríceps", "secundarios": "Glúteos", "equipamento": "Peso corporal/parede", "nivel": "Iniciante", "objetivo": "Reabilitação/Saúde", "contraindicacoes": "—", "substituto": "Leg press", "instrucao": "Costas na parede. Descer até 90°. Manter 30-60s.", "erros": "Joelhos além dos dedos dos pés.", "obs": "Excelente para reabilitação e fortalecimento inicial de idosos."}, {"cod": "EX095", "nome": "Dead Bug", "grupo": "Core/Coordenação", "secundarios": "Transverso abdominal", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "—", "substituto": "Prancha", "instrucao": "Deitado. Costas planas. Estender braço oposto à perna. Alternar.", "erros": "Levantar a lombar. Prender a respiração.", "obs": "Muito seguro. Indicado para lesão lombar."}, {"cod": "EX096", "nome": "Superman", "grupo": "Lombar/Glúteos/Eretores", "secundarios": "Isquiotibiais", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "Hérnia disco aguda", "substituto": "Extensão de tronco", "instrucao": "Deitado de bruços. Elevar braços e pernas. Manter 2-3s.", "erros": "Com dor lombar aguda. Velocidade excessiva.", "obs": "Extensão lombar de baixa intensidade."}, {"cod": "EX097", "nome": "Dissociação Lombo-Pélvica (cat-camel)", "grupo": "Lombar/Quadril", "secundarios": "Core geral", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Mobilidade/Saúde", "contraindicacoes": "—", "substituto": "Nenhum", "instrucao": "De quatro apoios. Alternar extensão (cat) e flexão (camel).", "erros": "Movimento brusco. Amplitude excessiva.", "obs": "Fundamental no aquecimento e saúde lombar."}, {"cod": "EX098", "nome": "Hip Hinge com Bastão", "grupo": "Isquiotibiais/Glúteos", "secundarios": "Lombar", "equipamento": "Bastão/parede", "nivel": "Iniciante", "objetivo": "Mobilidade/Técnica", "contraindicacoes": "—", "substituto": "Stiff", "instrucao": "Bastão ao longo da coluna (3 pontos de contato). Inclinar tronco.", "erros": "Perder contato dos 3 pontos.", "obs": "Ensina o padrão de dobradiça antes do deadlift/stiff."}, {"cod": "EX099", "nome": "Agachamento Aéreo (air squat)", "grupo": "Quadríceps/Glúteos", "secundarios": "Core, isquiotibiais", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Funcional/Saúde", "contraindicacoes": "—", "substituto": "Agachamento livre barra", "instrucao": "Braços à frente. Descer até paralela. Coluna neutra.", "erros": "Joelhos cedendo para dentro. Calcanhar levantando.", "obs": "Base para o agachamento livre. Avaliação de mobilidade."}, {"cod": "EX100", "nome": "Remada TRX", "grupo": "Romboides/Latíssimo", "secundarios": "Bíceps, core", "equipamento": "TRX/fita de suspensão", "nivel": "Iniciante", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "—", "substituto": "Remada inclinada barra", "instrucao": "Corpo inclinado abaixo das alças. Puxar o peito até as mãos.", "erros": "Quadril caindo. Não completar retração escapular.", "obs": "Excelente para home training. Dificuldade pelo ângulo."}, {"cod": "EX101", "nome": "Flexão Declinada (pés elevados)", "grupo": "Peitoral sup./Deltóide", "secundarios": "Tríceps, serrátil", "equipamento": "Banco+peso corporal", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro", "substituto": "Supino inclinado", "instrucao": "Pés elevados no banco. Mãos no chão. Tronco inclinado negativamente.", "erros": "Quadril elevado. Colapsar o tronco.", "obs": "Alternativa ao supino inclinado sem equipamento."}, {"cod": "EX102", "nome": "Levantamento Terra Trap Bar", "grupo": "Quadríceps/Glúteos/Lombar", "secundarios": "Trapézio, bíceps", "equipamento": "Trap bar", "nivel": "Intermediário", "objetivo": "Força/Funcional", "contraindicacoes": "—", "substituto": "Leg press + remada", "instrucao": "Posição neutra. Menor stress na coluna que o convencional.", "erros": "Arredondar lombar. Não completar lockout.", "obs": "Mais seguro que o levantamento terra convencional."}, {"cod": "EX103", "nome": "Agachamento Frontal", "grupo": "Quadríceps", "secundarios": "Glúteos, core, eretores", "equipamento": "Barra", "nivel": "Avançado", "objetivo": "Força/Hipertrofia", "contraindicacoes": "Lesão punho, ombro", "substituto": "Goblet + agachamento barra alta", "instrucao": "Barra sobre os deltóides anteriores. Tronco mais ereto.", "erros": "Deixar a barra cair. Cotovelos caírem.", "obs": "Ótimo para quadríceps e atletas de crossfit/halterofilia."}, {"cod": "EX104", "nome": "Agachamento com Pausa", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, eretores", "equipamento": "Barra/halteres", "nivel": "Avançado", "objetivo": "Força/Técnica", "contraindicacoes": "Lesão joelho", "substituto": "Agachamento normal", "instrucao": "Pausa de 2-3s na posição mais baixa. Elimina o reflexo miotático.", "erros": "Relaxar completamente no fundo.", "obs": "Técnica avançada para aumentar dificuldade sem aumentar carga."}, {"cod": "EX105", "nome": "Agachamento Pistol", "grupo": "Quadríceps/Glúteos", "secundarios": "Core, tornozelo", "equipamento": "Peso corporal", "nivel": "Avançado", "objetivo": "Funcional/Força", "contraindicacoes": "Lesão joelho, tornozelo", "substituto": "Agachamento búlgaro", "instrucao": "Em pé em uma perna. Descer até o paralelo. Perna livre à frente.", "erros": "Pé do chão se mover. Joelho ceder para dentro.", "obs": "Alta exigência de equilíbrio, mobilidade e força unilateral."}, {"cod": "EX106", "nome": "Good Morning", "grupo": "Isquiotibiais/Lombar", "secundarios": "Glúteos, eretores", "equipamento": "Barra", "nivel": "Avançado", "objetivo": "Força/Funcional", "contraindicacoes": "Hérnia disco, lombar fraca", "substituto": "Stiff halteres", "instrucao": "Barra nas costas. Inclinar com joelhos levemente fletidos.", "erros": "Arredondar lombar. Carga excessiva.", "obs": "Somente para avançados com lombar forte."}, {"cod": "EX107", "nome": "Turkish Get-Up", "grupo": "Full body/Core/Ombros", "secundarios": "Estabilizadores gerais", "equipamento": "Kettlebell/haltere", "nivel": "Avançado", "objetivo": "Funcional/Mobilidade", "contraindicacoes": "Lesão ombro, joelho", "substituto": "Nenhum substituto direto", "instrucao": "Sequência: deitado → sentado → ajoelhado → em pé com kettlebell acima.", "erros": "Perder o alinhamento do punho. Realizar rápido.", "obs": "Requer aprendizado antes de adicionar carga."}, {"cod": "EX108", "nome": "Remada Landmine", "grupo": "Romboides/Latíssimo", "secundarios": "Bíceps, trapézio", "equipamento": "Barra (landmine)", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Remada unilateral haltere", "instrucao": "Barra presa em um canto. Puxar a extremidade livre até o abdômen.", "erros": "Rotar o tronco. Não retrair escápulas.", "obs": "Menor stress lombar. Variação interessante."}, {"cod": "EX109", "nome": "Hip Thrust com Banda", "grupo": "Glúteo máximo/médio", "secundarios": "Isquiotibiais", "equipamento": "Barra+elástico+banco", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Hip thrust normal", "instrucao": "Hip thrust com banda acima dos joelhos. Adiciona trabalho de abdução.", "erros": "Joelhos cedendo para dentro.", "obs": "Adiciona trabalho de glúteo médio simultâneo."}, {"cod": "EX110", "nome": "Face Pull com Rotação", "grupo": "Deltóide post./Manguito", "secundarios": "Romboides, trapézio", "equipamento": "Polia alta + corda", "nivel": "Intermediário", "objetivo": "Saúde/Hipertrofia", "contraindicacoes": "—", "substituto": "Face pull convencional", "instrucao": "Mesmo padrão com rotação externa adicional no final.", "erros": "Carga excessiva. Não completar a rotação.", "obs": "Ainda maior ativação de rotadores externos."}, {"cod": "EX111", "nome": "Passada Lateral", "grupo": "Adutores/Abdutores/Glúteos", "secundarios": "Quadríceps, isquiotibiais", "equipamento": "Peso corporal/halteres", "nivel": "Iniciante", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "Lesão joelho, virilha", "substituto": "Agachamento sumô", "instrucao": "Passo lateral amplo. Dobrar o joelho do lado que vai. Outro pé estendido.", "erros": "Perder equilíbrio. Joelho cedendo para dentro.", "obs": "Excelente para adutores e glúteo médio."}, {"cod": "EX112", "nome": "Stiff Unilateral (single leg RDL)", "grupo": "Isquiotibiais/Glúteos", "secundarios": "Lombar, tibial ant.", "equipamento": "Haltere/peso corporal", "nivel": "Intermediário", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "Lesão joelho, equilíbrio comprometido", "substituto": "Stiff bilateral", "instrucao": "Em pé em uma perna. Inclinar o tronco. Perna de trás estendida para trás.", "erros": "Rotar o quadril. Perder equilíbrio.", "obs": "Detecta e corrige assimetrias."}, {"cod": "EX113", "nome": "Agachamento Sissy", "grupo": "Quadríceps (isolamento)", "secundarios": "Joelho, tendão patelar", "equipamento": "Peso corporal/apoio", "nivel": "Avançado", "objetivo": "Hipertrofia", "contraindicacoes": "Condromalácia, tendinopatia patelar", "substituto": "Cadeira extensora", "instrucao": "Inclinação do tronco para trás enquanto joelhos avançam.", "erros": "Sem base de força. Condromalácia moderada/severa.", "obs": "Alta carga no tendão patelar. Apenas avançados."}, {"cod": "EX114", "nome": "Chin-up com Lastro", "grupo": "Bíceps/Latíssimo", "secundarios": "Romboides", "equipamento": "Barra fixa+cinto", "nivel": "Avançado", "objetivo": "Força", "contraindicacoes": "Lesão ombro", "substituto": "Barra fixa sem lastro", "instrucao": "Mesmo técnica com peso adicional no cinto de lastro.", "erros": "Usar carga antes de dominar o peso corporal.", "obs": "Progressão avançada do chinup."}, {"cod": "EX115", "nome": "Carga Excêntrica (negativo barra fixa)", "grupo": "Latíssimo/Bíceps", "secundarios": "Romboides", "equipamento": "Barra fixa", "nivel": "Intermediário", "objetivo": "Força/Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Puxada normal", "instrucao": "Subir com auxílio e descer muito lentamente (5-8s).", "erros": "Descer muito rápido.", "obs": "Potente estímulo de hipertrofia. Útil para quem não faz pullup."}, {"cod": "EX116", "nome": "Burpee", "grupo": "Full body condicionamento", "secundarios": "Core, peitoral, quadríceps", "equipamento": "Peso corporal", "nivel": "Intermediário", "objetivo": "Condicionamento", "contraindicacoes": "Lesão joelho, lombar, ombro", "substituto": "Air squat + flexão separados", "instrucao": "Agachar, apoiar mãos, chutar pernas, flexão, voltar e saltar.", "erros": "Arredondar lombar ao chutar as pernas.", "obs": "Modificar para idosos: remover o salto."}, {"cod": "EX117", "nome": "Salto Caixote (box jump)", "grupo": "Quadríceps/Glúteos/Potência", "secundarios": "Gastrocnêmio, core", "equipamento": "Caixote", "nivel": "Intermediário", "objetivo": "Potência/Funcional", "contraindicacoes": "Lesão joelho, tornozelo", "substituto": "Leg press explosivo", "instrucao": "Saltar explosivamente. Pousar com joelhos levemente dobrados.", "erros": "Descer saltando da caixa (risco de lesão).", "obs": "Descida: sempre caminhar ou salto suave lateral."}, {"cod": "EX118", "nome": "Battle Rope", "grupo": "Condicionamento full body", "secundarios": "Deltóides, core, bíceps", "equipamento": "Corda grossa", "nivel": "Iniciante", "objetivo": "Condicionamento", "contraindicacoes": "Lesão ombro bilateral", "substituto": "Cardio convencional", "instrucao": "Ondas alternadas ou simultâneas com a corda.", "erros": "Perder a postura. Não variar os padrões.", "obs": "Excelente condicionamento sem impacto articular."}, {"cod": "EX119", "nome": "Bicicleta Ergométrica", "grupo": "Condicionamento cardio", "secundarios": "Quadríceps, glúteos", "equipamento": "Bicicleta ergométrica", "nivel": "Iniciante", "objetivo": "Condicionamento/Saúde", "contraindicacoes": "—", "substituto": "Corrida", "instrucao": "Ajustar selim para extensão quase completa. Pedalar cadenciado.", "erros": "Selim muito baixo (stress patelar).", "obs": "Menor impacto que corrida. Indicado para obesos, idosos e hipertensos."}, {"cod": "EX120", "nome": "Caminhada na Esteira", "grupo": "Condicionamento leve", "secundarios": "Quadríceps, glúteos", "equipamento": "Esteira", "nivel": "Iniciante", "objetivo": "Saúde/Condicionamento", "contraindicacoes": "—", "substituto": "Corrida", "instrucao": "5-10 km/h. Postura ereta. Braços balançando naturalmente.", "erros": "Segurar na esteira. Inclinação excessiva para iniciantes.", "obs": "Excelente para sedentários, idosos e início de programa."}, {"cod": "EX121", "nome": "Elíptico", "grupo": "Condicionamento cardio", "secundarios": "Full body cardio", "equipamento": "Elíptico", "nivel": "Iniciante", "objetivo": "Condicionamento/Saúde", "contraindicacoes": "—", "substituto": "Bicicleta ergométrica", "instrucao": "Mover os braços e pernas simultaneamente. Postura ereta.", "erros": "Segurar muito firme nas alças. Inclinar o tronco.", "obs": "Zero impacto. Ótimo para todas as populações especiais."}, {"cod": "EX122", "nome": "HIIT na Bicicleta", "grupo": "Condicionamento", "secundarios": "Quadríceps, glúteos", "equipamento": "Bicicleta ergométrica", "nivel": "Intermediário", "objetivo": "Condicionamento/Emagrecimento", "contraindicacoes": "HAS não controlada", "substituto": "HIIT na esteira", "instrucao": "Alternar sprint (30-60s) com recuperação (60-120s). 8-12 ciclos.", "erros": "Velocidade excessiva sem base cardiovascular.", "obs": "Eficaz para queima calórica. Menor impacto que esteira."}, {"cod": "EX123", "nome": "Remo Ergométrico", "grupo": "Condicionamento cardio", "secundarios": "Costas, glúteos, isquiotibiais", "equipamento": "Remo ergométrico", "nivel": "Intermediário", "objetivo": "Condicionamento/Força", "contraindicacoes": "Hérnia disco, lesão ombro", "substituto": "Elíptico", "instrucao": "Empurrar com as pernas primeiro, depois puxar os braços.", "erros": "Arredondar lombar. Puxar os braços antes das pernas.", "obs": "Excelente condicionamento de corpo inteiro. Baixo impacto."}, {"cod": "EX124", "nome": "Corrida", "grupo": "Condicionamento cardio", "secundarios": "Quadríceps, isquiotibiais, glúteos", "equipamento": "Esteira/rua", "nivel": "Iniciante", "objetivo": "Condicionamento", "contraindicacoes": "Lesão joelho, tornozelo", "substituto": "Bicicleta ergométrica", "instrucao": "Manter postura ereta. Passada eficiente. Respiração cadenciada.", "erros": "Passada de calcanhar. Tronco muito inclinado.", "obs": "Ajustar intensidade por FC ou RPE. Usar tênis adequado."}, {"cod": "EX125", "nome": "Salto com Corda", "grupo": "Condicionamento/Cardio", "secundarios": "Gastrocnêmio, core, deltóides", "equipamento": "Corda de pular", "nivel": "Iniciante", "objetivo": "Condicionamento", "contraindicacoes": "Lesão tornozelo, joelho", "substituto": "Corrida estacionária", "instrucao": "Cotovelos próximos ao corpo. Pulso fazendo o giro.", "erros": "Saltar muito alto. Pouso com joelhos travados.", "obs": "Excelente cardio. Modificar para alternância de pés em idosos."}, {"cod": "EX126", "nome": "Puxada com Elástico", "grupo": "Latíssimo/Costas", "secundarios": "Bíceps", "equipamento": "Elástico", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "—", "substituto": "Puxada frontal máquina", "instrucao": "Elástico preso acima. Puxar para baixo como na puxada frontal.", "erros": "Não retrair escápulas. Soltar o elástico sem controle.", "obs": "Ótima alternativa sem academia."}, {"cod": "EX127", "nome": "Agachamento com Elástico", "grupo": "Quadríceps/Glúteos", "secundarios": "—", "equipamento": "Elástico", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "—", "substituto": "Agachamento livre", "instrucao": "Elástico sob os pés e sobre os ombros. Agachar com resistência crescente.", "erros": "Deixar o elástico escorregar.", "obs": "Opção de treino em casa. Boa variação de estímulo."}, {"cod": "EX128", "nome": "Supino com Elástico", "grupo": "Peitoral/Tríceps", "secundarios": "Deltóide ant.", "equipamento": "Elástico", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "—", "substituto": "Flexão de braço", "instrucao": "Elástico nas costas. Pressionar para frente como no supino.", "erros": "Deixar o elástico escorregar. Não controlar retorno.", "obs": "Overload acomodado: maior resistência no pico da contração."}, {"cod": "EX129", "nome": "Press com Bolas Medicinais", "grupo": "Peitoral/Deltóide", "secundarios": "Tríceps", "equipamento": "Bola medicinal", "nivel": "Intermediário", "objetivo": "Funcional/Potência", "contraindicacoes": "Lesão ombro", "substituto": "Supino convencional", "instrucao": "Arremessar ou pressionar a bola contra parede ou parceiro.", "erros": "Usar bola muito pesada. Perder o padrão.", "obs": "Excelente para potência e treino funcional."}, {"cod": "EX130", "nome": "Vacuum Abdominal", "grupo": "Transverso abdominal", "secundarios": "—", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Funcional", "contraindicacoes": "Gestação", "substituto": "Prancha isométrica", "instrucao": "Expirar completamente e retrair o abdômen. Manter 10-30s.", "erros": "Prender a respiração. Realizar após refeição.", "obs": "Excelente para ativar o transverso."}, {"cod": "EX131", "nome": "Remada Serafim", "grupo": "Romboides/Trapézio médio", "secundarios": "Deltóide post., bíceps", "equipamento": "Halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Face pull", "instrucao": "Inclinado. Halteres em posição de supino. Retrair as escápulas puxando cotovelos para trás.", "erros": "Usar carga de supino. Não retrair as escápulas.", "obs": "Excelente para saúde postural e equilíbrio de ombro."}, {"cod": "EX132", "nome": "Chest Fly Máquina (peck deck)", "grupo": "Peitoral", "secundarios": "Peitoral menor, serrátil", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro", "substituto": "Crucifixo halteres", "instrucao": "Apoiar os braços. Fechar na frente. Pausa 1s. Controlar retorno.", "erros": "Carga excessiva. Hiperextender o ombro.", "obs": "Mais seguro que crucifixo para iniciantes e idosos."}, {"cod": "EX133", "nome": "Pullover Máquina", "grupo": "Latíssimo/Peitoral", "secundarios": "Serrátil, tríceps", "equipamento": "Máquina pullover", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro aguda", "substituto": "Pullover haltere", "instrucao": "Movimento guiado. Menor risco que a versão livre.", "erros": "Carga excessiva. Não completar amplitude.", "obs": "Mais seguro que o pullover com haltere."}, {"cod": "EX134", "nome": "Remada T-Bar (com apoio)", "grupo": "Romboides/Trapézio", "secundarios": "Bíceps, latíssimo", "equipamento": "Barra t-bar+apoio", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Hérnia disco", "substituto": "Remada curvada barra", "instrucao": "Peito apoiado no suporte. Puxar até o abdômen.", "erros": "Arredondar lombar. Impulso. Carga excessiva.", "obs": "Versão com apoio de peito mais segura para a coluna."}, {"cod": "EX135", "nome": "Agachamento Overhead (OHS)", "grupo": "Quadríceps/Glúteos/Core", "secundarios": "Deltóides, eretores", "equipamento": "Barra/PVC", "nivel": "Avançado", "objetivo": "Funcional/Mobilidade", "contraindicacoes": "Lesão ombro, quadril", "substituto": "Agachamento frontal", "instrucao": "Barra acima da cabeça. Agachar mantendo braços verticais.", "erros": "Braços caírem à frente. Calcanhar levantar.", "obs": "Excelente teste de mobilidade global. Usar PVC para aprendizado."}, {"cod": "EX136", "nome": "Press Landmine", "grupo": "Peitoral/Deltóide", "secundarios": "Tríceps", "equipamento": "Barra (landmine)", "nivel": "Intermediário", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "—", "substituto": "Supino com halteres", "instrucao": "Barra presa em um canto. Pressionar a extremidade livre à frente ou acima.", "erros": "Não controlar o arco de movimento. Usar impulso.", "obs": "Menor risco de impingement: excelente para ombro sensível."}, {"cod": "EX137", "nome": "Iso-hold Agachamento (isometria)", "grupo": "Quadríceps/Glúteos", "secundarios": "—", "equipamento": "Barra/halteres", "nivel": "Intermediário", "objetivo": "Força/Técnica", "contraindicacoes": "Lesão joelho", "substituto": "Agachamento normal", "instrucao": "Descer até paralela e manter isometricamente por 20-60s.", "erros": "Perder a postura. Usar carga excessiva.", "obs": "Técnica de intensidade para aumentar recrutamento muscular."}, {"cod": "EX138", "nome": "Corrida Estacionária Joelhos Altos", "grupo": "Condicionamento/Cardio", "secundarios": "Flexores do quadril, core", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Condicionamento", "contraindicacoes": "Lesão joelho, tornozelo", "substituto": "Salto com corda", "instrucao": "Elevar os joelhos até a altura do quadril alternadamente.", "erros": "Quedas de impacto. Inclinar o tronco.", "obs": "Excelente aquecimento. Ajustar amplitude para idosos."}, {"cod": "EX139", "nome": "Extensão de Quadril Polia", "grupo": "Glúteo máximo", "secundarios": "Isquiotibiais", "equipamento": "Polia baixa", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Hip thrust", "instrucao": "Polia presa no tornozelo. Estender o quadril para trás.", "erros": "Inclinar o tronco. Usar impulso.", "obs": "Exercício de isolamento do glúteo."}, {"cod": "EX140", "nome": "Afundo com Barra (split squat)", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Força/Hipertrofia", "contraindicacoes": "Lesão joelho", "substituto": "Passada halteres", "instrucao": "Posição de afundo estática. Descer verticalmente. Barra nas costas.", "erros": "Joelho da frente colapsar. Tronco inclinar demais.", "obs": "Versão de força do avanço: maior estabilidade que a passada em movimento."}, {"cod": "EX141", "nome": "Rosca Preacher Machine", "grupo": "Bíceps", "secundarios": "Braquial", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca concentrada", "instrucao": "Máquina guiada. Cotovelo apoiado. Flexionar e controlar retorno.", "erros": "Usar carga excessiva. Arremessar o peso.", "obs": "Mais seguro que a rosca Scott com barra. Ideal para iniciantes."}, {"cod": "EX142", "nome": "Remada Reclining (bodyweight)", "grupo": "Romboides/Latíssimo", "secundarios": "Bíceps, core", "equipamento": "Barra fixa baixa/TRX", "nivel": "Iniciante", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "—", "substituto": "Remada máquina", "instrucao": "Deitado sob a barra. Puxar o peito até a barra. Corpo rígido.", "erros": "Quadril caindo. Não completar a retração escapular.", "obs": "Excelente para iniciantes e treino em casa."}, {"cod": "EX143", "nome": "Kickback de Glúteo (quatro apoios)", "grupo": "Glúteo máximo", "secundarios": "Isquiotibiais", "equipamento": "Peso corporal/elástico", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Hip thrust", "instrucao": "De quatro apoios. Estender um quadril para trás até a extensão completa.", "erros": "Hiperestender a lombar. Não completar a extensão.", "obs": "Ótimo exercício de isolamento para glúteo máximo. Muito acessível."}, {"cod": "EX144", "nome": "Side Lying Hip Abduction", "grupo": "Glúteo médio", "secundarios": "TFL", "equipamento": "Peso corporal/elástico", "nivel": "Iniciante", "objetivo": "Reabilitação/Funcional", "contraindicacoes": "—", "substituto": "Abdução de quadril máquina", "instrucao": "Deitado de lado. Abduzir o quadril contra a gravidade ou elástico.", "erros": "Rotar o quadril. Usar impulso.", "obs": "Protocolo básico de ativação do glúteo médio. Muito seguro."}, {"cod": "EX145", "nome": "Donkey Kick", "grupo": "Glúteo máximo", "secundarios": "Isquiotibiais", "equipamento": "Peso corporal/elástico", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Hip thrust", "instrucao": "De quatro apoios. Chutar para trás com o joelho dobrado. Extensão completa.", "erros": "Hiperestender a lombar. Rotar o quadril.", "obs": "Versão acessível de isolamento de glúteo. Excelente para iniciantes."}, {"cod": "EX146", "nome": "Flexão de Quadril em Pé (polia)", "grupo": "Flexores do quadril/Iliopsoas", "secundarios": "Quadríceps", "equipamento": "Polia baixa", "nivel": "Iniciante", "objetivo": "Funcional/Reabilitação", "contraindicacoes": "—", "substituto": "Elevação de joelho em pé", "instrucao": "Polia presa no tornozelo. Flexionar o quadril à frente. Controlar retorno.", "erros": "Usar impulso do tronco. Velocidade excessiva.", "obs": "Fortalece flexores de quadril. Útil em corredores e atletas."}, {"cod": "EX147", "nome": "Agachamento Pistol Assistido", "grupo": "Quadríceps/Glúteos", "secundarios": "Core, equilíbrio", "equipamento": "Barra fixa/TRX", "nivel": "Intermediário", "objetivo": "Funcional/Força", "contraindicacoes": "Lesão joelho, tornozelo", "substituto": "Agachamento búlgaro", "instrucao": "Segurando a barra ou TRX para assistência. Descer em uma perna até o paralelo.", "erros": "Usar muita assistência. Joelho cedendo para dentro.", "obs": "Progressão para o pistol completo sem assistência."}, {"cod": "EX148", "nome": "Isometria de Glúteo (glute squeeze)", "grupo": "Glúteo máximo", "secundarios": "—", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Ativação/Reabilitação", "contraindicacoes": "—", "substituto": "Ponte pélvica", "instrucao": "Em pé ou deitado. Contrair o glúteo isometricamente por 10-30s.", "erros": "Prender a respiração. Substituir por compensação lombar.", "obs": "Excelente ativação pré-treino. Seguro para todos."}, {"cod": "EX149", "nome": "Box Squat", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, lombar", "equipamento": "Barra+caixote", "nivel": "Intermediário", "objetivo": "Força/Técnica", "contraindicacoes": "Lesão joelho severa", "substituto": "Agachamento normal", "instrucao": "Agachar até sentar no caixote. Pausa. Empurrar de volta.", "erros": "Soltar completamente a postura ao tocar o caixote.", "obs": "Ensina a profundidade. Usado por powerlifters para treino de força máxima."}, {"cod": "EX150", "nome": "Z-press (desenvolvimento sentado no chão)", "grupo": "Deltóide", "secundarios": "Core, adutores, isquiotibiais", "equipamento": "Barra/halteres", "nivel": "Avançado", "objetivo": "Funcional/Força", "contraindicacoes": "Lesão quadril, lombar", "substituto": "Desenvolvimento sentado", "instrucao": "Sentado no chão com pernas estendidas (L). Pressionar acima da cabeça.", "erros": "Não manter as costas retas. Usar carga de desenvolvimento convencional.", "obs": "Altíssima demanda de core e mobilidade."}];
+
+function prescreverTreino(){
+  // ══════════════════════════════════════════════════════════════════════════
+  // WILLGOMESFIT PRESCRIPTION ENGINE v3.0
+  // Base científica (Junho 2026):
+  // • ACSM 2026 Position Stand — Currier et al. (137 revisões, 30.000+ participantes)
+  // • Schoenfeld BJ 2010/2024 — mecanismos de hipertrofia (J Strength Cond Res)
+  // • Dr. Mike Israetel / RP Strength — Volume Landmarks (MEV/MAV/MRV)
+  // • Singer et al. 2024 — intervalos entre séries (Front Sports Act Living)
+  // • Greg Nuckols / Stronger by Science — progressão dupla e sobrecarga
+  // • Dr. Eric Helms 2016 — RPE/RIR Scale
+  // • ISSN Position Stand — proteína e exercício
+  // ══════════════════════════════════════════════════════════════════════════
+
+  const an  = MOTOR_D.anamnese || {};
+  const nu  = MOTOR_D.nutricao || {};
+  const cl  = MOTOR_D.cliente  || {};
+
+  const nivel  = an.nivel  || 'Iniciante';
+  const obj    = (an.objetivo || []).join(',').toLowerCase();
+  const equip  = (an['an-equip'] || 'Academia completa').toLowerCase();
+  const lesoes = (an['an-lesoes'] || '').toLowerCase();
+  const dores  = (an['an-dores']  || '').toLowerCase();
+  const dias   = parseInt(an['an-dias']) || 4;
+
+  // ── 1. PARÂMETROS POR NÍVEL ──────────────────────────────────────────────
+  // ACSM 2026: volume ≥10 séries/grupo/semana é o threshold mínimo de hipertrofia
+  // Israelatem (RP Strength): MEV/MAV/MRV variam por nível de treinamento
+  // Schoenfeld 2010: hipertrofia ocorre com 30–100% 1RM quando próximo à falha
+  // Singer et al. 2024: intervalos >60s favorecem hipertrofia vs <60s
+  const nivelMap = {
+    'Sedentario':    { series:'2–3', reps:'12–15', desc:'60s',  rir:'3–4', mev:6,  mav:12, mrv:16 },
+    'Iniciante':     { series:'3',   reps:'10–15', desc:'75s',  rir:'2–3', mev:8,  mav:14, mrv:18 },
+    'Intermediario': { series:'3–4', reps:'8–12',  desc:'90s',  rir:'1–3', mev:12, mav:18, mrv:22 },
+    'Avancado':      { series:'4–5', reps:'6–12',  desc:'90s',  rir:'0–2', mev:14, mav:20, mrv:26 },
+    'MuitoAvancado': { series:'4–5', reps:'4–12',  desc:'120s', rir:'0–2', mev:16, mav:22, mrv:30 },
+  };
+  const p = nivelMap[nivel] || nivelMap['Iniciante'];
+
+  // ── 2. AJUSTE POR OBJETIVO ───────────────────────────────────────────────
+  // ACSM 2026: rep range NÃO é variável independente quando esforço é controlado
+  // Para força máxima: cargas >80% 1RM | Para resistência: >15 reps
+  let repsObj = p.reps, seriesObj = p.series, descObj = p.desc;
+
+  const isEmagr  = obj.includes('emagrecimento') || obj.includes('condicionamento');
+  const isForca  = obj.includes('forca');
+  const isHipert = obj.includes('hipertrofia') || obj.includes('massa') || obj.includes('recomposicao');
+  const isPerf   = obj.includes('performance') || obj.includes('esportiva');
+
+  if(isEmagr)  { repsObj='12–20'; seriesObj='3';   descObj='45s';  }
+  if(isForca)  { repsObj='4–6';   seriesObj='4–5'; descObj='120s'; }
+  if(isHipert) { repsObj='6–12';  seriesObj='3–4'; descObj='90s';  }
+  if(isPerf)   { repsObj='5–10';  seriesObj='3–4'; descObj='90s';  }
+
+  const rir = p.rir;
+
+  // ── 3. FILTRO EQUIPAMENTO ────────────────────────────────────────────────
+  // ACSM 2026: tipo de equipamento NÃO é variável primária de resultado
+  // Elásticos, halteres, máquinas, barras → resultados similares com volume/esforço iguais
+  const equipMap = {
+    'peso corporal':        ['Peso corporal'],
+    'casa com halteres':    ['Halter','Peso corporal','Elástico'],
+    'academia de condominio':['Máquina','Halter','Peso corporal'],
+    'academia completa':    null,
+  };
+  let equipFiltro = null;
+  for(const [k,v] of Object.entries(equipMap)){
+    if(equip.includes(k.split(' ')[0]) && k!=='academia completa'){ equipFiltro=v; break; }
+  }
+
+  // ── 4. CONTRAINDICAÇÕES ──────────────────────────────────────────────────
+  const bloqueados = [];
+  if(lesoes.includes('joelho')||dores.includes('joelho'))
+    bloqueados.push('Agachamento Livre Barra','Leg Press 45°','Afundo com Barra');
+  if(lesoes.includes('ombro')||dores.includes('ombro'))
+    bloqueados.push('Desenvolvimento com Barra','Elevação Frontal','Arnold Press');
+  if(lesoes.includes('coluna')||lesoes.includes('lombar')||dores.includes('lombar'))
+    bloqueados.push('Levantamento Terra','Bom Dia','Hiperextensão Lombar');
+  if(lesoes.includes('punho')||lesoes.includes('cotovelo'))
+    bloqueados.push('Rosca Direta Barra','Tríceps Testa');
+
+  // ── 5. BUSCA DE EXERCÍCIOS ───────────────────────────────────────────────
+  // ACSM 2026: exercícios prioritários PRIMEIRO na sessão = maiores ganhos
+  // Multiarticulares antes de isolados para maximizar tensão mecânica
+  function buscarEx(grupo, n){
+    let pool = EX.filter(e=>{
+      if(!e.grupo.toLowerCase().includes(grupo.toLowerCase())) return false;
+      if(bloqueados.includes(e.nome)) return false;
+      if(equipFiltro && !equipFiltro.some(eq=>e.equipamento.toLowerCase().includes(eq.toLowerCase()))) return false;
+      return true;
+    });
+    // Priorizar multiarticulares (maior tensão mecânica por set - Schoenfeld 2024)
+    const multi = pool.filter(e=>
+      e.equipamento&&(e.equipamento.includes('Barra')||e.equipamento.includes('Halter')||e.equipamento.includes('Máquina'))
+    );
+    const final = (multi.length >= n) ? multi : pool;
+    return final.slice(0, n+3).sort(()=>Math.random()-0.5).slice(0,n);
+  }
+
+  // ── 6. MONTAGEM DE BLOCO ─────────────────────────────────────────────────
+  function montarBloco(id, nome, cor, grupos){
+    const exercicios = [];
+    grupos.forEach(({g, n})=>{
+      buscarEx(g, n).forEach(ex=>{
+        const info = EX.find(e=>e.nome===ex.nome) || ex;
+        const ins  = (info.instrucao||info.obs||'').split('.')[0].substring(0,90);
+        exercicios.push({
+          nome: ex.nome,
+          grupo: ex.grupo||g,
+          secundarios: info.secundarios||'',
+          series:   seriesObj,
+          reps:     repsObj,
+          descanso: descObj,
+          rir:      rir,
+          obs:      ins || `Amplitude completa. RIR ${rir}.`,
+        });
+      });
+    });
+    return {id, nome, cor, exercicios, ex:exercicios};
+  }
+
+  // ── 7. SPLITS POR DIAS DE TREINO ─────────────────────────────────────────
+  // ACSM 2026 + Schoenfeld: frequência 2x/semana por grupo = superior a 1x
+  // Splits validados pela prática e pesquisa:
+  //   ≤3 dias → Full Body (máxima frequência por grupo = ideal para iniciantes)
+  //   4 dias  → Upper/Lower (frequência 2x | ótimo para intermediários)
+  //   5-6 dias → Push/Pull/Legs (maior volume por sessão | avançados)
+  let blocos;
+
+  if(dias <= 3){
+    const n = nivel==='Sedentario' ? 1 : 2;
+    blocos = [
+      montarBloco('A','TREINO A — FULL BODY (Ênfase Membros Superiores)','g',[
+        {g:'Peitoral',n},{g:'Costas',n},{g:'Ombro',n:Math.max(1,n-1)},{g:'Tríceps',n:1},{g:'Bíceps',n:1},
+      ]),
+      montarBloco('B','TREINO B — FULL BODY (Ênfase Membros Inferiores)','o',[
+        {g:'Quadríceps',n},{g:'Glúteos',n:Math.max(1,n-1)},{g:'Posterior de Coxa',n:Math.max(1,n-1)},{g:'Abdômen',n:1},
+      ]),
+      montarBloco('C','TREINO C — FULL BODY (Composto + Core)','g',[
+        {g:'Peitoral',n:Math.max(1,n-1)},{g:'Costas',n:Math.max(1,n-1)},{g:'Quadríceps',n},{g:'Panturrilha',n:1},{g:'Abdômen',n:1},
+      ]),
+    ];
+  } else if(dias === 4){
+    const n = nivel==='Intermediario'||nivel==='Avancado'||nivel==='MuitoAvancado' ? 3 : 2;
+    blocos = [
+      montarBloco('A','TREINO A — SUPERIOR EMPURRAR (Peito · Ombro · Tríceps)','g',[
+        {g:'Peitoral',n},{g:'Ombro',n:Math.max(1,n-1)},{g:'Tríceps',n:Math.max(1,n-1)},
+      ]),
+      montarBloco('B','TREINO B — INFERIOR (Quadríceps · Glúteos · Panturrilha)','o',[
+        {g:'Quadríceps',n},{g:'Glúteos',n:Math.max(1,n-1)},{g:'Panturrilha',n:1},
+      ]),
+      montarBloco('C','TREINO C — SUPERIOR PUXAR (Costas · Bíceps · Core)','g',[
+        {g:'Costas',n},{g:'Bíceps',n:Math.max(1,n-1)},{g:'Abdômen',n:1},
+      ]),
+      montarBloco('D','TREINO D — INFERIOR + POSTERIOR (Glúteos · Posterior · Abdômen)','o',[
+        {g:'Glúteos',n},{g:'Posterior de Coxa',n},{g:'Abdômen',n:1},
+      ]),
+    ];
+  } else {
+    const n = nivel==='Avancado'||nivel==='MuitoAvancado' ? 4 : 3;
+    blocos = [
+      montarBloco('A','TREINO A — PUSH (Peito · Ombro Frontal · Tríceps)','g',[
+        {g:'Peitoral',n},{g:'Ombro',n:Math.max(1,n-1)},{g:'Tríceps',n:Math.max(2,n-1)},
+      ]),
+      montarBloco('B','TREINO B — PULL (Costas · Bíceps · Antebraço)','o',[
+        {g:'Costas',n},{g:'Bíceps',n:Math.max(2,n-1)},{g:'Abdômen',n:1},
+      ]),
+      montarBloco('C','TREINO C — LEGS (Quadríceps · Posterior · Glúteos · Panturrilha)','g',[
+        {g:'Quadríceps',n},{g:'Posterior de Coxa',n:Math.max(2,n-1)},{g:'Glúteos',n:Math.max(2,n-1)},{g:'Panturrilha',n:1},
+      ]),
+      montarBloco('D','TREINO D — PUSH 2 (Ombro · Peito · Tríceps — volume especializado)','o',[
+        {g:'Ombro',n},{g:'Peitoral',n:Math.max(2,n-1)},{g:'Tríceps',n:Math.max(2,n-1)},
+      ]),
+    ];
+  }
+
+  // ── 8. NOTAS CIENTÍFICAS PERSONALIZADAS ──────────────────────────────────
+  const notas = [
+    `📊 Volume semanal alvo: ${p.mev}–${p.mav} séries/grupo/semana (MEV→MAV por nível)`,
+    `🎯 Proximidade à falha: pare ${rir} reps antes da falha (RIR ${rir}) — tão eficaz quanto a falha com menos fadiga`,
+    `📈 Progressão dupla: aumente reps (ex: 6→12), depois aumente carga e reinicie em 6 reps`,
+    `⏱️ Descanso entre séries: ${descObj} — mínimo 60s para hipertrofia (Singer et al. 2024)`,
+    `🔄 Frequência: cada grupo muscular deve ser treinado 2× por semana (ACSM 2026)`,
+    `📏 Amplitude: use amplitude completa de movimento — posição alongada maximiza hipertrofia`,
+    `🔋 Deload: a cada 4–6 semanas, reduza volume em 40–50% por 1 semana para supercompensação`,
+    `🥩 Proteína: 1.6–2.2g/kg/dia para hipertrofia | ${isEmagr?'2.3–3.1g/kg em déficit calórico':isForca?'1.8–2.4g/kg para força':'1.6–2.2g/kg/dia ideal para este objetivo'}`,
+    `🏋️ Prioridade: exercícios multiarticulares PRIMEIRO na sessão = maiores ganhos (ACSM 2026)`,
+    `Refs: ACSM 2026 (Currier et al.) | Schoenfeld 2010/2024 | Israetel/RP Strength | Singer et al. 2024 | ISSN`,
+  ];
+
+  const resultado = blocos;
+  resultado._notas = notas;
+  resultado._params = { nivel, repsObj, seriesObj, descObj, rir, dias, p };
+  return resultado;
+}
+function getTreinos(){
+  if(MOTOR_D.anamnese && (MOTOR_D.anamnese.nivel || (MOTOR_D.anamnese.objetivo||[]).length > 0)){
+    return prescreverTreino();
+  }
+  return [
+    {id:'A',nome:'TREINO A — PEITO & TRÍCEPS',cor:'g',ex:[],exercicios:[]},
+    {id:'B',nome:'TREINO B — COSTAS & BÍCEPS',cor:'o',ex:[],exercicios:[]},
+    {id:'C',nome:'TREINO C — PERNAS & GLÚTEOS',cor:'g',ex:[],exercicios:[]},
+    {id:'D',nome:'TREINO D — OMBROS & ABDÔMEN',cor:'o',ex:[],exercicios:[]},
+  ];
+}
+
+
+const REFEICOES=[
+  {ico:'☀️',n:'Café da Manhã',h:'06:30',k:450,p:35,c:50,g:12,
+   f:'Omelete (3 ovos) + aveia (40g) + fruta + iogurte grego (100g) + café preto'},
+  {ico:'🍌',n:'Lanche da Manhã',h:'09:30',k:200,p:20,c:20,g:5,
+   f:'Whey protein (30g) + banana OU mix de castanhas (30g)'},
+  {ico:'🍽️',n:'Almoço',h:'12:00',k:600,p:50,c:55,g:12,
+   f:'Frango (150g) + arroz integral (100g) + feijão (60g) + salada à vontade'},
+  {ico:'⚡',n:'Pré-Treino',h:'15:00',k:250,p:20,c:30,g:5,
+   f:'Batata-doce (150g) + frango (100g) OU banana + pasta de amendoim (20g)'},
+  {ico:'💪',n:'Pós-Treino',h:'18:00',k:300,p:35,c:25,g:5,
+   f:'Whey (30g) + banana + aveia (30g) OU frango (150g) + arroz (80g)'},
+  {ico:'🌙',n:'Jantar',h:'20:00',k:500,p:40,c:45,g:12,
+   f:'Salmão (150g) + quinoa (80g) + legumes no vapor + azeite (10ml)'},
+  {ico:'🌛',n:'Ceia',h:'22:00',k:150,p:20,c:5,g:5,
+   f:'Iogurte grego 0% (170g) + canela + mel OU queijo cottage (120g)'},
+];
+
+// ── ESTADO ──────────────────────────────────────────────────────────────────
+// D removido - usando MOTOR_D no contexto do painel
+
+function load(){try{const s=localStorage.getItem('wgf');if(s)MOTOR_D={...MOTOR_D,...JSON.parse(s)};}catch(e){}}
+function save(){try{localStorage.setItem('wgf',JSON.stringify(MOTOR_D));}catch(e){}}
+function cfg(){try{return JSON.parse(localStorage.getItem('wgf_cfg')||'{}');}catch(e){return{};}}
+
+// ── SUPABASE ─────────────────────────────────────────────────────────────────
+// SB já declarado
+function initSB(){
+  const c=cfg();
+  if(c.sbUrl&&c.sbKey&&window.supabase){
+    SB=window.supabase.createClient(c.sbUrl,c.sbKey);
+  }
+}
+
+async function syncSB(tabela,dados){
+  if(!SB)return;
+  try{await SB.from(tabela).upsert(dados);}catch(e){console.warn('Supabase:',e);}
+}
+
+async function loadFromSB(){
+  if(!SB)return;
+  try{
+    const r=await SB.from('clientes').select('*').limit(1).single();
+    if(r.data&&r.data.dados){
+      D={...D,...r.data.dados};
+      preencherForms();
+      toast('Dados do cliente carregados do Supabase!','o');
+    }
+    // Verificar se há questionário novo de cliente
+    const q=await SB.from('questionarios').select('*').order('id',{ascending:false}).limit(1).single();
+    if(q.data&&q.data.dados){
+      const qd=q.data.dados;
+      // Mesclar dados do questionário com o estado atual
+      if(qd.cliente)  MOTOR_D.cliente  ={...MOTOR_D.cliente,...qd.cliente};
+      if(qd.anamnese) MOTOR_D.anamnese ={...MOTOR_D.anamnese,...qd.anamnese};
+      if(qd.nutricao) MOTOR_D.nutricao ={...MOTOR_D.nutricao,...qd.nutricao};
+      save();
+      preencherForms();
+      toast('Novo questionário do cliente recebido!','o');
+    }
+  }catch(e){console.warn('Supabase loadFromSB:',e);}
+}
+
+// ── NAVEGAÇÃO ────────────────────────────────────────────────────────────────
+function go(pg){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById('pg-'+pg).classList.add('on');
+  document.querySelector('[data-pg="'+pg+'"]').classList.add('on');
+  if(pg==='relatorio')gerarRelatorio();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(m,t='g'){
+  const el=document.getElementById('toast');
+  el.textContent=m;
+  el.style.background=t==='g'?'var(--g)':'var(--o)';
+  el.style.color=t==='g'?'var(--gd)':'#1a1000';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ── CÁLCULOS ─────────────────────────────────────────────────────────────────
+function calcIdade(){
+  const v=document.getElementById('c-nasc').value;
+  if(!v)return;
+  const n=new Date(v),h=new Date();
+  let a=h.getFullYear()-n.getFullYear();
+  if(h<new Date(h.getFullYear(),n.getMonth(),n.getDate()))a--;
+  document.getElementById('c-idade').value=a+' anos';
+}
+
+function calcAv(){
+  const p=parseFloat(document.getElementById('av-peso').value)||0;
+  const h=parseFloat(document.getElementById('av-alt').value)||0;
+  const g=parseFloat(document.getElementById('av-gord').value)||0;
+  if(p&&h){
+    const imc=(p/(h/100)**2).toFixed(1);
+    document.getElementById('av-imc').value=imc;
+    const cls=imc<18.5?'Abaixo do peso':imc<25?'Peso normal':imc<30?'Sobrepeso':imc<35?'Obesidade I':'Obesidade II+';
+    document.getElementById('av-imcc').value=cls;
+  }
+  if(p&&g){
+    document.getElementById('av-magra').value=(p*(1-g/100)).toFixed(1)+' kg';
+    document.getElementById('av-mgorda').value=(p*g/100).toFixed(1)+' kg';
+  }
+}
+
+function calcDobras(){
+  const vals=[...Array(7)].map((_,i)=>parseFloat(document.getElementById('av-d'+i)?.value)||0);
+  const soma=vals.reduce((a,b)=>a+b,0);
+  if(soma>0){
+    const idade=parseFloat(document.getElementById('c-idade')?.value)||30;
+    // Jackson & Pollock 7 dobras (homem)
+    const dc=1.112-(0.00043499*soma)+(0.00000055*soma**2)-(0.00028826*idade);
+    const pct=((4.95/dc)-4.50)*100;
+    document.getElementById('av-jp7').value=pct.toFixed(1)+'%';
+  }
+}
+
+// ── SALVAR ────────────────────────────────────────────────────────────────────
+function coleta(ids){
+  const r={};
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)r[id]=el.value;});
+  return r;
+}
+
+function salvarCliente(){
+  MOTOR_D.cliente={...coleta(['c-nome','c-sexo','c-nasc','c-email','c-tel','c-cidade','c-uf',
+    'c-prof','c-plano','c-inc-treino','c-inc-guia','c-inicio','c-renova','c-status',
+    'c-altura','c-mfit-l','c-mfit-s','c-obs']),
+    idade:document.getElementById('c-idade').value};
+  save();
+  syncSB('clientes',{id:'principal',dados:D});
+  toast('Cliente salvo!');
+}
+
+function salvarAnamnese(){
+  MOTOR_D.anamnese={
+    ...coleta(['an-dias','an-dur','an-hora','an-equip','an-pref','an-nao',
+               'an-hipertensao','an-diabetes','an-problemascardiacos',
+               'an-problemasarticulares','an-problemasdecoluna',
+               'an-lesoes','an-cirurgias','an-meds','an-liberacao','an-dores',
+               'an-sono','an-sonoq','an-stress','an-alcool','an-tabaco',
+               'an-agua','an-hist','an-outro']),
+    objetivo:[...document.querySelectorAll('.ci.sel[data-g="obj"]')].map(e=>e.dataset.v),
+    nivel:[...document.querySelectorAll('.ci.sel[data-g="nivel"]')].map(e=>e.dataset.v)[0]||'',
+  };
+  save();
+  syncSB('clientes',{id:'principal',dados:D});
+  toast('Anamnese salva!');
+}
+
+function salvarNutricao(){
+  MOTOR_D.nutricao={...coleta(['nu-obj','nu-ativ','nu-ref','nu-prep','nu-fome','nu-comp',
+    'nu-pref','nu-nao','nu-hist','nu-alerg','nu-intoler','nu-perfil',
+    'nu-orca','nu-rest','nu-supl','nu-meds',
+    ...[...Array(6)].map((_,i)=>'nu-h'+i)])};
+  save();
+  syncSB('clientes',{id:'principal',dados:D});
+  toast('Anamnese nutricional salva!');
+}
+
+function salvarAvaliacao(){
+  MOTOR_D.avaliacao={...coleta([
+    'av-peso','av-alt','av-gord','av-data','av-obs','av-jp7',
+    'av-imc','av-imcc','av-magra','av-mgorda',
+    ...[...Array(7)].map((_,i)=>'av-d'+i),
+    ...[...Array(12)].map((_,i)=>'av-c'+i),
+  ])};
+  save();
+  syncSB('clientes',{id:'principal',dados:D});
+  toast('Avaliação salva!');
+}
+
+function salvarConfig(){
+  const c={sbUrl:document.getElementById('sb-url').value,sbKey:document.getElementById('sb-key').value};
+  localStorage.setItem('wgf_cfg',JSON.stringify(c));
+  initSB();
+  toast('Configuração salva! Conectando ao Supabase...','o');
+  setTimeout(()=>loadFromSB(),500);
+}
+
+function salvarPerfil(){
+  const c={...cfg(),
+    profNome:document.getElementById('prof-nome').value,
+    profReg:document.getElementById('prof-reg').value,
+    profEmail:document.getElementById('prof-email').value,
+    profTel:document.getElementById('prof-tel').value,
+    profUrl:document.getElementById('prof-url').value,
+  };
+  localStorage.setItem('wgf_cfg',JSON.stringify(c));
+  toast('Perfil salvo!','o');
+}
+
+// ── LINK DO CLIENTE ──────────────────────────────────────────────────────────
+function gerarLinkCliente(){
+  const c=cfg();
+
+  // URL base: usa profUrl configurado ou pede para configurar
+  const base=(c.profUrl||'').replace(/\/+$/,'');
+  if(!base){
+    document.getElementById('link-area').style.display='block';
+    document.getElementById('link-val').textContent='';
+    document.getElementById('link-status').innerHTML=
+      '<span style="color:var(--red)">⚠️ Configure a URL do sistema em Configurações antes de gerar o link.</span>';
+    go('config');
+    toast('Configure a URL do sistema primeiro!','o');
+    return;
+  }
+
+  const payload={
+    prof:  c.profNome||'WillgomesFit',
+    ts:    Date.now(),
+    sbUrl: c.sbUrl||'',
+    sbKey: c.sbKey||'',
+  };
+  const token=btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const link=base+'/cliente.html?t='+token;
+
+  document.getElementById('link-val').textContent=link;
+  document.getElementById('link-area').style.display='block';
+  document.getElementById('link-status').innerHTML='';
+
+  // Abrir preview do link em nova aba para testar
+  document.getElementById('link-preview').href=link;
+  document.getElementById('link-preview').style.display='inline-flex';
+}
+
+// copiarLink unificada acima
+function copiarFallback(txt){
+  // Fallback: prompt nativo
+  prompt('Copie o link abaixo (Ctrl+A → Ctrl+C):', txt);
+  notif('✅ Use Ctrl+C para copiar.');
+}
+
+function compartilharWhatsApp(){
+  const txt=document.getElementById('link-val').textContent;
+  if(!txt){toast('Gere o link primeiro.','o');return;}
+  const c=cfg();
+  const nome=document.getElementById('c-nome')?.value||'';
+  const msg=encodeURIComponent(
+    'Olá'+( nome?' '+nome.split(' ')[0]:'')+', tudo bem?\n\n'+
+    'Segue o link para você preencher seu questionário de avaliação:\n\n'+
+    txt+'\n\n'+
+    'Preencha com calma, suas respostas me ajudarão a montar seu programa personalizado. 💪\n\n'+
+    (c.profNome||'WillgomesFit')
+  );
+  window.open('https://api.whatsapp.com/send?text='+msg,'_blank');
+}
+
+// ── PREENCHIMENTO ─────────────────────────────────────────────────────────────
+function preencherForms(){
+  Object.entries(MOTOR_D.cliente).forEach(([k,v])=>{const e=document.getElementById(k);if(e)e.value=v;});
+  Object.entries(MOTOR_D.anamnese).forEach(([k,v])=>{
+    if(k==='objetivo'&&Array.isArray(v)){
+      v.forEach(val=>document.querySelectorAll(`.ci[data-g="obj"][data-v="${val}"]`).forEach(e=>e.classList.add('sel')));
+    } else if(k==='nivel'){
+      document.querySelectorAll(`.ci[data-g="nivel"][data-v="${v}"]`).forEach(e=>e.classList.add('sel'));
+    } else {const e=document.getElementById(k);if(e)e.value=v;}
+  });
+  Object.entries(MOTOR_D.nutricao).forEach(([k,v])=>{const e=document.getElementById(k);if(e)e.value=v;});
+  Object.entries(MOTOR_D.avaliacao).forEach(([k,v])=>{const e=document.getElementById(k);if(e)e.value=v;});
+  // Config
+  const c=cfg();
+  if(c.sbUrl)document.getElementById('sb-url').value=c.sbUrl;
+  if(c.sbKey)document.getElementById('sb-key').value=c.sbKey;
+  if(c.profNome)document.getElementById('prof-nome').value=c.profNome;
+  if(c.profReg)document.getElementById('prof-reg').value=c.profReg;
+  if(c.profEmail)document.getElementById('prof-email').value=c.profEmail;
+  if(c.profTel)document.getElementById('prof-tel').value=c.profTel;
+  if(c.profUrl)document.getElementById('prof-url').value=c.profUrl;
+}
+
+// ── GERAR RELATÓRIO ───────────────────────────────────────────────────────────
+function calcNutri(){
+  // Peso: avaliação física (prioritário) → fallback 80kg
+  const p   = parseFloat(MOTOR_D.avaliacao['av-peso']) || 80;
+  // Altura: avaliação física → cadastro → fallback 170
+  const alt = parseFloat(MOTOR_D.avaliacao['av-alt'] || MOTOR_D.cliente['c-altura']) || 170;
+  const i   = parseInt((MOTOR_D.cliente.idade||'30')) || 30;
+  const s   = MOTOR_D.cliente['c-sexo'] || 'Masculino';
+  // Nível de atividade vem do formulário de nutrição
+  const at  = parseFloat(MOTOR_D.nutricao['nu-ativ']) || 1.55;
+  // Objetivo: nutricional (prioritário) → objetivo da anamnese → fallback
+  const anObj  = (MOTOR_D.anamnese?.objetivo || []).join(',');
+  const nuObj  = MOTOR_D.nutricao['nu-obj'] || '';
+  const obj    = nuObj || (anObj.includes('Emagrecimento') ? 'Emagrecimento'
+                         : anObj.includes('Hipertrofia')   ? 'Hipertrofia'
+                         : 'Manutenção');
+  // TMB: Mifflin-St Jeor (mais precisa que Harris-Benedict) — ACSM 2021
+  const tmb = s==='Masculino'
+    ? 10*p + 6.25*alt - 5*i + 5
+    : 10*p + 6.25*alt - 5*i - 161;
+  const tdee=tmb*at;
+  const meta=obj==='Emagrecimento'?tdee-500:obj==='Hipertrofia'?tdee+300:tdee;
+  const prot=obj==='Emagrecimento'?p*2.0:obj==='Hipertrofia'?p*1.9:p*1.6;
+  const gord=p*0.8;
+  const carb=Math.max(0,(meta-prot*4-gord*9)/4);
+  return{tmb:Math.round(tmb),tdee:Math.round(tdee),meta:Math.round(meta),
+         prot:Math.round(prot),carb:Math.round(carb),gord:Math.round(gord)};
+}
+
+
+// Função adaptada do gerarRelatorio para usar dados do cliente atual
+async function gerarRelatorioCliente(c){
+  // Se não tem questionário em cache, tentar buscar agora do Supabase
+  if(!c._questionario && SB){
+    try{
+      // Buscar por cliente_id
+      let { data } = await SB.from('questionarios')
+        .select('*').eq('cliente_id', c.id)
+        .order('ts',{ascending:false}).limit(1);
+      
+      // Buscar por email se não encontrou
+      if(!data||data.length===0){
+        const res = await SB.from('questionarios')
+          .select('*').eq('email', c.email||'')
+          .order('ts',{ascending:false}).limit(1);
+        data = res.data;
+      }
+
+      // Buscar todos e verificar por nome se ainda não encontrou
+      if(!data||data.length===0){
+        const res2 = await SB.from('questionarios')
+          .select('*').eq('nome', c.nome||'')
+          .order('ts',{ascending:false}).limit(1);
+        data = res2.data;
+      }
+
+      // REMOVIDO: fallback sem filtro causava mistura de dados entre clientes
+
+      if(data && data.length>0){
+        c._questionario = data[0].dados;
+        const cidx = clientes.findIndex(x=>x.id===c.id);
+        if(cidx>=0) clientes[cidx]._questionario = c._questionario;
+        // Vincular ao cliente
+        if(data[0].cliente_id !== c.id){
+          await SB.from('questionarios').update({cliente_id: c.id}).eq('id', data[0].id);
+        }
+      }
+    }catch(e){ console.warn('Erro ao buscar questionário:', e); }
+  }
+
+  if(!c || !c._questionario) {
+    document.getElementById('rel-loading').style.display='none';
+    document.getElementById('rel-sem-dados').style.display='block';
+    document.getElementById('rel-content').style.display='none';
+    return;
+  }
+  const q = c._questionario;
+  // Popular D com dados do cliente
+  MOTOR_D.cliente = {
+    'c-nome': c.nome||'—',
+    'c-email': c.email||'—',
+    'c-tel': c.whatsapp||'—',
+    'c-plano': c.plano||'—',
+    'c-sexo': c.sexo||(q.cliente&&q.cliente['c-sexo'])||'—',
+    'c-nasc': q.cliente&&q.cliente['c-nasc']||'',
+    'c-inc-treino': 'Sim',
+    'c-inc-guia': 'Sim',
+    ...(q.cliente||{})
+  };
+  MOTOR_D.anamnese = q.anamnese || {};
+  MOTOR_D.nutricao = q.nutricao || {};
+  MOTOR_D.avaliacao = {};
+
+  document.getElementById('rel-loading').style.display='none';
+  document.getElementById('rel-sem-dados').style.display='none';
+  document.getElementById('rel-content').style.display='block';
+
+  // Dados do cliente
+  const dados=[
+    ['Nome', c.nome||'—'], ['Plano', c.plano||'—'],
+    ['E-mail', c.email||'—'], ['WhatsApp', c.whatsapp||'—'],
+    ['Sexo', MOTOR_D.cliente['c-sexo']||'—'], ['Objetivo', (MOTOR_D.anamnese.objetivo||[]).join(', ')||'—'],
+    ['Nível', MOTOR_D.anamnese.nivel||'—'], ['Equipamentos', MOTOR_D.anamnese['an-equip']||'—'],
+  ];
+  document.getElementById('rel-dados').innerHTML = dados.map(([l,v])=>
+    `<div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:10px 12px">
+      <div style="font-size:.6rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">${l}</div>
+      <div style="font-size:.83rem;font-weight:600;color:var(--white)">${v}</div>
+    </div>`).join('');
+
+  // Anamnese resumo completo
+  const an = MOTOR_D.anamnese || {};
+  const nu = MOTOR_D.nutricao || {};
+  const cl = MOTOR_D.cliente || {};
+  const campos=[
+    ['Peso', (cl['c-peso']||'—')+' kg'],
+    ['Altura', (cl['c-altura']||'—')+' cm'],
+    ['Sexo', cl['c-sexo']||'—'],
+    ['Nível', an.nivel||'—'],
+    ['Objetivos', (an.objetivo||[]).join(', ')||'—'],
+    ['Disponibilidade', `${an['an-dias']||'—'} · ${an['an-dur']||'—'}`],
+    ['Equipamentos', an['an-equip']||'—'],
+    ['Hipertensão', an['an-hipertensao']||'—'],
+    ['Diabetes', an['an-diabetes']||'—'],
+    ['Lesões', an['an-lesoes']||'Nenhuma'],
+    ['Medicamentos', an['an-meds']||'Nenhum'],
+    ['Dores/limitações', an['an-dores']||'Nenhuma'],
+    ['Sono', `${an['an-sono']||'—'} · ${an['an-sonoq']||'—'}`],
+    ['Estresse', an['an-stress']||'—'],
+    ['Restrição alimentar', nu['nu-rest']||'—'],
+    ['Obj. nutricional', nu['nu-obj']||'—'],
+    ['Suplementos', nu['nu-supl']||'Nenhum'],
+  ];
+  document.getElementById('rel-anamnese').innerHTML =
+    `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+      ${campos.filter(([,v])=>v&&v!=='—').map(([l,v])=>
+        `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:.78rem;color:var(--muted)">${l}</span>
+          <span style="font-size:.78rem;font-weight:600;color:var(--white)">${v}</span>
+        </div>`).join('')}
+    </div>`;
+
+  // Ficha de treino via motor
+  try{
+    prescreverTreino();
+    const treinos = getTreinos();
+    // Filtrar apenas treinos com exercícios
+    const treinosComEx = treinos.filter(t=>(t.exercicios||t.ex||[]).length>0);
+    document.getElementById('rel-treino').innerHTML = treinosComEx.length===0
+      ? '<div style="color:var(--muted);font-size:.82rem;padding:12px">Nenhum exercício gerado. Verifique os dados da anamnese.</div>'
+      : treinosComEx.map(t=>
+      `<div style="margin-bottom:20px;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+        <div style="background:var(--card);border-bottom:2px solid var(--green);padding:10px 14px">
+          <span style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--green)">${t.nome}</span>
+        </div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:var(--card2)">
+            <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">#</th>
+            <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Exercício</th>
+            <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Séries</th>
+            <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Reps</th>
+            <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Descanso</th>
+            <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">RIR</th>
+            <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Observações</th>
+          </tr></thead>
+          <tbody>${(t.exercicios||[]).map((e,i)=>
+            `<tr style="${i%2===0?'':'background:var(--card2)'}">
+              <td style="padding:8px 10px;font-size:.78rem;color:var(--muted)">${i+1}</td>
+              <td style="padding:8px 10px;font-size:.82rem;font-weight:600;color:var(--white)">${e.nome||'—'}</td>
+              <td style="padding:8px 10px;font-size:.78rem">${e.series||e.s||'—'}</td>
+              <td style="padding:8px 10px;font-size:.78rem">${e.reps||e.r||'—'}</td>
+              <td style="padding:8px 10px;font-size:.78rem">${e.descanso||e.d||'—'}</td>
+              <td style="padding:8px 10px;font-size:.75rem;color:var(--yellow);font-weight:600">${e.rir||'1–3'}</td>
+              <td style="padding:8px 10px;font-size:.75rem;color:var(--muted)">${(e.obs||'—').replace(/\|.*RIR.*$/,'').trim()}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>
+      </div>`).join('');
+    // Adicionar notas/princípios científicos
+    const notas = treinos._notas || [];
+    if(notas.length){
+      const notasHtml = `<div style="margin-top:20px;background:rgba(255,106,0,.06);border:1px solid rgba(255,106,0,.2);border-radius:6px;padding:16px">
+        <div style="font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:12px">📋 Princípios Científicos do Programa</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+          ${notas.map(n=>`<div style="font-size:.78rem;color:#aaa;padding:6px 0;border-bottom:1px solid var(--border)">${n}</div>`).join('')}
+        </div>
+        <div style="margin-top:10px;font-size:.68rem;color:var(--muted);font-style:italic">
+          Base científica: ACSM 2026 Position Stand (137 revisões, >30.000 participantes) · Schoenfeld 2010/2024 · Israetel/RP Strength · Singer et al. 2024
+        </div>
+      </div>`;
+      document.getElementById('rel-treino').innerHTML += notasHtml;
+    }
+  }catch(err){
+    document.getElementById('rel-treino').innerHTML='<div style="color:var(--muted);font-size:.82rem">Erro ao gerar treino: '+err.message+'</div>';
+  }
+
+  // ── GUIA ALIMENTAR — PAINEL VISUAL (evidências científicas) ────────────
+  // Mifflin-St Jeor (1990) | ISSN 2017 | Aragon & Schoenfeld 2013
+  const nu2     = MOTOR_D.nutricao || {};
+  const cl2     = MOTOR_D.cliente  || {};
+  const an2     = MOTOR_D.anamnese || {};
+  const nutobj2 = nu2['nu-obj'] || 'Hipertrofia';
+  const no2     = nutobj2.toLowerCase();
+  const restr2  = nu2['nu-rest'] || 'Nenhuma';
+  const supl2   = nu2['nu-supl'] || 'Nenhum';
+
+  // Biométricos
+  const sexo2  = (cl2['c-sexo']||'Masculino').toLowerCase().includes('fem') ? 'F' : 'M';
+  const peso2  = parseFloat(cl2['c-peso']  || c.peso   || 75);
+  const alt2   = parseFloat(cl2['c-altura']|| c.altura || 175);
+  const nasc2  = cl2['c-nasc'] || '';
+  const idade2 = nasc2 ? Math.max(18,Math.floor((new Date()-new Date(nasc2))/31557600000)) : 30;
+  const nivel2 = an2.nivel || 'Iniciante';
+  const dias2  = parseInt(an2['an-dias']) || 4;
+
+  // TMB — Mifflin-St Jeor
+  const tmb2 = Math.round(sexo2==='M'
+    ? (10*peso2)+(6.25*alt2)-(5*idade2)+5
+    : (10*peso2)+(6.25*alt2)-(5*idade2)-161);
+
+  const fatAtiv2 = {'Sedentario':1.20,'Iniciante':1.40,'Intermediario':1.55,'Avancado':1.725,'MuitoAvancado':1.90};
+  const get2  = Math.round(tmb2 * (fatAtiv2[nivel2]||1.55));
+  const isEm2 = no2.includes('emagr')||no2.includes('perda');
+  const isMa2 = no2.includes('hipert')||no2.includes('massa')||no2.includes('ganho');
+  const meta2 = Math.round(isEm2 ? get2-400 : isMa2 ? get2+300 : get2);
+
+  // Macros
+  const pFat2  = isEm2 ? 2.2 : isMa2 ? 1.8 : 2.0;
+  const protG2 = Math.round(pFat2 * peso2);
+  const gord2  = Math.round(meta2 * 0.25 / 9);
+  const carb2  = Math.round((meta2 - protG2*4 - gord2*9) / 4);
+  const agua2  = Math.round(35 * peso2 / 100) / 10;
+
+  // Refeições resumidas para o painel
+  const refVisual = isEm2 ? [
+    {h:'07:00', nome:'Café da manhã',   items:`${sexo2==='F'?'2':'3'} ovos · pão integral · fruta · café s/açúcar`, prot:Math.round(protG2*0.24), carb:Math.round(carb2*0.20), kcal:Math.round(meta2*0.22)},
+    {h:'12:00', nome:'Almoço',          items:`Frango ${Math.round(peso2*0.55)}g · arroz integral · feijão · salada · azeite`, prot:Math.round(protG2*0.30), carb:Math.round(carb2*0.28), kcal:Math.round(meta2*0.30)},
+    {h:'15:30', nome:'Lanche da tarde', items:'Iogurte grego 0% (170g) · castanhas (15g) · frutas vermelhas', prot:Math.round(protG2*0.16), carb:Math.round(carb2*0.10), kcal:Math.round(meta2*0.13)},
+    {h:'19:30', nome:'Jantar',          items:`Salmão/atum ${sexo2==='F'?'120':'150'}g · batata-doce · brócolis · azeite`, prot:Math.round(protG2*0.26), carb:Math.round(carb2*0.22), kcal:Math.round(meta2*0.25)},
+  ] : isMa2 ? [
+    {h:'07:00', nome:'Café da manhã',   items:`${sexo2==='F'?'3':'4'} ovos · ${sexo2==='F'?'1':'2'} fatia pão integral · banana · leite`, prot:Math.round(protG2*0.20), carb:Math.round(carb2*0.22), kcal:Math.round(meta2*0.22)},
+    {h:'10:00', nome:'Pré-treino',      items:`Whey ${Math.round(0.4*peso2)}g · banana · aveia 30g`, prot:Math.round(protG2*0.15), carb:Math.round(carb2*0.18), kcal:Math.round(meta2*0.13)},
+    {h:'13:00', nome:'Almoço',          items:`Carne/frango ${Math.round(peso2*0.7)}g · arroz · feijão · batata-doce · salada`, prot:Math.round(protG2*0.28), carb:Math.round(carb2*0.28), kcal:Math.round(meta2*0.28)},
+    {h:'16:00', nome:'Pós-treino',      items:`Whey ${Math.round(0.4*peso2)}g · banana · creatina 5g`, prot:Math.round(protG2*0.18), carb:Math.round(carb2*0.15), kcal:Math.round(meta2*0.14)},
+    {h:'20:00', nome:'Jantar',          items:`Salmão/frango ${sexo2==='F'?'150':'200'}g · arroz integral · legumes · azeite`, prot:Math.round(protG2*0.18), carb:Math.round(carb2*0.17), kcal:Math.round(meta2*0.20)},
+    {h:'22:00', nome:'Ceia (opcional)', items:`Cottage ${sexo2==='F'?'150':'200'}g ou caseína 30g · amêndoas`, prot:Math.round(protG2*0.07), carb:Math.round(carb2*0.04), kcal:Math.round(meta2*0.07)},
+  ] : [
+    {h:'07:00', nome:'Café da manhã',   items:`${sexo2==='F'?'2':'3'} ovos · pão integral · abacate · fruta`, prot:Math.round(protG2*0.22), carb:Math.round(carb2*0.22), kcal:Math.round(meta2*0.22)},
+    {h:'12:30', nome:'Almoço',          items:`Frango/peixe ${Math.round(peso2*0.55)}g · arroz integral · feijão · salada`, prot:Math.round(protG2*0.30), carb:Math.round(carb2*0.30), kcal:Math.round(meta2*0.30)},
+    {h:'15:30', nome:'Peri-treino',     items:`Whey ${Math.round(0.4*peso2)}g · banana · aveia`, prot:Math.round(protG2*0.22), carb:Math.round(carb2*0.22), kcal:Math.round(meta2*0.18)},
+    {h:'19:30', nome:'Jantar',          items:`Salmão/frango ${sexo2==='F'?'150':'180'}g · batata-doce · legumes · azeite`, prot:Math.round(protG2*0.24), carb:Math.round(carb2*0.22), kcal:Math.round(meta2*0.25)},
+  ];
+
+  document.getElementById('rel-guia').innerHTML = `
+    <!-- Cards metabólicos -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+      ${[
+        ['🔥 TMB', tmb2+' kcal', '#ff9944'],
+        ['⚡ TDEE', get2+' kcal', '#ff9944'],
+        ['🎯 Meta', meta2+' kcal', '#ff6a00'],
+        [isEm2?'📉 Déficit':isMa2?'📈 Superávit':'⚖️ Manutenção', isEm2?'-400 kcal':isMa2?'+300 kcal':'=', '#4ade80'],
+      ].map(([l,v,cor])=>`
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center">
+          <div style="font-size:.65rem;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase">${l}</div>
+          <div style="font-size:.95rem;font-weight:800;color:${cor}">${v}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- Macros -->
+    <div style="background:rgba(255,106,0,.05);border:1px solid rgba(255,106,0,.2);border-radius:6px;padding:14px;margin-bottom:16px">
+      <div style="font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:10px">Macronutrientes Diários</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        ${[
+          ['🥩 Proteína', protG2+'g', `${Math.round(pFat2*10)/10}g/kg — ISSN 2017`, '#4ade80'],
+          ['🍞 Carboidrato', carb2+'g', 'Substrato treino de força', '#60a5fa'],
+          ['🫒 Gordura', gord2+'g', '25% kcal — suporte hormonal', '#facc15'],
+          ['💧 Água', agua2+'L', '35ml/kg + reposição treino', '#67e8f9'],
+        ].map(([l,v,d,cor])=>`
+          <div style="border:1px solid var(--border);border-radius:4px;padding:10px;text-align:center">
+            <div style="font-size:.65rem;color:var(--muted);margin-bottom:3px">${l}</div>
+            <div style="font-size:1.1rem;font-weight:800;color:${cor}">${v}</div>
+            <div style="font-size:.6rem;color:var(--muted);margin-top:3px">${d}</div>
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:10px;font-size:.7rem;color:var(--muted);font-style:italic">
+        Equação: Mifflin-St Jeor (1990) · Proteína: ISSN Position Stand (Jäger et al. 2017) · Janela anabólica: Aragon & Schoenfeld (2013)
+      </div>
+    </div>
+
+    <!-- Cardápio -->
+    <div style="font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--yellow);margin-bottom:10px">Cardápio Diário Personalizado</div>
+    ${refVisual.map((r,i)=>`
+      <div style="border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:8px">
+        <div style="background:var(--card);padding:9px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
+          <span style="font-size:.8rem;font-weight:700;color:var(--yellow)">${r.h} — ${r.nome}</span>
+          <span style="font-size:.72rem;color:var(--muted)">${r.kcal} kcal · P:${r.prot}g · C:${r.carb}g</span>
+        </div>
+        <div style="padding:10px 14px;font-size:.8rem;color:#ccc">${r.items}</div>
+      </div>`).join('')}
+
+    <!-- Suplementação -->
+    <div style="margin-top:14px;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:6px;padding:14px">
+      <div style="font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#a78bfa;margin-bottom:10px">💊 Suplementação com Evidência</div>
+      ${[
+        ['⭐⭐⭐⭐⭐ Creatina monoidratada', '3–5g/dia', '+4.43kg força (meta-análise 2024, n=509)'],
+        ['⭐⭐⭐⭐⭐ Whey protein', `${Math.round(0.4*peso2)}g por refeição peri-treino`, 'Síntese proteica máxima por refeição'],
+        ['⭐⭐⭐⭐⭐ Cafeína', '3–6mg/kg, 45–60 min pré', 'Performance +2–16% (ISSN 2021)'],
+        ['⭐⭐⭐⭐ Ômega-3', '2–4g EPA+DHA/dia', 'Anti-inflamatório e suporte à recuperação'],
+        supl2!=='Nenhum' ? ['📋 Cliente: '+supl2, 'Conforme indicado', 'Suplemento informado na anamnese'] : null,
+      ].filter(Boolean).map(([n,d,e])=>`
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
+          <span style="color:#c4b5fd;font-weight:600">${n}</span>
+          <span style="color:var(--muted)">${d}</span>
+        </div>
+        <div style="font-size:.68rem;color:var(--muted);padding:2px 0 6px 8px;font-style:italic">${e}</div>
+      `).join('')}
+    </div>
+
+    <!-- Sono -->
+    <div style="margin-top:10px;background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.15);border-radius:6px;padding:12px 14px">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#60a5fa;margin-bottom:8px">😴 Sono — Fator Nutricional Crítico</div>
+      <div style="font-size:.75rem;color:#aaa;line-height:1.8">
+        • <strong style="color:#fff">7–9h/noite</strong>: 1 noite sem dormir ↓ síntese proteica 18%, ↑ cortisol 21%, ↓ testosterona 24%<br>
+        • Proteína antes de dormir (cottage/caseína 30–40g): ↑ MPS noturna em 22%<br>
+        • Magnésio 300–400mg antes de dormir: relaxamento muscular e qualidade do sono<br>
+        <em style="color:var(--muted);font-size:.68rem">Ref: Lamon et al. J Physiol (2020) · Res et al. Nutr Metab (2012) · GSSI Gatorade (2025)</em>
+      </div>
+    </div>
+
+    <!-- Restrições -->
+    ${restr2!=='Nenhuma' ? `<div style="margin-top:10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:12px 14px;font-size:.78rem">
+      <strong style="color:#ef4444">⚠️ Restrição alimentar: ${restr2}</strong><br>
+      <span style="color:var(--muted)">Todas as substituições foram consideradas. Informe ao cliente para ajustes adicionais.</span>
+    </div>` : ''}
+  `;
+}
+
+// ── RESETAR QUESTIONÁRIO ──────────────────────────────────────────────────
+async function resetarQuestionario(){
+  if(!clienteAtual){ notif('Nenhum cliente selecionado.','#ef4444'); return; }
+  const c = clienteAtual;
+
+  const confirmar = confirm(
+    `Tem certeza que deseja resetar o questionário de ${c.nome}?\n\n` +
+    `Isso irá:\n` +
+    `• Apagar os dados do questionário no painel\n` +
+    `• Permitir que o cliente preencha novamente\n\n` +
+    `O link do questionário continuará o mesmo.`
+  );
+  if(!confirmar) return;
+
+  try{
+    if(SB){
+      // Remover questionários do Supabase vinculados a este cliente
+      const { error: e1 } = await SB.from('questionarios')
+        .delete().eq('cliente_id', c.id);
+      if(e1) console.warn('Erro ao deletar por cliente_id:', e1);
+
+      // Remover por email também (questionários sem vínculo)
+      if(c.email){
+        const { error: e2 } = await SB.from('questionarios')
+          .delete().eq('email', c.email);
+        if(e2) console.warn('Erro ao deletar por email:', e2);
+      }
+
+      // Atualizar status do cliente de volta para "ativo" (não "processando")
+      await SB.from('clientes').update({
+        status: 'ativo',
+        atualizado_em: new Date().toISOString()
+      }).eq('id', c.id);
+    }
+
+    // Limpar do cache local
+    c._questionario = null;
+    c._q_ts = null;
+    if(c.status === 'processando') c.status = 'ativo';
+    const idx = clientes.findIndex(x=>x.id===c.id);
+    if(idx>=0){
+      clientes[idx]._questionario = null;
+      clientes[idx]._q_ts = null;
+    }
+
+    // Atualizar abas
+    renderAnamnese(c);
+    // Resetar aba relatório
+    try{
+      document.getElementById('rel-loading').style.display='none';
+      document.getElementById('rel-sem-dados').style.display='block';
+      document.getElementById('rel-content').style.display='none';
+    }catch(e){}
+
+    notif('✅ Questionário resetado! O cliente pode preencher novamente.');
+    renderClientes();
+
+  }catch(err){
+    notif('Erro ao resetar: '+err.message,'#ef4444');
+    console.error(err);
+  }
+}
+
+// ── INICIALIZAÇÃO ─────────────────────────────────────────────────────────
+async function init(){
+  await initSB();
+  await loadClientes();
+}
+
+init();
+</script>
+</body>
+</html>

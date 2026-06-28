@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WillgomesFit – Anamnese Nutricional</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--black:#080808;--dark:#111;--card:#161616;--border:#252525;--orange:#ff6a00;--orange2:#ff8c00;--white:#f2f2f2;--muted:#777;--font-d:'Bebas Neue',sans-serif;--font-b:'Inter',sans-serif}
+body{background:var(--black);color:var(--white);font-family:var(--font-b);font-size:16px;line-height:1.6;min-height:100vh}
+header{background:rgba(8,8,8,.98);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:14px}
+.logo{font-family:var(--font-d);font-size:1.4rem;letter-spacing:3px;color:var(--white)}.logo span{color:var(--orange)}
+.header-tag{font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-left:1px solid var(--border);padding-left:14px}
+.container{max-width:620px;margin:0 auto;padding:48px 24px 80px}
+.step-indicator{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--orange)}.step-dot.inactive{background:var(--border)}
+.step-label{font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange)}
+h1{font-family:var(--font-d);font-size:2.4rem;line-height:1;margin-bottom:10px}
+.form-desc{font-size:.9rem;color:var(--muted);line-height:1.7;margin-bottom:28px}
+.plan-badge{display:inline-block;background:#1a1a1a;border:1px solid var(--orange);color:var(--orange);font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 14px;border-radius:3px;margin-bottom:28px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.form-group label .req{color:var(--orange)}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:#141414;border:1px solid var(--border);border-radius:4px;color:var(--white);font-family:var(--font-b);font-size:.95rem;padding:13px 16px;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--orange)}
+.form-group select option{background:#141414}.form-group textarea{resize:vertical;min-height:90px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-hint{font-size:.74rem;color:var(--muted);margin-top:5px;line-height:1.5}
+.divider{border:none;border-top:1px solid var(--border);margin:28px 0}
+.section-label{font-size:.68rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--orange);margin-bottom:16px}
+.btn-submit{width:100%;background:var(--orange);color:#fff;border:none;font-family:var(--font-b);font-weight:700;font-size:1rem;padding:17px;border-radius:4px;cursor:pointer;transition:background .2s;margin-top:8px}
+.btn-submit:hover{background:var(--orange2)}.btn-submit:disabled{background:#333;color:var(--muted);cursor:not-allowed}
+.security-note{font-size:.74rem;color:var(--muted);text-align:center;margin-top:12px}
+.success-screen{display:none;text-align:center;padding:40px 0}
+.success-icon{font-size:3.5rem;margin-bottom:20px}
+.success-title{font-family:var(--font-d);font-size:2.4rem;margin-bottom:12px}
+.success-body{font-size:.9rem;color:var(--muted);line-height:1.75;margin-bottom:32px;max-width:420px;margin-left:auto;margin-right:auto}
+.btn-payment{display:block;background:var(--orange);color:#fff;font-weight:700;font-size:1rem;padding:17px;border-radius:4px;text-decoration:none;transition:background .2s;margin-bottom:12px}
+.btn-payment:hover{background:var(--orange2)}.payment-note{font-size:.78rem;color:var(--muted);line-height:1.6}
+@media(max-width:560px){.form-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">WILL<span>GOMES</span>FIT</div>
+  <div class="header-tag">Anamnese · Guia Nutricional</div>
+</header>
+<div class="container">
+  <div id="form-screen">
+    <div class="step-indicator">
+      <div class="step-dot"></div><div class="step-dot inactive"></div><div class="step-dot inactive"></div>
+      <span class="step-label">Passo 1 de 3 — Anamnese Nutricional</span>
+    </div>
+    <h1>SUA ANAMNESE<br>NUTRICIONAL</h1>
+    <p class="form-desc">Preencha com atenção. Quanto mais detalhado, mais personalizado e eficaz será o seu guia nutricional.</p>
+    <div class="plan-badge">🍎 Guia Nutricional + Cardápio — R$ 29,90</div>
+    <form id="main-form">
+
+      <div class="section-label">1. Dados pessoais</div>
+      <div class="form-group"><label>Nome completo <span class="req">*</span></label><input type="text" id="nome" required placeholder="Seu nome completo"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>E-mail <span class="req">*</span></label><input type="email" id="email" required placeholder="seu@email.com"/></div>
+        <div class="form-group"><label>WhatsApp <span class="req">*</span></label><input type="tel" id="whatsapp" required placeholder="(85) 99999-9999"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Idade <span class="req">*</span></label><input type="number" id="idade" required placeholder="Ex: 28"/></div>
+        <div class="form-group"><label>Sexo <span class="req">*</span></label>
+          <select id="sexo" required><option value="">Selecione...</option><option>Masculino</option><option>Feminino</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Profissão</label><input type="text" id="profissao" placeholder="Ex: professor, motorista, atendente..."/><div class="form-hint">Ajuda a calcular seu gasto energético diário.</div></div>
+
+      <hr class="divider"/>
+      <div class="section-label">2. Dados físicos e antropométricos</div>
+      <div class="form-row">
+        <div class="form-group"><label>Peso atual (kg) <span class="req">*</span></label><input type="number" step="0.1" id="peso" required placeholder="Ex: 75"/></div>
+        <div class="form-group"><label>Altura (cm) <span class="req">*</span></label><input type="number" id="altura" required placeholder="Ex: 175"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Circunferência da cintura (cm)</label><input type="number" id="cintura" placeholder="Ex: 82"/></div>
+        <div class="form-group"><label>Circunferência do quadril (cm)</label><input type="number" id="quadril" placeholder="Ex: 96"/></div>
+      </div>
+
+      <hr class="divider"/>
+      <div class="section-label">3. Objetivo e atividade física</div>
+      <div class="form-group"><label>Objetivo principal <span class="req">*</span></label>
+        <select id="objetivo" required><option value="">Selecione...</option><option>Emagrecimento / perda de gordura</option><option>Ganho de massa muscular</option><option>Manutenção do peso com mais saúde</option><option>Melhorar disposição e energia</option><option>Controle de doença (diabetes, colesterol...)</option><option>Potencializar resultados do treino</option></select>
+      </div>
+      <div class="form-group"><label>Descreva seu objetivo com mais detalhes</label><textarea id="objetivo_detalhe" placeholder="Ex: quero perder 8kg, controlar o diabetes com alimentação, ganhar massa..."></textarea></div>
+      <div class="form-group"><label>Nível de atividade física atual <span class="req">*</span></label>
+        <select id="atividade" required><option value="">Selecione...</option><option>Sedentário (não pratica exercício)</option><option>Leve (1 a 2 vezes por semana)</option><option>Moderado (3 a 4 vezes por semana)</option><option>Intenso (5 ou mais vezes por semana)</option><option>Atleta / treina 2x ao dia</option></select>
+      </div>
+      <div class="form-group"><label>Que tipo de exercício pratica?</label><input type="text" id="tipo_exercicio" placeholder="Ex: musculação, corrida, jiu-jítsu, não pratico..."/></div>
+
+      <hr class="divider"/>
+      <div class="section-label">4. Hábitos alimentares</div>
+      <div class="form-row">
+        <div class="form-group"><label>Quantas refeições faz por dia? <span class="req">*</span></label>
+          <select id="refeicoes" required><option value="">Selecione...</option><option>1 a 2 refeições</option><option>3 refeições</option><option>4 a 5 refeições</option><option>6 ou mais refeições</option></select>
+        </div>
+        <div class="form-group"><label>Hidratação diária <span class="req">*</span></label>
+          <select id="hidratacao" required><option value="">Selecione...</option><option>Menos de 1 litro</option><option>1 a 2 litros</option><option>2 a 3 litros</option><option>Mais de 3 litros</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Horário aproximado das refeições</label><textarea id="horario_refeicoes" placeholder="Ex: café às 7h, almoço ao meio-dia, jantar às 19h, ceia às 22h..."></textarea></div>
+      <div class="form-group"><label>Come fora de casa com frequência? <span class="req">*</span></label>
+        <select id="come_fora" required><option value="">Selecione...</option><option>Não, como em casa todos os dias</option><option>Raramente (1-2x por semana)</option><option>Às vezes (3-4x por semana)</option><option>Sim, quase todos os dias</option></select>
+      </div>
+      <div class="form-group"><label>Já fez dieta ou acompanhamento nutricional antes?</label>
+        <select id="historico_dieta"><option value="">Selecione...</option><option>Não</option><option>Sim, com nutricionista</option><option>Sim, por conta própria</option><option>Sim, dietas da internet / aplicativos</option></select>
+      </div>
+      <div class="form-group"><label>Se já fez dieta antes, como foi a experiência?</label><textarea id="experiencia_dieta" placeholder="Ex: consegui emagrecer mas não mantive, tive efeito rebote, não me adaptei..."></textarea></div>
+
+      <hr class="divider"/>
+      <div class="section-label">5. Preferências e restrições alimentares</div>
+      <div class="form-group"><label>Tem alguma restrição ou intolerância alimentar? <span class="req">*</span></label>
+        <select id="restricao" required><option value="">Selecione...</option><option>Não tenho restrições</option><option>Intolerância à lactose</option><option>Intolerância ao glúten / doença celíaca</option><option>Alergia a frutos do mar</option><option>Alergia a amendoim / castanhas</option><option>Vegetariano</option><option>Vegano</option><option>Outra (descreva abaixo)</option></select>
+      </div>
+      <div class="form-group"><label>Alimentos que não come ou não gosta</label><textarea id="nao_come" placeholder="Ex: não como brócolis, detesto fígado, alergia a leite..."></textarea></div>
+      <div class="form-group"><label>Alimentos que come com frequência e gosta</label><textarea id="preferidos" placeholder="Ex: frango, arroz, ovos, batata-doce, frutas variadas..."></textarea><div class="form-hint">Ajuda a montar um cardápio próximo da sua realidade.</div></div>
+      <div class="form-group"><label>Tem preferência por algum estilo alimentar?</label>
+        <select id="estilo_alimentar"><option value="">Selecione...</option><option>Sem preferência</option><option>Low carb</option><option>Dieta mediterrânea</option><option>Jejum intermitente</option><option>Alta proteína</option><option>Comida caseira tradicional</option></select>
+      </div>
+
+      <hr class="divider"/>
+      <div class="section-label">6. Saúde e histórico médico</div>
+      <div class="form-group"><label>Tem alguma condição de saúde relevante? <span class="req">*</span></label>
+        <select id="condicao_saude" required><option value="">Selecione...</option><option>Não tenho nenhuma condição</option><option>Diabetes tipo 1</option><option>Diabetes tipo 2 / pré-diabetes</option><option>Hipertensão</option><option>Colesterol / triglicérides altos</option><option>Hipotireoidismo / hipertireoidismo</option><option>SOP (síndrome do ovário policístico)</option><option>Problemas gastrointestinais (gastrite, refluxo...)</option><option>Outras (descreva abaixo)</option></select>
+      </div>
+      <div class="form-group"><label>Tem histórico familiar de doenças metabólicas?</label><textarea id="historico_familiar" placeholder="Ex: pai com diabetes, histórico de obesidade na família, doença cardíaca..."></textarea></div>
+      <div class="form-group"><label>Faz uso de algum medicamento contínuo?</label><textarea id="medicamento" placeholder="Ex: metformina, losartana, levotiroxina... Se não usar, deixe em branco."></textarea></div>
+      <div class="form-group"><label>Saúde gastrointestinal</label>
+        <select id="intestino"><option value="">Selecione...</option><option>Normal, sem queixas</option><option>Constipação (intestino preso)</option><option>Diarreia frequente</option><option>Inchaço abdominal frequente</option><option>Refluxo / azia</option><option>Gastrite</option><option>Mais de uma das opções acima</option></select>
+      </div>
+      <div class="form-group"><label>Usa algum suplemento atualmente?</label><textarea id="suplemento" placeholder="Ex: whey protein, creatina, vitamina D, ômega 3... Se não usar, deixe em branco."></textarea></div>
+
+      <hr class="divider"/>
+      <div class="section-label">7. Estilo de vida</div>
+      <div class="form-row">
+        <div class="form-group"><label>Qualidade do sono <span class="req">*</span></label>
+          <select id="sono" required><option value="">Selecione...</option><option>Durmo bem (7-9h)</option><option>Durmo pouco (menos de 6h)</option><option>Sono irregular</option><option>Tenho insônia</option></select>
+        </div>
+        <div class="form-group"><label>Nível de estresse diário <span class="req">*</span></label>
+          <select id="estresse" required><option value="">Selecione...</option><option>Baixo</option><option>Moderado</option><option>Alto</option><option>Muito alto</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Consome bebida alcoólica?</label>
+          <select id="alcool"><option value="">Selecione...</option><option>Não consumo</option><option>Raramente</option><option>Finais de semana</option><option>Frequentemente</option></select>
+        </div>
+        <div class="form-group"><label>Fuma?</label>
+          <select id="fuma"><option value="">Selecione...</option><option>Não</option><option>Sim</option><option>Ex-fumante</option></select>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+      <div class="section-label">8. Informações adicionais</div>
+      <div class="form-group"><label>Alguma observação adicional?</label><textarea id="obs" placeholder="Qualquer informação que considere importante para montar seu guia nutricional."></textarea></div>
+
+      <button type="submit" class="btn-submit" id="btn-enviar">Enviar e ir para o pagamento →</button>
+      <p class="security-note">🔒 Suas informações são confidenciais e usadas exclusivamente para personalizar seu guia nutricional.</p>
+    </form>
+  </div>
+
+  <div class="success-screen" id="success-screen">
+    <div class="step-indicator" style="justify-content:center;margin-bottom:28px">
+      <div class="step-dot inactive"></div><div class="step-dot inactive"></div><div class="step-dot"></div>
+      <span class="step-label">Passo 3 de 3 — Pagamento</span>
+    </div>
+    <div class="success-icon">✅</div>
+    <div class="success-title">ANAMNESE ENVIADA!</div>
+    <p class="success-body">Suas informações chegaram para o Will. Finalize o pagamento para garantir seu guia nutricional. Após pagar, envie o comprovante pelo WhatsApp.</p>
+    <a href="https://link.infinitepay.io/wildeni-gomes/VC1DLTQtSQ-sqWsjin8Si-29,90" class="btn-payment" target="_blank">Ir para o pagamento — R$ 29,90 →</a>
+    <p class="payment-note">Após o pagamento, envie o comprovante pelo WhatsApp.<br/>Will entregará seu guia nutricional em até 48h.</p>
+  </div>
+</div>
+<script>
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycby3l-F9cQqgcrpZCppDoxW8vAVe79Z4cNWr4_tw7mwX0phvkdsX8Y4rclzzmrAchwxW/exec';
+document.getElementById('main-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const data = {
+    tipo: 'Guia Nutricional', plano: 'Guia Nutricional + Cardápio – R$ 29,90',
+    nome: document.getElementById('nome').value, email: document.getElementById('email').value,
+    whatsapp: document.getElementById('whatsapp').value, idade: document.getElementById('idade').value,
+    sexo: document.getElementById('sexo').value, profissao: document.getElementById('profissao').value || '—',
+    peso: document.getElementById('peso').value, altura: document.getElementById('altura').value,
+    cintura: document.getElementById('cintura').value || '—', quadril: document.getElementById('quadril').value || '—',
+    objetivo: document.getElementById('objetivo').value, objetivo_detalhe: document.getElementById('objetivo_detalhe').value || '—',
+    atividade: document.getElementById('atividade').value, tipo_exercicio: document.getElementById('tipo_exercicio').value || '—',
+    refeicoes: document.getElementById('refeicoes').value, hidratacao: document.getElementById('hidratacao').value,
+    horario_refeicoes: document.getElementById('horario_refeicoes').value || '—',
+    come_fora: document.getElementById('come_fora').value,
+    historico_dieta: document.getElementById('historico_dieta').value || '—',
+    experiencia_dieta: document.getElementById('experiencia_dieta').value || '—',
+    restricao: document.getElementById('restricao').value,
+    nao_come: document.getElementById('nao_come').value || '—',
+    preferidos: document.getElementById('preferidos').value || '—',
+    estilo_alimentar: document.getElementById('estilo_alimentar').value || '—',
+    condicao_saude: document.getElementById('condicao_saude').value,
+    historico_familiar: document.getElementById('historico_familiar').value || '—',
+    medicamento: document.getElementById('medicamento').value || '—',
+    intestino: document.getElementById('intestino').value || '—',
+    suplemento: document.getElementById('suplemento').value || '—',
+    sono: document.getElementById('sono').value, estresse: document.getElementById('estresse').value,
+    alcool: document.getElementById('alcool').value || '—', fuma: document.getElementById('fuma').value || '—',
+    obs: document.getElementById('obs').value || '—',
+    data_envio: new Date().toLocaleString('pt-BR'),
+  };
+  try { await fetch(SHEET_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); } catch(err) {}
+  document.getElementById('form-screen').style.display = 'none';
+  document.getElementById('success-screen').style.display = 'block';
+  window.scrollTo(0,0);
+});
+</script>
+</body>
+</html>

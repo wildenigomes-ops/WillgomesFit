@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WillgomesFit — Questionário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#09110a;--bg2:#0d150e;--card:#111c12;--card2:#172219;
+  --border:#1a2e1c;--border2:#223825;
+  --g:#2ecc71;--g2:#27ae60;--gd:#0a2a0a;
+  --o:#c9a84c;--ob:#f5c842;
+  --t1:#e8ede8;--t2:#7a9e7a;--t3:#3d5e3d;
+  --red:#e74c3c;--redbg:#180808;
+  --r:12px;--rsm:8px;
+  --font:'Inter',system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:var(--font);background:var(--bg);color:var(--t1);
+     min-height:100vh;display:flex;flex-direction:column;align-items:center;
+     padding:24px 16px}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── HEADER ── */
+.q-logo{width:100%;max-width:560px;margin-bottom:24px;
+        background:var(--card);border:1px solid var(--border);
+        border-radius:var(--r);padding:20px 24px;
+        border-top:3px solid var(--ob)}
+.q-brand{font-size:1.1rem;font-weight:900;color:var(--ob);letter-spacing:.08em}
+.q-sub{font-size:.72rem;color:var(--t3);margin-top:3px}
+
+/* ── STEP INDICATOR ── */
+.steps{display:flex;gap:6px;margin-bottom:20px;width:100%;max-width:560px}
+.step-dot{flex:1;height:4px;border-radius:2px;background:var(--border2);transition:background .3s}
+.step-dot.done{background:var(--g2)}
+.step-dot.active{background:var(--g)}
+
+/* ── CARD ── */
+.q-card{width:100%;max-width:560px;background:var(--card);
+        border:1px solid var(--border);border-radius:var(--r);
+        padding:24px;margin-bottom:16px;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.q-title{font-size:1.1rem;font-weight:800;margin-bottom:4px}
+.q-title em{color:var(--g);font-style:normal}
+.q-desc{font-size:.78rem;color:var(--t2);margin-bottom:20px;line-height:1.5}
+
+/* ── FORM ── */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+label{font-size:.68rem;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em}
+input,select,textarea{
+  background:var(--card2);border:1px solid var(--border2);border-radius:var(--rsm);
+  color:var(--t1);font-family:var(--font);font-size:.9rem;padding:11px 13px;
+  outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--g);box-shadow:0 0 0 3px rgba(46,204,113,.1)}
+textarea{resize:vertical;min-height:80px;line-height:1.5}
+input::placeholder,textarea::placeholder{color:var(--t3)}
+select option{background:var(--card)}
+
+/* ── CHECK ── */
+.cg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.ci{display:flex;align-items:center;gap:10px;padding:11px 13px;
+    background:var(--card2);border:1px solid var(--border2);border-radius:var(--rsm);
+    cursor:pointer;transition:all .12s;font-size:.88rem;color:var(--t2)}
+.ci:hover{border-color:var(--g);color:var(--t1)}
+.ci.sel{background:rgba(46,204,113,.08);border-color:var(--g);color:var(--g);font-weight:600}
+.cd{width:18px;height:18px;border-radius:50%;border:2px solid var(--t3);
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.ci.sel .cd{border-color:var(--g);background:var(--g)}
+.ci.sel .cd::after{content:'✓';font-size:.65rem;color:var(--gd)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 20px;
+     border-radius:var(--rsm);font-family:var(--font);font-size:.82rem;font-weight:700;
+     text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:none;
+     transition:all .15s;white-space:nowrap}
+.bg{background:var(--g);color:var(--gd)}
+.bg:hover{background:#34e07e;transform:translateY(-1px)}
+.bgh{background:transparent;border:1px solid var(--border2);color:var(--t2)}
+.bgh:hover{border-color:var(--g);color:var(--g)}
+.row-btns{display:flex;gap:10px;justify-content:space-between;width:100%;max-width:560px}
+
+/* ── ALERT ── */
+.al{padding:12px 14px;border-radius:var(--rsm);font-size:.82rem;
+    border-left:3px solid;margin-bottom:12px;line-height:1.5}
+.alg{background:rgba(46,204,113,.07);border-color:var(--g);color:#a0f0c0}
+.alr{background:var(--redbg);border-color:var(--red);color:#f4a7a0}
+.alo{background:rgba(201,168,76,.07);border-color:var(--o);color:#f0d090}
+
+/* ── PROGRESS ── */
+.prog-num{font-size:.7rem;color:var(--t3);margin-bottom:8px;
+          width:100%;max-width:560px;text-align:right}
+
+/* ── SUCCESS ── */
+#success{display:none;text-align:center;width:100%;max-width:560px}
+.success-icon{font-size:3.5rem;margin-bottom:16px}
+.success-title{font-size:1.4rem;font-weight:800;color:var(--g);margin-bottom:8px}
+.success-sub{font-size:.88rem;color:var(--t2);line-height:1.6}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;font-weight:700;font-size:.78rem;
+       padding:10px 16px;border-radius:var(--rsm);box-shadow:0 4px 20px rgba(0,0,0,.5);
+       transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999}
+#toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:600px){
+  body{padding:16px 12px}
+  .q-card{padding:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="q-logo">
+  <div class="q-brand">WILLGOMESFIT</div>
+  <div class="q-sub">Preencha o questionário abaixo para que seu consultor prepare seu programa personalizado</div>
+</div>
+
+<div class="steps">
+  <div class="step-dot active" id="sd0"></div>
+  <div class="step-dot" id="sd1"></div>
+  <div class="step-dot" id="sd2"></div>
+  <div class="step-dot" id="sd3"></div>
+  <div class="step-dot" id="sd4"></div>
+</div>
+
+<div class="prog-num" id="prog-num">Passo 1 de 5</div>
+
+<!-- STEP 0 — DADOS PESSOAIS -->
+<div class="q-card" id="step-0">
+  <div class="q-title">Seus <em>dados</em> pessoais</div>
+  <div class="q-desc">Informações básicas para identificação. Todos os dados são confidenciais.</div>
+  <div class="fg"><label>Nome completo *</label><input id="q-nome" placeholder="Seu nome completo"></div>
+  <div class="fg"><label>E-mail *</label><input type="email" id="q-email" placeholder="seu@email.com"></div>
+  <div class="fg"><label>WhatsApp *</label><input type="tel" id="q-tel" placeholder="(00) 00000-0000"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="fg"><label>Data de nascimento</label><input type="date" id="q-nasc"></div>
+    <div class="fg"><label>Sexo</label>
+      <select id="q-sexo"><option value="">—</option><option>Masculino</option><option>Feminino</option><option>Outro</option></select>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="fg"><label>Profissão</label><input id="q-prof" placeholder="Sua profissão"></div>
+    <div class="fg"><label>Cidade / Estado</label><input id="q-cidade" placeholder="Cidade – SP"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
+    <div class="fg"><label>Peso atual (kg) *</label><input type="number" step="0.1" id="q-peso" placeholder="Ex: 75.5"></div>
+    <div class="fg"><label>Altura (cm) *</label><input type="number" id="q-altura" placeholder="Ex: 175"></div>
+  </div>
+</div>
+
+<!-- STEP 1 — OBJETIVOS -->
+<div class="q-card" id="step-1" style="display:none">
+  <div class="q-title">Seus <em>objetivos</em></div>
+  <div class="q-desc">O que você quer alcançar com o treinamento? Pode marcar mais de um.</div>
+  <div class="cg">
+    <div class="ci" data-g="obj" data-v="Emagrecimento"><div class="cd"></div>🔥 Emagrecimento / Perda de gordura</div>
+    <div class="ci" data-g="obj" data-v="Hipertrofia"><div class="cd"></div>💪 Hipertrofia / Ganho de massa muscular</div>
+    <div class="ci" data-g="obj" data-v="Forca"><div class="cd"></div>⚡ Ganho de força máxima</div>
+    <div class="ci" data-g="obj" data-v="Condicionamento"><div class="cd"></div>🏃 Condicionamento físico</div>
+    <div class="ci" data-g="obj" data-v="Recomposicao"><div class="cd"></div>🔄 Recomposição corporal</div>
+    <div class="ci" data-g="obj" data-v="Saude"><div class="cd"></div>❤️ Saúde e qualidade de vida</div>
+    <div class="ci" data-g="obj" data-v="Performance"><div class="cd"></div>🏆 Performance esportiva</div>
+  </div>
+  <div class="fg"><label>Nível de treinamento atual</label>
+    <select id="q-nivel">
+      <option value="">Selecione seu nível</option>
+      <option>Sedentário — nunca treinou ou parou há mais de 1 ano</option>
+      <option>Iniciante — treina há menos de 6 meses</option>
+      <option>Intermediário — treina entre 6 meses e 2 anos</option>
+      <option>Avançado — treina há mais de 2 anos com consistência</option>
+      <option>Muito avançado — atleta ou mais de 5 anos</option>
+    </select>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="fg"><label>Dias disponíveis por semana</label>
+      <select id="q-dias">
+        <option>2 dias</option><option>3 dias</option><option selected>4 dias</option>
+        <option>5 dias</option><option>6 dias</option>
+      </select>
+    </div>
+    <div class="fg"><label>Duração da sessão</label>
+      <select id="q-dur">
+        <option>30 min</option><option>45 min</option><option selected>60 min</option>
+        <option>75 min</option><option>90 min</option><option>120 min</option>
+      </select>
+    </div>
+  </div>
+  <div class="fg"><label>Equipamentos disponíveis</label>
+    <select id="q-equip">
+      <option selected>Academia completa</option>
+      <option>Academia de condomínio</option>
+      <option>Casa com halteres</option>
+      <option>Apenas peso corporal</option>
+    </select>
+  </div>
+</div>
+
+<!-- STEP 2 — SAÚDE -->
+<div class="q-card" id="step-2" style="display:none">
+  <div class="q-title">Histórico de <em>saúde</em></div>
+  <div class="q-desc">Essas informações são confidenciais e essenciais para uma prescrição segura.</div>
+  <div class="al alr">Todas as informações são sigilosas e usadas apenas pelo seu consultor.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="fg"><label>Hipertensão arterial</label>
+      <select id="q-hiper"><option value="">—</option><option>Sim</option><option>Não</option></select>
+    </div>
+    <div class="fg"><label>Diabetes</label>
+      <select id="q-diab"><option value="">—</option><option>Sim</option><option>Não</option></select>
+    </div>
+    <div class="fg"><label>Problemas cardíacos</label>
+      <select id="q-card"><option value="">—</option><option>Sim</option><option>Não</option></select>
+    </div>
+    <div class="fg"><label>Problemas articulares</label>
+      <select id="q-arti"><option value="">—</option><option>Sim</option><option>Não</option></select>
+    </div>
+    <div class="fg"><label>Problemas de coluna</label>
+      <select id="q-col"><option value="">—</option><option>Sim</option><option>Não</option></select>
+    </div>
+    <div class="fg"><label>Liberação médica para exercício</label>
+      <select id="q-lib"><option>Sim</option><option>Não</option><option>Não se aplica</option></select>
+    </div>
+  </div>
+  <div class="fg"><label>Lesões anteriores ou atuais (descrever)</label>
+    <textarea id="q-lesoes" placeholder="Ex: tendinite no joelho direito em 2022, operado do ombro esquerdo..."></textarea>
+  </div>
+  <div class="fg"><label>Medicamentos em uso</label>
+    <input id="q-meds" placeholder="Nome dos medicamentos que usa regularmente"></div>
+  <div class="fg"><label>Dores articulares frequentes</label>
+    <textarea id="q-dores" placeholder="Onde sente dor? Com que frequência? O que piora?"></textarea>
+  </div>
+</div>
+
+<!-- STEP 3 — HÁBITOS -->
+<div class="q-card" id="step-3" style="display:none">
+  <div class="q-title">Hábitos de <em>vida</em> e alimentação</div>
+  <div class="q-desc">Nos conte sobre sua rotina para personalizar ainda mais o programa.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="fg"><label>Horas de sono por noite</label>
+      <select id="q-sono">
+        <option>Menos de 5h</option><option>5–6h</option>
+        <option>6–7h</option><option selected>7–8h</option><option>Mais de 8h</option>
+      </select>
+    </div>
+    <div class="fg"><label>Qualidade do sono</label>
+      <select id="q-sonoq">
+        <option>Ótima</option><option selected>Boa</option>
+        <option>Regular</option><option>Ruim</option><option>Péssima</option>
+      </select>
+    </div>
+    <div class="fg"><label>Nível de estresse</label>
+      <select id="q-stress">
+        <option>Baixo</option><option selected>Moderado</option>
+        <option>Alto</option><option>Muito alto</option>
+      </select>
+    </div>
+    <div class="fg"><label>Consumo de álcool</label>
+      <select id="q-alcool">
+        <option selected>Não consome</option><option>Raramente</option>
+        <option>1–2x/semana</option><option>3–5x/semana</option><option>Diariamente</option>
+      </select>
+    </div>
+    <div class="fg"><label>Tabagismo</label>
+      <select id="q-tabaco">
+        <option selected>Não fumante</option><option>Ex-fumante</option><option>Fumante</option>
+      </select>
+    </div>
+    <div class="fg"><label>Água (litros/dia)</label>
+      <input type="number" id="q-agua" placeholder="Ex: 2.5" step="0.5" min="0" max="10">
+    </div>
+  </div>
+  <div class="fg"><label>Objetivo nutricional</label>
+    <select id="q-nutobj">
+      <option>Emagrecimento</option><option selected>Hipertrofia / Ganho de massa</option>
+      <option>Manutenção</option><option>Recomposição corporal</option><option>Saúde</option>
+    </select>
+  </div>
+  <div class="fg"><label>Restrições alimentares</label>
+    <select id="q-rest">
+      <option selected>Nenhuma (onívoro)</option><option>Vegetariano</option>
+      <option>Vegano</option><option>Sem glúten</option><option>Sem lactose</option><option>Outro</option>
+    </select>
+  </div>
+  <div class="fg"><label>Alimentos que não gosta ou não pode comer</label>
+    <textarea id="q-naocome" placeholder="Liste alimentos que evita..."></textarea>
+  </div>
+  <div class="fg"><label>Suplementos que já usa</label>
+    <input id="q-supl" placeholder="Ex: Whey, creatina, cafeína, vitamina D...">
+  </div>
+</div>
+
+<!-- STEP 4 — REVISÃO -->
+<div class="q-card" id="step-4" style="display:none">
+  <div class="q-title">Revisão e <em>envio</em></div>
+  <div class="q-desc">Verifique suas respostas antes de enviar. Após envio, seu consultor receberá tudo automaticamente.</div>
+  <div id="revisao" style="font-size:.82rem;color:var(--t2);line-height:1.8"></div>
+  <div class="al alg" style="margin-top:16px">
+    Ao clicar em Enviar, suas respostas serão transmitidas com segurança ao seu consultor.
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div id="success" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:40px 20px">
+  <div class="success-icon">✅</div>
+  <div class="success-title">Dados enviados!</div>
+  <div class="success-sub" style="margin-bottom:20px">Suas informações foram recebidas com sucesso.<br>O Will Gomes irá preparar seu programa personalizado e entrará em contato pelo <strong style="color:var(--g)">WhatsApp</strong>.</div>
+  <div style="background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.2);border-radius:10px;padding:16px 20px;font-size:.82rem;color:#aaa;line-height:1.8">📌 Seu programa será entregue em até <strong style="color:#fff">48 horas</strong>.<br>Fique atento ao WhatsApp para receber seu material.</div>
+</div>
+
+<!-- NAV BUTTONS -->
+<div class="row-btns" id="nav-btns">
+  <button class="btn bgh" id="btn-prev" onclick="prevStep()" style="display:none">← Anterior</button>
+  <button class="btn bg" id="btn-next" onclick="nextStep()" style="margin-left:auto">
+    Próximo →
+  </button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let currentStep=0;
+const totalSteps=5;
+
+// Dados do questionário
+let Q={};
+
+// ── IDENTIFICAÇÃO DO CLIENTE VIA TOKEN ──────────────────────────────────────
+let CLIENTE_ID = null;
+let CLIENTE_NOME = null;
+let CLIENTE_EMAIL = null;
+
+(function lerToken(){
+  try{
+    const params = new URLSearchParams(location.search);
+    const t = params.get('t');
+    if(!t) return;
+    // Tentar decodificar o token (btoa+encodeURIComponent)
+    let dados = null;
+    try{ dados = JSON.parse(decodeURIComponent(escape(atob(t)))); }catch(e){}
+    if(!dados){ try{ dados = JSON.parse(atob(t)); }catch(e){} }
+    if(!dados){ try{ dados = JSON.parse(decodeURIComponent(atob(t))); }catch(e){} }
+    if(dados && dados.clienteId){
+      CLIENTE_ID    = dados.clienteId;
+      CLIENTE_NOME  = dados.nome  || null;
+      CLIENTE_EMAIL = dados.email || null;
+      // Guardar no localStorage como fallback
+      localStorage.setItem('wgf_cid', dados.clienteId);
+      localStorage.setItem('wgf_cemail', dados.email||'');
+      localStorage.setItem('wgf_cnome', dados.nome||'');
+      console.log('Token lido OK. clienteId:', CLIENTE_ID);
+    }
+  }catch(e){ console.warn('Erro ao ler token:', e); }
+  // Fallback: tentar recuperar do localStorage
+  if(!CLIENTE_ID){
+    CLIENTE_ID    = localStorage.getItem('wgf_cid') || null;
+    CLIENTE_EMAIL = localStorage.getItem('wgf_cemail') || null;
+    CLIENTE_NOME  = localStorage.getItem('wgf_cnome') || null;
+  }
+})();
+// ────────────────────────────────────────────────────────────────────────────
+
+function toast(m,t='g'){
+  const el=document.getElementById('toast');
+  el.textContent=m;
+  el.style.background=t==='g'?'#2ecc71':'#c9a84c';
+  el.style.color=t==='g'?'#0a2a0a':'#1a1000';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+function updateSteps(){
+  for(let i=0;i<totalSteps;i++){
+    const d=document.getElementById('sd'+i);
+    if(!d)continue;
+    d.className='step-dot'+(i<currentStep?' done':i===currentStep?' active':'');
+  }
+  document.getElementById('prog-num').textContent=`Passo ${currentStep+1} de ${totalSteps}`;
+  document.getElementById('btn-prev').style.display=currentStep>0?'inline-flex':'none';
+  const btnNext=document.getElementById('btn-next');
+  if(currentStep===totalSteps-1){btnNext.textContent='✓ Enviar respostas';btnNext.onclick=enviar;}
+  else{btnNext.textContent='Próximo →';btnNext.onclick=nextStep;}
+}
+
+function showStep(n){
+  for(let i=0;i<totalSteps;i++){
+    const el=document.getElementById('step-'+i);
+    if(el)el.style.display=i===n?'block':'none';
+  }
+  updateSteps();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function validarStep(){
+  if(currentStep===0){
+    const nome=document.getElementById('q-nome').value.trim();
+    const email=document.getElementById('q-email').value.trim();
+    const tel=document.getElementById('q-tel').value.trim();
+    if(!nome){toast('Por favor, informe seu nome.','o');return false;}
+    if(!email||!email.includes('@')){toast('E-mail inválido.','o');return false;}
+    if(!tel){toast('Por favor, informe seu WhatsApp.','o');return false;}
+    const peso=document.getElementById('q-peso')?.value;
+    const altura=document.getElementById('q-altura')?.value;
+    if(!peso){toast('Por favor, informe seu peso.','o');return false;}
+    if(!altura){toast('Por favor, informe sua altura.','o');return false;}
+  }
+  if(currentStep===1){
+    const obj=[...document.querySelectorAll('.ci.sel[data-g="obj"]')];
+    if(obj.length===0){toast('Selecione ao menos um objetivo.','o');return false;}
+    if(!document.getElementById('q-nivel').value){toast('Selecione seu nível de treinamento.','o');return false;}
+  }
+  return true;
+}
+
+function coletarDados(){
+  Q.nome=document.getElementById('q-nome')?.value||'';
+  Q.email=document.getElementById('q-email')?.value||'';
+  Q.tel=document.getElementById('q-tel')?.value||'';
+  Q.nasc=document.getElementById('q-nasc')?.value||'';
+  Q.sexo=document.getElementById('q-sexo')?.value||'';
+  Q.prof=document.getElementById('q-prof')?.value||'';
+  Q.cidade=document.getElementById('q-cidade')?.value||'';
+  Q.peso=document.getElementById('q-peso')?.value||'';
+  Q.altura=document.getElementById('q-altura')?.value||'';
+  Q.objetivo=[...document.querySelectorAll('.ci.sel[data-g="obj"]')].map(e=>e.dataset.v);
+  Q.nivel=(document.getElementById('q-nivel')?.value||'').split(' ')[0].replace('Intermediário','Intermediario').replace('Avançado','Avancado').replace('Sedentário','Sedentario').replace('Muito','MuitoAvancado');
+  Q.dias=document.getElementById('q-dias')?.value||'';
+  Q.dur=document.getElementById('q-dur')?.value||'';
+  Q.equip=document.getElementById('q-equip')?.value||'';
+  Q.hiper=document.getElementById('q-hiper')?.value||'';
+  Q.diab=document.getElementById('q-diab')?.value||'';
+  Q.card=document.getElementById('q-card')?.value||'';
+  Q.arti=document.getElementById('q-arti')?.value||'';
+  Q.col=document.getElementById('q-col')?.value||'';
+  Q.lib=document.getElementById('q-lib')?.value||'';
+  Q.lesoes=document.getElementById('q-lesoes')?.value||'';
+  Q.meds=document.getElementById('q-meds')?.value||'';
+  Q.dores=document.getElementById('q-dores')?.value||'';
+  Q.sono=document.getElementById('q-sono')?.value||'';
+  Q.sonoq=document.getElementById('q-sonoq')?.value||'';
+  Q.stress=document.getElementById('q-stress')?.value||'';
+  Q.alcool=document.getElementById('q-alcool')?.value||'';
+  Q.tabaco=document.getElementById('q-tabaco')?.value||'';
+  Q.agua=document.getElementById('q-agua')?.value||'';
+  Q.nutobj=document.getElementById('q-nutobj')?.value||'';
+  Q.rest=document.getElementById('q-rest')?.value||'';
+  Q.naocome=document.getElementById('q-naocome')?.value||'';
+  Q.supl=document.getElementById('q-supl')?.value||'';
+}
+
+function gerarRevisao(){
+  const items=[
+    ['Nome',Q.nome],['E-mail',Q.email],['WhatsApp',Q.tel],['Sexo',Q.sexo],
+    ['Objetivo',(Q.objetivo||[]).join(', ')||'—'],['Nível',Q.nivel],
+    ['Disponibilidade',`${Q.dias} · ${Q.dur}`],['Equipamentos',Q.equip],
+    ['Hipertensão',Q.hiper||'—'],['Diabetes',Q.diab||'—'],
+    ['Lesões',Q.lesoes||'Nenhuma'],['Medicamentos',Q.meds||'Nenhum'],
+    ['Sono',`${Q.sono} · ${Q.sonoq}`],['Estresse',Q.stress],
+    ['Restrição alimentar',Q.rest],['Objetivo nutricional',Q.nutobj],
+    ['Suplementos',Q.supl||'Nenhum'],
+  ];
+  document.getElementById('revisao').innerHTML=items
+    .filter(([,v])=>v&&v!=='—')
+    .map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--t3);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">${l}</span>
+      <span style="color:var(--t1);font-size:.8rem;max-width:60%;text-align:right">${v}</span>
+    </div>`).join('');
+}
+
+function nextStep(){
+  if(!validarStep())return;
+  coletarDados();
+  if(currentStep===totalSteps-2)gerarRevisao();
+  currentStep++;
+  showStep(currentStep);
+}
+
+function prevStep(){
+  currentStep--;
+  showStep(currentStep);
+}
+
+async function enviar(){
+  coletarDados();
+  const btn=document.getElementById('btn-next');
+  btn.textContent='Enviando...';
+  btn.disabled=true;
+
+  // Mapear dados para o formato do painel profissional
+  const dadosParaPainel={
+    cliente:{
+      'c-nome':Q.nome,'c-email':Q.email,'c-tel':Q.tel,'c-nasc':Q.nasc,
+      'c-sexo':Q.sexo,'c-prof':Q.prof,'c-cidade':Q.cidade.split('–')[0]?.trim(),
+      'c-uf':Q.cidade.split('–')[1]?.trim()||'',
+      'c-peso':Q.peso,'c-altura':Q.altura,
+    },
+    anamnese:{
+      objetivo:Q.objetivo,nivel:Q.nivel,'an-dias':Q.dias,'an-dur':Q.dur,
+      'an-equip':Q.equip,'an-hipertensao':Q.hiper,'an-diabetes':Q.diab,
+      'an-problemascardiacos':Q.card,'an-problemasarticulares':Q.arti,
+      'an-problemasdecoluna':Q.col,'an-liberacao':Q.lib,
+      'an-lesoes':Q.lesoes,'an-meds':Q.meds,'an-dores':Q.dores,
+      'an-sono':Q.sono,'an-sonoq':Q.sonoq,'an-stress':Q.stress,
+      'an-alcool':Q.alcool,'an-tabaco':Q.tabaco,'an-agua':Q.agua,
+    },
+    nutricao:{
+      'nu-obj':Q.nutobj,'nu-ativ':'1.55','nu-rest':Q.rest,'nu-nao':Q.naocome,'nu-supl':Q.supl,
+    },
+    ts:new Date().toISOString(),
+  };
+
+  // Usar clienteId identificado no carregamento da página
+  const clienteId = CLIENTE_ID;
+  const emailCliente = Q.email || CLIENTE_EMAIL || null;
+
+  // Salvar no Supabase
+  let enviado=false;
+  try{
+    if(window.supabase){
+      const sb=window.supabase.createClient('https://fkpgehyjwxkoyhdbhtva.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcGdlaHlqd3hrb3loZGJodHZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDE5MTQsImV4cCI6MjA5ODE3NzkxNH0.dPJGKvw0KIOOwAC-xf0djgixVSpz8J9S-L-gFsth1xk');
+      await sb.from('questionarios').insert({
+        id: Date.now().toString(),
+        dados: dadosParaPainel,
+        email: Q.email || emailCliente || '',
+        nome: Q.nome || CLIENTE_NOME || '',
+        cliente_id: clienteId,
+        ts: new Date().toISOString()
+      });
+      console.log('Questionário salvo! clienteId:', clienteId, 'email:', Q.email);
+      if(clienteId){
+        await sb.from('clientes').update({
+          status:'processando',
+          atualizado_em: new Date().toISOString()
+        }).eq('id', clienteId);
+      }
+      enviado=true;
+    }
+  }catch(err){ console.warn('Supabase erro:',err); }
+
+  // Mostrar tela de sucesso sempre
+  try{ document.querySelectorAll('.q-card').forEach(el=>el.style.display='none'); }catch(e){}
+  try{ document.getElementById('nav-btns').style.display='none'; }catch(e){}
+  try{ document.querySelector('.steps').style.display='none'; }catch(e){}
+  try{ document.querySelector('.prog-num').style.display='none'; }catch(e){}
+  try{ document.querySelector('.prog-bar').style.display='none'; }catch(e){}
+  const sEl=document.getElementById('success');
+  if(sEl){ sEl.style.display='flex'; }
+  toast(enviado ? '✅ Dados enviados!' : '✅ Dados recebidos!');
+}
+
+// Checkboxes
+document.addEventListener('click',e=>{
+  const ci=e.target.closest('.ci');
+  if(!ci)return;
+  if(ci.dataset.g==='obj')ci.classList.toggle('sel');
+});
+
+showStep(0);
+
+// Verificar se tem token válido
+if(!CLIENTE_ID){
+  console.warn('Atenção: questionário acessado sem link personalizado. O relatório pode não ser vinculado automaticamente.');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WillgomesFit – Confirmação de Pedido</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--black:#080808;--dark:#111;--card:#161616;--border:#252525;--orange:#ff6a00;--orange2:#ff8c00;--white:#f2f2f2;--muted:#777;--font-d:"Bebas Neue",sans-serif;--font-b:"Inter",sans-serif}
+body{background:var(--black);color:var(--white);font-family:var(--font-b);font-size:16px;line-height:1.6;min-height:100vh}
+header{background:rgba(8,8,8,.98);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:14px}
+.logo{font-family:var(--font-d);font-size:1.4rem;letter-spacing:3px;color:var(--white)}.logo span{color:var(--orange)}
+.container{max-width:520px;margin:0 auto;padding:48px 24px 80px}
+h1{font-family:var(--font-d);font-size:2.2rem;line-height:1;margin-bottom:8px}
+.desc{font-size:.9rem;color:var(--muted);line-height:1.7;margin-bottom:32px}
+.plan-box{background:#1a1a1a;border:1px solid var(--orange);border-radius:6px;padding:16px 20px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between}
+.plan-name{font-family:var(--font-d);font-size:1.4rem;color:var(--orange)}
+.plan-price{font-family:var(--font-d);font-size:1.8rem;color:var(--white)}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.form-group label .req{color:var(--orange)}
+.form-group input{width:100%;background:#141414;border:1px solid var(--border);border-radius:4px;color:var(--white);font-family:var(--font-b);font-size:.95rem;padding:14px 16px;outline:none;transition:border-color .2s}
+.form-group input:focus{border-color:var(--orange)}
+.btn-submit{width:100%;background:var(--orange);color:#fff;border:none;font-family:var(--font-b);font-weight:700;font-size:1rem;padding:18px;border-radius:4px;cursor:pointer;transition:background .2s;margin-top:8px}
+.btn-submit:hover{background:var(--orange2)}
+.btn-submit:disabled{background:#333;color:var(--muted);cursor:not-allowed}
+.security-note{font-size:.74rem;color:var(--muted);text-align:center;margin-top:12px}
+.success-screen{display:none;text-align:center;padding:40px 0}
+.success-icon{font-size:3.5rem;margin-bottom:20px}
+.success-title{font-family:var(--font-d);font-size:2.2rem;margin-bottom:12px}
+.success-body{font-size:.9rem;color:var(--muted);line-height:1.75;margin-bottom:32px}
+.btn-payment{display:block;background:var(--orange);color:#fff;font-weight:700;font-size:1rem;padding:17px;border-radius:4px;text-decoration:none;transition:background .2s;margin-bottom:12px}
+.btn-payment:hover{background:var(--orange2)}
+.pay-note{font-size:.78rem;color:var(--muted);line-height:1.6}
+.pay-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.pay-step{display:flex;align-items:flex-start;gap:12px;background:#1a1a1a;border:1px solid var(--border);border-radius:4px;padding:12px 14px}
+.pay-step-num{background:var(--orange);color:#fff;font-weight:800;font-size:.8rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pay-step-text{font-size:.83rem;color:#bbb;line-height:1.6}
+.pay-step-text strong{color:var(--white)}
+.divider{text-align:center;font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:14px 0 12px;position:relative}
+.divider::before,.divider::after{content:"";position:absolute;top:50%;width:38%;height:1px;background:var(--border)}
+.divider::before{left:0}.divider::after{right:0}
+.btn-whatsapp{display:block;text-align:center;background:#25d366;color:#fff;font-weight:700;font-size:1rem;padding:16px;border-radius:4px;text-decoration:none}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<header>
+  <div class="logo">WILL<span>GOMES</span>FIT</div>
+</header>
+<div class="container">
+  <div id="form-screen">
+    <h1>CONFIRME<br>SEU PEDIDO</h1>
+    <p class="desc">Preencha seus dados para finalizar. Após o pagamento, você receberá um questionário completo para montagem do seu programa personalizado.</p>
+
+    <div class="plan-box">
+      <div class="plan-name" id="plan-display">Carregando...</div>
+      <div class="plan-price" id="price-display"></div>
+    </div>
+
+    <form id="main-form">
+      <div class="form-group">
+        <label>Nome completo <span class="req">*</span></label>
+        <input type="text" id="nome" required placeholder="Seu nome completo"/>
+      </div>
+      <div class="form-group">
+        <label>E-mail <span class="req">*</span></label>
+        <input type="email" id="email" required placeholder="seu@email.com"/>
+      </div>
+      <div class="form-group">
+        <label>WhatsApp <span class="req">*</span></label>
+        <input type="tel" id="whatsapp" required placeholder="(85) 99999-9999"/>
+      </div>
+      <input type="hidden" id="plano-hidden"/>
+      <input type="hidden" id="tipo-hidden"/>
+      <button type="submit" class="btn-submit" id="btn-enviar">Confirmar e ir para o pagamento →</button>
+      <p class="security-note">🔒 Seus dados são usados apenas para identificação do pedido.</p>
+    </form>
+  </div>
+
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon">✅</div>
+    <div class="success-title">DADOS CONFIRMADOS!</div>
+    <p class="success-body">Agora finalize o pagamento. Após confirmar, envie o comprovante pelo WhatsApp e aguarde o link do questionário completo.</p>
+    <div class="pay-steps">
+      <div class="pay-step"><div class="pay-step-num">1</div><div class="pay-step-text">Clique em <strong>Ir para o pagamento</strong> e conclua na página segura.</div></div>
+      <div class="pay-step"><div class="pay-step-num">2</div><div class="pay-step-text">Após pagar, <strong>envie o comprovante pelo WhatsApp</strong>.</div></div>
+      <div class="pay-step"><div class="pay-step-num">3</div><div class="pay-step-text">Após confirmação, você receberá o <strong>link do questionário completo</strong> para montagem do seu programa.</div></div>
+    </div>
+    <a href="#" id="payment-link" class="btn-payment" target="_blank">Ir para o pagamento →</a>
+    <div class="divider">Já pagou?</div>
+    <a id="wa-link" href="#" target="_blank" class="btn-whatsapp">💬 Enviar comprovante pelo WhatsApp</a>
+    <p class="pay-note" style="margin-top:12px">Guarde o comprovante. Will confirmará e enviará o questionário completo em breve.</p>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3l-F9cQqgcrpZCppDoxW8vAVe79Z4cNWr4_tw7mwX0phvkdsX8Y4rclzzmrAchwxW/exec';
+
+const payLinks = {
+  'Ficha Start': 'https://mpago.la/2dneDyK',
+  'Ficha Premium': 'https://mpago.la/2cibGzr',
+  'Ficha Evolução': 'https://mpago.la/2CgKtmY',
+  'Acompanhamento Start': 'https://mpago.la/2whVyDp',
+  'Acompanhamento Performance': 'https://mpago.la/24PYJiF',
+  'Acompanhamento Elite': 'https://mpago.la/1WL4Ai6',
+  'Performance Trimestral': 'https://mpago.la/17yWVVF',
+  'Performance Semestral': 'https://mpago.la/2rXTG5A',
+  'Guia Nutricional': 'https://mpago.la/2GPrLku',
+};
+
+const prices = {
+  'Ficha Start': 'R$ 29,90','Ficha Premium': 'R$ 69,90','Ficha Evolução': 'R$ 99,90',
+  'Acompanhamento Start': 'R$ 79,90','Acompanhamento Performance': 'R$ 119,90',
+  'Acompanhamento Elite': 'R$ 169,90','Performance Trimestral': 'R$ 249,90',
+  'Performance Semestral': 'R$ 499,90','Guia Nutricional': 'R$ 29,90',
+};
+
+// Ler plano da URL
+const params = new URLSearchParams(window.location.search);
+const plano = params.get('plano') || 'Ficha Start';
+const tipo = params.get('tipo') || 'Ficha de Treino';
+
+document.getElementById('plan-display').textContent = plano;
+document.getElementById('price-display').textContent = prices[plano] || '';
+document.getElementById('plano-hidden').value = plano;
+document.getElementById('tipo-hidden').value = tipo;
+
+document.getElementById('main-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  const nome = document.getElementById('nome').value;
+  const email = document.getElementById('email').value;
+  const whatsapp = document.getElementById('whatsapp').value;
+
+  const data = {
+    tipo: tipo,
+    plano: plano,
+    nome, email, whatsapp,
+    data_envio: new Date().toLocaleString('pt-BR'),
+    obs: 'Questionário básico — aguardando pagamento',
+    // Campos vazios para compatibilidade com o script
+    objetivo:'—',nivel:'—',dias:'—',local:'—',peso:'—',altura:'—',
+    lesao:'—',idade:'—',sexo:'—',profissao:'—',emergencia:'—',
+    tempo_sessao:'—',historico:'—',preferencia_exercicio:'—',
+    doenca:'—',sensacoes:'—',medicamento:'—',historico_familiar:'—',
+    cirurgia:'—',sono:'—',estresse:'—',alcool:'—',fuma:'—',
+    hidratacao:'—',suplemento:'—',objetivo_detalhe:'—',
+    // Acompanhamento
+    personal:'—',desafio:'—',avaliacao_fisica:'—',refeicoes:'—',horario_chamada:'—',
+    cintura:'—',quadril:'—',
+    // Nutricional
+    atividade:'—',tipo_exercicio:'—',horario_refeicoes:'—',come_fora:'—',
+    historico_dieta:'—',experiencia_dieta:'—',restricao:'—',nao_come:'—',
+    preferidos:'—',estilo_alimentar:'—',condicao_saude:'—',intestino:'—',
+  };
+
+  // 1. Salvar no Supabase para aparecer no painel
+  const clienteId = Date.now().toString();
+  try {
+    if(window.supabase) {
+      const sb = window.supabase.createClient('https://fkpgehyjwxkoyhdbhtva.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcGdlaHlqd3hrb3loZGJodHZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDE5MTQsImV4cCI6MjA5ODE3NzkxNH0.dPJGKvw0KIOOwAC-xf0djgixVSpz8J9S-L-gFsth1xk');
+      await sb.from('clientes').upsert({
+        id: clienteId,
+        email: email,
+        nome: nome,
+        status: 'pendente',
+        pagamento_confirmado: false,
+        plano: plano,
+        dados: { nome, email, whatsapp, plano, tipo, criado_em: new Date().toISOString(), data_envio: new Date().toLocaleString('pt-BR') },
+        criado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString(),
+      });
+    }
+  } catch(err) { console.warn('Supabase:', err); }
+  // 2. Enviar e-mail
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+  } catch(err) {}
+
+  // Montar mensagem WhatsApp
+  const msg = encodeURIComponent(
+    'Olá Will! Acabei de realizar o pagamento do plano *' + plano + '*. ' +
+    'Meu nome é *' + nome + '*. Segue o comprovante!'
+  );
+  const waUrl = 'https://wa.me/5585989383246?text=' + msg;
+
+  document.getElementById('payment-link').href = payLinks[plano] || '#';
+  document.getElementById('wa-link').href = waUrl;
+  document.getElementById('form-screen').style.display = 'none';
+  document.getElementById('success-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+});
+</script>
+</body>
+</html>
