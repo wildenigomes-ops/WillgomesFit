@@ -1233,15 +1233,15 @@ const EX = [{"cod": "EX001", "nome": "Supino Reto Barra", "grupo": "Peitoral", "
 
 function prescreverTreino(){
   // ══════════════════════════════════════════════════════════════════════════
-  // WILLGOMESFIT PRESCRIPTION ENGINE v3.0
-  // Base científica (Junho 2026):
-  // • ACSM 2026 Position Stand — Currier et al. (137 revisões, 30.000+ participantes)
-  // • Schoenfeld BJ 2010/2024 — mecanismos de hipertrofia (J Strength Cond Res)
-  // • Dr. Mike Israetel / RP Strength — Volume Landmarks (MEV/MAV/MRV)
-  // • Singer et al. 2024 — intervalos entre séries (Front Sports Act Living)
-  // • Greg Nuckols / Stronger by Science — progressão dupla e sobrecarga
-  // • Dr. Eric Helms 2016 — RPE/RIR Scale
-  // • ISSN Position Stand — proteína e exercício
+  // WILLGOMESFIT PRESCRIPTION ENGINE v3.1 — Com diferenciação por gênero
+  // Base científica:
+  // • ACSM 2026 Position Stand — Currier et al. (137 revisões, >30.000 participantes)
+  // • Schoenfeld BJ 2010/2024 — mecanismos de hipertrofia
+  // • Israetel/RP Strength — Volume Landmarks (MEV/MAV/MRV)
+  // • Diferenciação por gênero: Calatayud et al. 2020 | Baz-Valle et al. 2022
+  //   Mulheres: maior proporção de fibras tipo I, maior tolerância ao volume,
+  //   preferência e maior potencial de hipertrofia em glúteos/pernas
+  //   Homens: maior potencial absoluto em membros superiores e tronco
   // ══════════════════════════════════════════════════════════════════════════
 
   const an  = MOTOR_D.anamnese || {};
@@ -1255,11 +1255,15 @@ function prescreverTreino(){
   const dores  = (an['an-dores']  || '').toLowerCase();
   const dias   = parseInt(an['an-dias']) || 4;
 
-  // ── 1. PARÂMETROS POR NÍVEL ──────────────────────────────────────────────
-  // ACSM 2026: volume ≥10 séries/grupo/semana é o threshold mínimo de hipertrofia
-  // Israelatem (RP Strength): MEV/MAV/MRV variam por nível de treinamento
-  // Schoenfeld 2010: hipertrofia ocorre com 30–100% 1RM quando próximo à falha
-  // Singer et al. 2024: intervalos >60s favorecem hipertrofia vs <60s
+  // ── SEXO — determina foco e distribuição de volume ───────────────────────
+  // Evidência: mulheres têm ~67% mais fibras tipo I nos membros inferiores
+  // Glúteo máximo feminino responde melhor a volume maior (Contreras et al. 2015)
+  // Homens: maior potencial de hipertrofia em peitoral, ombros e braços
+  const sexoRaw = (cl['c-sexo'] || '').toLowerCase();
+  const isFem   = sexoRaw.includes('fem') || sexoRaw.includes('mulher') || sexoRaw === 'f';
+  const sexo    = isFem ? 'F' : 'M';
+
+  // ── PARÂMETROS POR NÍVEL ──────────────────────────────────────────────────
   const nivelMap = {
     'Sedentario':    { series:'2–3', reps:'12–15', desc:'60s',  rir:'3–4', mev:6,  mav:12, mrv:16 },
     'Iniciante':     { series:'3',   reps:'10–15', desc:'75s',  rir:'2–3', mev:8,  mav:14, mrv:18 },
@@ -1269,11 +1273,8 @@ function prescreverTreino(){
   };
   const p = nivelMap[nivel] || nivelMap['Iniciante'];
 
-  // ── 2. AJUSTE POR OBJETIVO ───────────────────────────────────────────────
-  // ACSM 2026: rep range NÃO é variável independente quando esforço é controlado
-  // Para força máxima: cargas >80% 1RM | Para resistência: >15 reps
+  // ── AJUSTE POR OBJETIVO ───────────────────────────────────────────────────
   let repsObj = p.reps, seriesObj = p.series, descObj = p.desc;
-
   const isEmagr  = obj.includes('emagrecimento') || obj.includes('condicionamento');
   const isForca  = obj.includes('forca');
   const isHipert = obj.includes('hipertrofia') || obj.includes('massa') || obj.includes('recomposicao');
@@ -1284,11 +1285,12 @@ function prescreverTreino(){
   if(isHipert) { repsObj='6–12';  seriesObj='3–4'; descObj='90s';  }
   if(isPerf)   { repsObj='5–10';  seriesObj='3–4'; descObj='90s';  }
 
+  // Mulheres: faixa de reps ligeiramente mais alta para membros inferiores
+  // (maior proporção fibras tipo I — resistentes à fadiga)
+  const repsInfFem = isEmagr ? '15–25' : isForca ? '6–10' : '10–15';
   const rir = p.rir;
 
-  // ── 3. FILTRO EQUIPAMENTO ────────────────────────────────────────────────
-  // ACSM 2026: tipo de equipamento NÃO é variável primária de resultado
-  // Elásticos, halteres, máquinas, barras → resultados similares com volume/esforço iguais
+  // ── FILTRO EQUIPAMENTO ────────────────────────────────────────────────────
   const equipMap = {
     'peso corporal':        ['Peso corporal'],
     'casa com halteres':    ['Halter','Peso corporal','Elástico'],
@@ -1300,20 +1302,18 @@ function prescreverTreino(){
     if(equip.includes(k.split(' ')[0]) && k!=='academia completa'){ equipFiltro=v; break; }
   }
 
-  // ── 4. CONTRAINDICAÇÕES ──────────────────────────────────────────────────
+  // ── CONTRAINDICAÇÕES ──────────────────────────────────────────────────────
   const bloqueados = [];
   if(lesoes.includes('joelho')||dores.includes('joelho'))
-    bloqueados.push('Agachamento Livre Barra','Leg Press 45°','Afundo com Barra');
+    bloqueados.push('Agachamento Livre Barra','Leg Press 45°','Afundo com Barra','Hack Squat');
   if(lesoes.includes('ombro')||dores.includes('ombro'))
-    bloqueados.push('Desenvolvimento com Barra','Elevação Frontal','Arnold Press');
+    bloqueados.push('Desenvolvimento com Barra','Elevação Frontal','Arnold Press','Supino Inclinado Barra');
   if(lesoes.includes('coluna')||lesoes.includes('lombar')||dores.includes('lombar'))
-    bloqueados.push('Levantamento Terra','Bom Dia','Hiperextensão Lombar');
+    bloqueados.push('Levantamento Terra','Bom Dia','Hiperextensão Lombar','Agachamento Livre Barra');
   if(lesoes.includes('punho')||lesoes.includes('cotovelo'))
-    bloqueados.push('Rosca Direta Barra','Tríceps Testa');
+    bloqueados.push('Rosca Direta Barra','Tríceps Testa','Supino com Barra');
 
-  // ── 5. BUSCA DE EXERCÍCIOS ───────────────────────────────────────────────
-  // ACSM 2026: exercícios prioritários PRIMEIRO na sessão = maiores ganhos
-  // Multiarticulares antes de isolados para maximizar tensão mecânica
+  // ── BUSCA DE EXERCÍCIOS ───────────────────────────────────────────────────
   function buscarEx(grupo, n){
     let pool = EX.filter(e=>{
       if(!e.grupo.toLowerCase().includes(grupo.toLowerCase())) return false;
@@ -1321,18 +1321,19 @@ function prescreverTreino(){
       if(equipFiltro && !equipFiltro.some(eq=>e.equipamento.toLowerCase().includes(eq.toLowerCase()))) return false;
       return true;
     });
-    // Priorizar multiarticulares (maior tensão mecânica por set - Schoenfeld 2024)
     const multi = pool.filter(e=>
-      e.equipamento&&(e.equipamento.includes('Barra')||e.equipamento.includes('Halter')||e.equipamento.includes('Máquina'))
+      e.equipamento&&(e.equipamento.includes('Barra')||e.equipamento.includes('Halter')||e.equipamento.includes('Máquina')||e.equipamento.includes('Cabo'))
     );
     const final = (multi.length >= n) ? multi : pool;
     return final.slice(0, n+3).sort(()=>Math.random()-0.5).slice(0,n);
   }
 
-  // ── 6. MONTAGEM DE BLOCO ─────────────────────────────────────────────────
+  // ── MONTAGEM DE BLOCO ─────────────────────────────────────────────────────
+  // Suporte a reps customizados por grupo (ex: repsInfFem para pernas/glúteos feminino)
   function montarBloco(id, nome, cor, grupos){
     const exercicios = [];
-    grupos.forEach(({g, n})=>{
+    grupos.forEach(({g, n, reps: repsCustom})=>{
+      const repsUsar = repsCustom || repsObj;
       buscarEx(g, n).forEach(ex=>{
         const info = EX.find(e=>e.nome===ex.nome) || ex;
         const ins  = (info.instrucao||info.obs||'').split('.')[0].substring(0,90);
@@ -1341,7 +1342,7 @@ function prescreverTreino(){
           grupo: ex.grupo||g,
           secundarios: info.secundarios||'',
           series:   seriesObj,
-          reps:     repsObj,
+          reps:     repsUsar,
           descanso: descObj,
           rir:      rir,
           obs:      ins || `Amplitude completa. RIR ${rir}.`,
@@ -1351,78 +1352,206 @@ function prescreverTreino(){
     return {id, nome, cor, exercicios, ex:exercicios};
   }
 
-  // ── 7. SPLITS POR DIAS DE TREINO ─────────────────────────────────────────
-  // ACSM 2026 + Schoenfeld: frequência 2x/semana por grupo = superior a 1x
-  // Splits validados pela prática e pesquisa:
-  //   ≤3 dias → Full Body (máxima frequência por grupo = ideal para iniciantes)
-  //   4 dias  → Upper/Lower (frequência 2x | ótimo para intermediários)
-  //   5-6 dias → Push/Pull/Legs (maior volume por sessão | avançados)
+  // ══════════════════════════════════════════════════════════════════════════
+  // SPLITS POR SEXO + DIAS DE TREINO
+  // ── MULHER: ÊNFASE MEMBROS INFERIORES (glúteos, pernas, core)
+  //    Volumes: Glúteo 16–22 sets/sem | Posterior 12–16 | Quadríceps 12–16
+  //    Referência: Contreras et al. 2015; Neto et al. 2020
+  // ── HOMEM: ÊNFASE MEMBROS SUPERIORES (peito, costas, ombros, braços)
+  //    Volumes: Peitoral 14–20 sets/sem | Costas 14–20 | Ombro 12–16
+  // ══════════════════════════════════════════════════════════════════════════
   let blocos;
+  const n = nivel==='Sedentario' ? 1 : nivel==='Iniciante' ? 2 : nivel==='Intermediario' ? 3 : 4;
 
-  if(dias <= 3){
-    const n = nivel==='Sedentario' ? 1 : 2;
-    blocos = [
-      montarBloco('A','TREINO A — FULL BODY (Ênfase Membros Superiores)','g',[
-        {g:'Peitoral',n},{g:'Costas',n},{g:'Ombro',n:Math.max(1,n-1)},{g:'Tríceps',n:1},{g:'Bíceps',n:1},
-      ]),
-      montarBloco('B','TREINO B — FULL BODY (Ênfase Membros Inferiores)','o',[
-        {g:'Quadríceps',n},{g:'Glúteos',n:Math.max(1,n-1)},{g:'Posterior de Coxa',n:Math.max(1,n-1)},{g:'Abdômen',n:1},
-      ]),
-      montarBloco('C','TREINO C — FULL BODY (Composto + Core)','g',[
-        {g:'Peitoral',n:Math.max(1,n-1)},{g:'Costas',n:Math.max(1,n-1)},{g:'Quadríceps',n},{g:'Panturrilha',n:1},{g:'Abdômen',n:1},
-      ]),
-    ];
-  } else if(dias === 4){
-    const n = nivel==='Intermediario'||nivel==='Avancado'||nivel==='MuitoAvancado' ? 3 : 2;
-    blocos = [
-      montarBloco('A','TREINO A — SUPERIOR EMPURRAR (Peito · Ombro · Tríceps)','g',[
-        {g:'Peitoral',n},{g:'Ombro',n:Math.max(1,n-1)},{g:'Tríceps',n:Math.max(1,n-1)},
-      ]),
-      montarBloco('B','TREINO B — INFERIOR (Quadríceps · Glúteos · Panturrilha)','o',[
-        {g:'Quadríceps',n},{g:'Glúteos',n:Math.max(1,n-1)},{g:'Panturrilha',n:1},
-      ]),
-      montarBloco('C','TREINO C — SUPERIOR PUXAR (Costas · Bíceps · Core)','g',[
-        {g:'Costas',n},{g:'Bíceps',n:Math.max(1,n-1)},{g:'Abdômen',n:1},
-      ]),
-      montarBloco('D','TREINO D — INFERIOR + POSTERIOR (Glúteos · Posterior · Abdômen)','o',[
-        {g:'Glúteos',n},{g:'Posterior de Coxa',n},{g:'Abdômen',n:1},
-      ]),
-    ];
+  if(isFem){
+    // ────────────────────────────────────────────────────────────────────────
+    // SPLITS FEMININOS — foco em glúteos, pernas, core + superior equilibrado
+    // ────────────────────────────────────────────────────────────────────────
+    if(dias <= 3){
+      // Full Body Feminino: mais ênfase inferior a cada treino
+      blocos = [
+        montarBloco('A','TREINO A — FULL BODY COM ÊNFASE INFERIOR','g',[
+          {g:'Glúteos',   n:n+1, reps:repsInfFem},
+          {g:'Quadríceps',n:n,   reps:repsInfFem},
+          {g:'Peitoral',  n:Math.max(1,n-1)},
+          {g:'Costas',    n:Math.max(1,n-1)},
+          {g:'Abdômen',   n:1},
+        ]),
+        montarBloco('B','TREINO B — FULL BODY COM ÊNFASE GLÚTEOS','o',[
+          {g:'Glúteos',         n:n+1, reps:repsInfFem},
+          {g:'Posterior de Coxa',n:n,  reps:repsInfFem},
+          {g:'Panturrilha',     n:1,   reps:'15–20'},
+          {g:'Ombro',           n:Math.max(1,n-1)},
+          {g:'Bíceps',          n:1},
+        ]),
+        montarBloco('C','TREINO C — FULL BODY COMPOSTO + CORE','g',[
+          {g:'Quadríceps',n:n,   reps:repsInfFem},
+          {g:'Glúteos',   n:n,   reps:repsInfFem},
+          {g:'Costas',    n:Math.max(1,n-1)},
+          {g:'Tríceps',   n:1},
+          {g:'Abdômen',   n:2},
+        ]),
+      ];
+    } else if(dias === 4){
+      // Upper/Lower Feminino: treino inferior com muito mais volume
+      blocos = [
+        montarBloco('A','TREINO A — INFERIOR ANTERIOR (Glúteos · Quadríceps)','g',[
+          {g:'Glúteos',   n:n+1, reps:repsInfFem},
+          {g:'Quadríceps',n:n,   reps:repsInfFem},
+          {g:'Panturrilha',n:1,  reps:'15–20'},
+          {g:'Abdômen',   n:1},
+        ]),
+        montarBloco('B','TREINO B — SUPERIOR (Costas · Ombro · Bíceps)','o',[
+          {g:'Costas', n:n},
+          {g:'Ombro',  n:Math.max(1,n-1)},
+          {g:'Bíceps', n:Math.max(1,n-1)},
+          {g:'Abdômen',n:1},
+        ]),
+        montarBloco('C','TREINO C — INFERIOR POSTERIOR (Glúteos · Posterior · Core)','g',[
+          {g:'Glúteos',          n:n+1, reps:repsInfFem},
+          {g:'Posterior de Coxa',n:n,   reps:repsInfFem},
+          {g:'Panturrilha',      n:1,   reps:'15–20'},
+          {g:'Abdômen',          n:2},
+        ]),
+        montarBloco('D','TREINO D — SUPERIOR (Peitoral · Tríceps · Ombro)','o',[
+          {g:'Peitoral',n:n},
+          {g:'Tríceps', n:Math.max(1,n-1)},
+          {g:'Ombro',   n:Math.max(1,n-1)},
+        ]),
+      ];
+    } else {
+      // PPL Feminino: 2 treinos de inferior para 1 de superior
+      blocos = [
+        montarBloco('A','TREINO A — GLÚTEOS & POSTERIOR (Pull Inferior)','g',[
+          {g:'Glúteos',          n:n+1, reps:repsInfFem},
+          {g:'Posterior de Coxa',n:n,   reps:repsInfFem},
+          {g:'Panturrilha',      n:1,   reps:'15–20'},
+          {g:'Abdômen',          n:1},
+        ]),
+        montarBloco('B','TREINO B — COSTAS & BÍCEPS (Pull Superior)','o',[
+          {g:'Costas', n:n},
+          {g:'Bíceps', n:Math.max(2,n-1)},
+          {g:'Abdômen',n:1},
+        ]),
+        montarBloco('C','TREINO C — QUADRÍCEPS & GLÚTEOS (Push Inferior)','g',[
+          {g:'Quadríceps',n:n,   reps:repsInfFem},
+          {g:'Glúteos',   n:n,   reps:repsInfFem},
+          {g:'Panturrilha',n:1,  reps:'15–20'},
+        ]),
+        montarBloco('D','TREINO D — PEITO · OMBRO · TRÍCEPS (Push Superior)','o',[
+          {g:'Peitoral',n:Math.max(2,n-1)},
+          {g:'Ombro',   n:Math.max(2,n-1)},
+          {g:'Tríceps', n:Math.max(2,n-1)},
+        ]),
+      ];
+    }
   } else {
-    const n = nivel==='Avancado'||nivel==='MuitoAvancado' ? 4 : 3;
-    blocos = [
-      montarBloco('A','TREINO A — PUSH (Peito · Ombro Frontal · Tríceps)','g',[
-        {g:'Peitoral',n},{g:'Ombro',n:Math.max(1,n-1)},{g:'Tríceps',n:Math.max(2,n-1)},
-      ]),
-      montarBloco('B','TREINO B — PULL (Costas · Bíceps · Antebraço)','o',[
-        {g:'Costas',n},{g:'Bíceps',n:Math.max(2,n-1)},{g:'Abdômen',n:1},
-      ]),
-      montarBloco('C','TREINO C — LEGS (Quadríceps · Posterior · Glúteos · Panturrilha)','g',[
-        {g:'Quadríceps',n},{g:'Posterior de Coxa',n:Math.max(2,n-1)},{g:'Glúteos',n:Math.max(2,n-1)},{g:'Panturrilha',n:1},
-      ]),
-      montarBloco('D','TREINO D — PUSH 2 (Ombro · Peito · Tríceps — volume especializado)','o',[
-        {g:'Ombro',n},{g:'Peitoral',n:Math.max(2,n-1)},{g:'Tríceps',n:Math.max(2,n-1)},
-      ]),
-    ];
+    // ────────────────────────────────────────────────────────────────────────
+    // SPLITS MASCULINOS — foco em membros superiores + inferior equilibrado
+    // ────────────────────────────────────────────────────────────────────────
+    if(dias <= 3){
+      blocos = [
+        montarBloco('A','TREINO A — FULL BODY (Ênfase Peito & Costas)','g',[
+          {g:'Peitoral',  n:n},
+          {g:'Costas',    n:n},
+          {g:'Quadríceps',n:Math.max(1,n-1)},
+          {g:'Ombro',     n:1},
+        ]),
+        montarBloco('B','TREINO B — FULL BODY (Ênfase Membros Inferiores)','o',[
+          {g:'Quadríceps',       n:n},
+          {g:'Glúteos',          n:Math.max(1,n-1)},
+          {g:'Posterior de Coxa',n:Math.max(1,n-1)},
+          {g:'Abdômen',          n:1},
+        ]),
+        montarBloco('C','TREINO C — FULL BODY (Ênfase Ombros & Braços)','g',[
+          {g:'Ombro',    n:n},
+          {g:'Bíceps',   n:Math.max(1,n-1)},
+          {g:'Tríceps',  n:Math.max(1,n-1)},
+          {g:'Peitoral', n:Math.max(1,n-1)},
+          {g:'Abdômen',  n:1},
+        ]),
+      ];
+    } else if(dias === 4){
+      blocos = [
+        montarBloco('A','TREINO A — SUPERIOR EMPURRAR (Peito · Ombro · Tríceps)','g',[
+          {g:'Peitoral',n:n},
+          {g:'Ombro',   n:Math.max(1,n-1)},
+          {g:'Tríceps', n:Math.max(1,n-1)},
+        ]),
+        montarBloco('B','TREINO B — INFERIOR (Quadríceps · Glúteos · Panturrilha)','o',[
+          {g:'Quadríceps',n:n},
+          {g:'Glúteos',   n:Math.max(1,n-1)},
+          {g:'Panturrilha',n:1},
+        ]),
+        montarBloco('C','TREINO C — SUPERIOR PUXAR (Costas · Bíceps · Core)','g',[
+          {g:'Costas',  n:n},
+          {g:'Bíceps',  n:Math.max(1,n-1)},
+          {g:'Abdômen', n:1},
+        ]),
+        montarBloco('D','TREINO D — INFERIOR + POSTERIOR (Posterior · Glúteos · Abdômen)','o',[
+          {g:'Quadríceps',       n:Math.max(2,n-1)},
+          {g:'Posterior de Coxa',n:n},
+          {g:'Glúteos',          n:Math.max(1,n-1)},
+          {g:'Abdômen',          n:2},
+        ]),
+      ];
+    } else {
+      blocos = [
+        montarBloco('A','TREINO A — PUSH (Peito · Ombro Frontal · Tríceps)','g',[
+          {g:'Peitoral',n:n},
+          {g:'Ombro',   n:Math.max(2,n-1)},
+          {g:'Tríceps', n:Math.max(2,n-1)},
+        ]),
+        montarBloco('B','TREINO B — PULL (Costas · Bíceps · Core)','o',[
+          {g:'Costas',  n:n},
+          {g:'Bíceps',  n:Math.max(2,n-1)},
+          {g:'Abdômen', n:1},
+        ]),
+        montarBloco('C','TREINO C — LEGS (Quadríceps · Posterior · Glúteos · Panturrilha)','g',[
+          {g:'Quadríceps',       n:n},
+          {g:'Posterior de Coxa',n:Math.max(2,n-1)},
+          {g:'Glúteos',          n:Math.max(2,n-1)},
+          {g:'Panturrilha',      n:1},
+        ]),
+        montarBloco('D','TREINO D — PUSH 2 (Ombro · Peitoral · Tríceps — especializado)','o',[
+          {g:'Ombro',   n:n},
+          {g:'Peitoral',n:Math.max(2,n-1)},
+          {g:'Tríceps', n:Math.max(2,n-1)},
+        ]),
+      ];
+    }
   }
 
-  // ── 8. NOTAS CIENTÍFICAS PERSONALIZADAS ──────────────────────────────────
-  const notas = [
-    `📊 Volume semanal alvo: ${p.mev}–${p.mav} séries/grupo/semana (MEV→MAV por nível)`,
-    `🎯 Proximidade à falha: pare ${rir} reps antes da falha (RIR ${rir}) — tão eficaz quanto a falha com menos fadiga`,
-    `📈 Progressão dupla: aumente reps (ex: 6→12), depois aumente carga e reinicie em 6 reps`,
-    `⏱️ Descanso entre séries: ${descObj} — mínimo 60s para hipertrofia (Singer et al. 2024)`,
-    `🔄 Frequência: cada grupo muscular deve ser treinado 2× por semana (ACSM 2026)`,
-    `📏 Amplitude: use amplitude completa de movimento — posição alongada maximiza hipertrofia`,
-    `🔋 Deload: a cada 4–6 semanas, reduza volume em 40–50% por 1 semana para supercompensação`,
-    `🥩 Proteína: 1.6–2.2g/kg/dia para hipertrofia | ${isEmagr?'2.3–3.1g/kg em déficit calórico':isForca?'1.8–2.4g/kg para força':'1.6–2.2g/kg/dia ideal para este objetivo'}`,
-    `🏋️ Prioridade: exercícios multiarticulares PRIMEIRO na sessão = maiores ganhos (ACSM 2026)`,
-    `Refs: ACSM 2026 (Currier et al.) | Schoenfeld 2010/2024 | Israetel/RP Strength | Singer et al. 2024 | ISSN`,
+  // ── NOTAS CIENTÍFICAS PERSONALIZADAS POR SEXO ────────────────────────────
+  const notasBase = [
+    `📊 Volume semanal alvo: ${p.mev}–${p.mav} séries/grupo/semana (MEV→MAV conforme nível)`,
+    `🎯 Proximidade à falha: pare ${rir} reps antes da falha (RIR ${rir}) — tão eficaz com menos fadiga`,
+    `📈 Progressão dupla: aumente reps até o limite da faixa, depois aumente carga e recomece`,
+    `⏱️ Descanso: ${descObj} entre séries (mínimo 60s para hipertrofia — Singer et al. 2024)`,
+    `🔄 Frequência: cada grupo muscular treinado 2× por semana (ACSM 2026)`,
+    `📏 Amplitude completa: posição de alongamento maximiza hipertrofia (ACSM 2026)`,
+    `🔋 Deload: a cada 4–6 semanas, reduza volume em 40–50% por 1 semana`,
+  ];
+
+  const notasSexo = isFem ? [
+    `👩 Foco feminino: glúteos e membros inferiores com volume superior (${Math.min(p.mav+4,26)} sets/sem para glúteo)`,
+    `👩 Reps inferiores: ${repsInfFem} reps — mulheres têm maior proporção de fibras tipo I nas pernas (Calatayud 2020)`,
+    `👩 Exercícios-chave: Hip Thrust, Agachamento, Stiff, Passada, Leg Curl, Abdutora`,
+    `🥩 Proteína: 1.8–2.0g/kg/dia — mulheres metabolizam proteína de forma eficiente para síntese muscular`,
+  ] : [
+    `👨 Foco masculino: membros superiores (peito, costas, ombros) com volume prioritário`,
+    `👨 Exercícios-chave: Supino, Barra Fixa, Desenvolvimento, Remada, Rosca, Tríceps`,
+    `👨 Volume superior: ${Math.min(p.mav+2,24)} sets/sem para peitoral e costas (maior potencial anabólico masculino)`,
+    `🥩 Proteína: 2.0–2.2g/kg/dia — testosterona + proteína otimizam síntese proteica muscular`,
+  ];
+
+  const notas = [...notasBase, ...notasSexo,
+    `Refs: ACSM 2026 · Schoenfeld 2010/2024 · Israetel/RP Strength · Calatayud et al. 2020 · Singer et al. 2024`
   ];
 
   const resultado = blocos;
-  resultado._notas = notas;
-  resultado._params = { nivel, repsObj, seriesObj, descObj, rir, dias, p };
+  resultado._notas  = notas;
+  resultado._params = { nivel, repsObj, seriesObj, descObj, rir, dias, p, sexo };
   return resultado;
 }
 function getTreinos(){
@@ -2029,6 +2158,28 @@ async function gerarRelatorioCliente(c){
       `).join('')}
     </div>
 
+    <!-- Dicas específicas por sexo -->
+    <div style="margin-top:10px;background:${sexo2==='F'?'rgba(236,72,153,.05)':'rgba(59,130,246,.05)'};border:1px solid ${sexo2==='F'?'rgba(236,72,153,.15)':'rgba(59,130,246,.15)'};border-radius:6px;padding:12px 14px">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${sexo2==='F'?'#ec4899':'#60a5fa'};margin-bottom:8px">${sexo2==='F'?'👩 DICAS NUTRICIONAIS FEMININAS':'👨 DICAS NUTRICIONAIS MASCULINAS'}</div>
+      <div style="font-size:.75rem;color:#aaa;line-height:1.8">
+        ${sexo2==='F' ? `
+        • <strong style="color:#fff">Ferro:</strong> mulheres perdem ferro na menstruação — consumir carnes vermelhas, feijão e vegetais escuros regularmente<br>
+        • <strong style="color:#fff">Cálcio:</strong> 1.000mg/dia essencial para saúde óssea e contração muscular — laticínios, brócolis, sardinha<br>
+        • <strong style="color:#fff">Ômega-3:</strong> EPA+DHA reduzem cólicas e inflamação pós-treino (meta-análise 2024)<br>
+        • <strong style="color:#fff">Calorias no ciclo:</strong> fase lútea (pré-menstrual) pode aumentar necessidade calórica em 100–300 kcal<br>
+        • <strong style="color:#fff">Proteína:</strong> ${Math.round(pFat2*0.9*10)/10}g/kg/dia — mulheres metabolizam proteína de forma mais eficiente<br>
+        • <strong style="color:#fff">Glúteo:</strong> enfatizar carnes magras e proteína pós-treino de pernas para maximizar hipertrofia glútea
+        ` : `
+        • <strong style="color:#fff">Zinco:</strong> essencial para síntese de testosterona — carnes vermelhas, frutos do mar, sementes de abóbora<br>
+        • <strong style="color:#fff">Vitamina D:</strong> 2.000–5.000 UI/dia — deficiência reduz testosterona e força (meta-análise 2024)<br>
+        • <strong style="color:#fff">Creatina:</strong> 5g/dia após o treino — maior benefício em homens pela maior massa muscular total<br>
+        • <strong style="color:#fff">Proteína:</strong> ${Math.round(pFat2*10)/10}g/kg/dia — testosterona amplifica síntese proteica pós-treino<br>
+        • <strong style="color:#fff">Carboidrato pós-treino:</strong> 1g/kg em até 2h — repõe glicogênio para próxima sessão de treino<br>
+        • <strong style="color:#fff">Sono e testosterona:</strong> 7–9h eleva testosterona em 15%; privação de 1 semana ↓ 10–15% (GSSI 2025)
+        `}
+      </div>
+    </div>
+
     <!-- Sono -->
     <div style="margin-top:10px;background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.15);border-radius:6px;padding:12px 14px">
       <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#60a5fa;margin-bottom:8px">😴 Sono — Fator Nutricional Crítico</div>
@@ -2046,6 +2197,746 @@ async function gerarRelatorioCliente(c){
       <span style="color:var(--muted)">Todas as substituições foram consideradas. Informe ao cliente para ajustes adicionais.</span>
     </div>` : ''}
   `;
+}
+
+
+// ── EXPORTAR FICHA DE TREINO ──────────────────────────────────────────────
+async function exportarFichaTreinoCompleta(){
+  if(!window.docx){ notif('Carregando biblioteca Word...','#eab308'); return; }
+  const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,
+         AlignmentType,WidthType,BorderStyle,VerticalAlign,HeadingLevel,
+         ShadingType,convertInchesToTwip} = docx;
+  const c = clienteAtual;
+  if(!c){ notif('Nenhum cliente selecionado.','#ef4444'); return; }
+  if(!c._questionario){ notif('Questionário não recebido ainda.','#ef4444'); return; }
+
+  prescreverTreino();
+  const treinos = getTreinos();
+  const treinosComEx = (treinos||[]).filter(t=>(t.exercicios||t.ex||[]).length>0);
+  if(!treinosComEx.length){ notif('Nenhum exercício gerado.','#ef4444'); return; }
+
+  const an   = MOTOR_D.anamnese||{};
+  const cl   = MOTOR_D.cliente||{};
+  const prms = treinos._params||{};
+  const notas = treinos._notas||[];
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const nomeCliente = c.nome||'Cliente';
+
+  // ── CORES E ESTILOS ──────────────────────────────────────────────────────
+  const LARANJA  = 'E85D04';  // WillgomesFit orange
+  const VERDE    = '2D6A4F';  // verde escuro profissional
+  const CINZA_TH = 'F0F0F0';  // fundo cabeçalho tabela
+  const CINZA_LN = 'F8F8F8';  // fundo linha alternada
+  const BRANCO   = 'FFFFFF';
+  const PRETO    = '1A1A1A';
+  const CINZA_MD = '555555';
+  const CINZA_LT = '999999';
+  const BORDA    = {style:BorderStyle.SINGLE, size:4, color:'DDDDDD'};
+  const BORDA_TH = {style:BorderStyle.SINGLE, size:6, color:'CCCCCC'};
+  const SEM      = {style:BorderStyle.NONE, size:0, color:'FFFFFF'};
+
+  // ── HELPERS ───────────────────────────────────────────────────────────────
+  function p(text, opts={}){
+    const runs = Array.isArray(text) ? text : [new TextRun({
+      text: String(text||''), size: opts.size||20,
+      bold: opts.bold||false, italics: opts.italics||false,
+      color: opts.color||PRETO,
+      font: opts.font||'Calibri',
+    })];
+    return new Paragraph({
+      children: Array.isArray(text) ? text : runs,
+      alignment: opts.align||AlignmentType.LEFT,
+      spacing: {before: opts.before||0, after: opts.after||60, line: opts.line||276},
+      indent: opts.indent ? {left: opts.indent} : undefined,
+      border: opts.border||undefined,
+    });
+  }
+
+  function cell(children, opts={}){
+    return new TableCell({
+      children: Array.isArray(children) ? children : [children],
+      shading: opts.bg ? {type:ShadingType.CLEAR, color:'auto', fill:opts.bg} : undefined,
+      verticalAlign: opts.va||VerticalAlign.CENTER,
+      borders: opts.borders||{
+        top: BORDA, bottom: BORDA, left: BORDA, right: BORDA,
+      },
+      margins: {top:60, bottom:60, left:80, right:80},
+      width: opts.width ? {size:opts.width, type:WidthType.PERCENTAGE} : undefined,
+      columnSpan: opts.span||undefined,
+    });
+  }
+
+  function divider(color=LARANJA, espessura=12){
+    return p('', {border:{bottom:{style:BorderStyle.SINGLE,size:espessura,color}}, after:120, before:60});
+  }
+
+  // ── LINHA SEPARADORA DECORATIVA ───────────────────────────────────────────
+  function separador(){
+    return new Table({
+      width:{size:9360, type:WidthType.DXA},
+      rows:[new TableRow({children:[
+        new TableCell({
+          children:[p('')],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:LARANJA},
+          borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+          margins:{top:0,bottom:0,left:0,right:0},
+          width:{size:20,type:WidthType.PERCENTAGE},
+        }),
+        new TableCell({
+          children:[p('')],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:'EEEEEE'},
+          borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+          margins:{top:0,bottom:0,left:0,right:0},
+          width:{size:80,type:WidthType.PERCENTAGE},
+        }),
+      ]}],
+    });
+  }
+
+  // ── CABEÇALHO DO DOCUMENTO ────────────────────────────────────────────────
+  const headerTable = new Table({
+    width:{size:9360,type:WidthType.DXA},
+    rows:[new TableRow({children:[
+      // Logo/marca
+      new TableCell({
+        children:[
+          p('WILLGOMESFIT',{size:36,bold:true,color:LARANJA,align:AlignmentType.LEFT,after:0}),
+          p('Personal Trainer Online',{size:16,color:CINZA_LT,align:AlignmentType.LEFT,after:0}),
+          p('professorwillgomes@gmail.com',{size:15,color:CINZA_MD,align:AlignmentType.LEFT}),
+        ],
+        borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+        margins:{top:0,bottom:0,left:0,right:0},
+        width:{size:60,type:WidthType.PERCENTAGE},
+      }),
+      // Info do cliente
+      new TableCell({
+        children:[
+          p('FICHA DE TREINO',{size:22,bold:true,color:BRANCO,align:AlignmentType.RIGHT,after:0}),
+          p(nomeCliente,{size:18,bold:true,color:BRANCO,align:AlignmentType.RIGHT,after:0}),
+          p(`Gerado em ${hoje}`,{size:14,color:'FFCCAA',align:AlignmentType.RIGHT}),
+        ],
+        shading:{type:ShadingType.CLEAR,color:'auto',fill:LARANJA},
+        borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+        margins:{top:120,bottom:120,left:120,right:120},
+        width:{size:40,type:WidthType.PERCENTAGE},
+      }),
+    ]}],
+  });
+
+  // ── CARDS DE DADOS DO CLIENTE ─────────────────────────────────────────────
+  const dadosObj = [
+    ['Plano', c.plano||'—'],
+    ['Nível', an.nivel||'—'],
+    ['Objetivo', (an.objetivo||[]).join(' + ')||'—'],
+    ['Disponibilidade', (an['an-dias']||'—')+' dias · '+(an['an-dur']||'—')],
+  ];
+  const dadosTable = new Table({
+    width:{size:9360,type:WidthType.DXA},
+    rows:[new TableRow({
+      children: dadosObj.map(([label, valor])=>new TableCell({
+        children:[
+          p(label,{size:13,color:CINZA_LT,bold:false,after:0}),
+          p(valor,{size:18,bold:true,color:PRETO,after:0}),
+        ],
+        shading:{type:ShadingType.CLEAR,color:'auto',fill:CINZA_LN},
+        borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+        margins:{top:80,bottom:80,left:120,right:120},
+        width:{size:25,type:WidthType.PERCENTAGE},
+      }))
+    })]
+  });
+
+  // ── FUNÇÃO PARA MONTAR TABELA DE EXERCÍCIOS ───────────────────────────────
+  function tabelaExercicios(exercicios){
+    // Cabeçalho
+    const cabecalhos = [
+      ['#',    4 ],
+      ['EXERCÍCIO', 27],
+      ['SÉRIES',12],
+      ['REPS',  12],
+      ['DESCANSO',13],
+      ['RIR',   8 ],
+      ['OBSERVAÇÕES',16],
+      ['IMAGEM',8 ],
+    ];
+
+    const thRow = new TableRow({
+      tableHeader: true,
+      children: cabecalhos.map(([txt,pct])=>new TableCell({
+        children:[p(txt,{size:14,bold:true,color:BRANCO,align:AlignmentType.CENTER,after:0,before:0})],
+        shading:{type:ShadingType.CLEAR,color:'auto',fill:VERDE},
+        borders:{top:BORDA_TH,bottom:BORDA_TH,left:BORDA_TH,right:BORDA_TH},
+        margins:{top:80,bottom:80,left:80,right:80},
+        width:{size:pct,type:WidthType.PERCENTAGE},
+        verticalAlign:VerticalAlign.CENTER,
+      })),
+    });
+
+    const exRows = exercicios.map((e,i)=>{
+      const bg = i%2===0 ? BRANCO : CINZA_LN;
+      const exInfo = (typeof EX!=='undefined'?EX:[]).find(ex=>ex.nome===e.nome)||{};
+      const obs = (exInfo.instrucao||e.obs||'Amplitude completa de movimento').split('.')[0].substring(0,70);
+      const grupo = exInfo.secundarios ? `(${exInfo.secundarios})` : '';
+
+      return new TableRow({children:[
+        // #
+        new TableCell({
+          children:[p(String(i+1),{size:18,bold:true,color:LARANJA,align:AlignmentType.CENTER,after:0})],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:bg},
+          borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+          margins:{top:80,bottom:80,left:60,right:60},
+          verticalAlign:VerticalAlign.CENTER,
+          width:{size:4,type:WidthType.PERCENTAGE},
+        }),
+        // Exercício + grupo muscular
+        new TableCell({
+          children:[
+            p(e.nome||'—',{size:18,bold:true,color:PRETO,after:0}),
+            grupo ? p(grupo,{size:13,color:CINZA_LT,italics:true,after:0}) : p('',{size:8,after:0}),
+          ],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:bg},
+          borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+          margins:{top:80,bottom:80,left:100,right:80},
+          verticalAlign:VerticalAlign.CENTER,
+          width:{size:27,type:WidthType.PERCENTAGE},
+        }),
+        // Séries
+        new TableCell({
+          children:[p(e.series||e.s||'3–4',{size:20,bold:true,color:VERDE,align:AlignmentType.CENTER,after:0})],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:bg},
+          borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+          margins:{top:80,bottom:80,left:60,right:60},
+          verticalAlign:VerticalAlign.CENTER,
+          width:{size:12,type:WidthType.PERCENTAGE},
+        }),
+        // Reps
+        new TableCell({
+          children:[p(e.reps||e.r||'8–12',{size:20,bold:true,color:VERDE,align:AlignmentType.CENTER,after:0})],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:bg},
+          borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+          margins:{top:80,bottom:80,left:60,right:60},
+          verticalAlign:VerticalAlign.CENTER,
+          width:{size:12,type:WidthType.PERCENTAGE},
+        }),
+        // Descanso
+        new TableCell({
+          children:[p(e.descanso||e.d||'90s',{size:18,color:CINZA_MD,align:AlignmentType.CENTER,after:0})],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:bg},
+          borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+          margins:{top:80,bottom:80,left:60,right:60},
+          verticalAlign:VerticalAlign.CENTER,
+          width:{size:13,type:WidthType.PERCENTAGE},
+        }),
+        // RIR
+        new TableCell({
+          children:[p(e.rir||'1–3',{size:16,bold:true,color:LARANJA,align:AlignmentType.CENTER,after:0})],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:bg},
+          borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+          margins:{top:80,bottom:80,left:60,right:60},
+          verticalAlign:VerticalAlign.CENTER,
+          width:{size:8,type:WidthType.PERCENTAGE},
+        }),
+        // Observações
+        new TableCell({
+          children:[p(obs,{size:14,color:CINZA_MD,italics:false,after:0})],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:bg},
+          borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+          margins:{top:80,bottom:80,left:80,right:80},
+          verticalAlign:VerticalAlign.CENTER,
+          width:{size:16,type:WidthType.PERCENTAGE},
+        }),
+        // Imagem
+        new TableCell({
+          children:[
+            p('',{after:0}),
+            p('📷',{size:22,align:AlignmentType.CENTER,after:0}),
+            p('inserir',{size:12,color:CINZA_LT,italics:true,align:AlignmentType.CENTER,after:0}),
+            p('imagem',{size:12,color:CINZA_LT,italics:true,align:AlignmentType.CENTER,after:0}),
+            p('',{after:0}),
+          ],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:'FFF8F5'},
+          borders:{
+            top:{style:BorderStyle.DASHED,size:6,color:LARANJA},
+            bottom:{style:BorderStyle.DASHED,size:6,color:LARANJA},
+            left:{style:BorderStyle.DASHED,size:6,color:LARANJA},
+            right:{style:BorderStyle.DASHED,size:6,color:LARANJA},
+          },
+          margins:{top:60,bottom:60,left:60,right:60},
+          verticalAlign:VerticalAlign.CENTER,
+          width:{size:8,type:WidthType.PERCENTAGE},
+        }),
+      ]});
+    });
+
+    return new Table({
+      width:{size:9360,type:WidthType.DXA},
+      rows:[thRow,...exRows],
+    });
+  }
+
+  // ── MONTAR DOCUMENTO ──────────────────────────────────────────────────────
+  const children = [
+    headerTable,
+    p('',{after:80}),
+    dadosTable,
+    p('',{after:160}),
+  ];
+
+  treinosComEx.forEach((t,idx)=>{
+    // Título do treino
+    children.push(new Table({
+      width:{size:9360,type:WidthType.DXA},
+      rows:[new TableRow({children:[
+        new TableCell({
+          children:[p(t.nome,{size:24,bold:true,color:BRANCO,after:0,before:0})],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:VERDE},
+          borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+          margins:{top:100,bottom:100,left:160,right:160},
+        }),
+      ]})]
+    }));
+    children.push(p('',{after:60}));
+    children.push(tabelaExercicios(t.exercicios||t.ex||[]));
+    children.push(p('',{after:220}));
+  });
+
+  // Princípios científicos
+  children.push(new Table({
+    width:{size:9360,type:WidthType.DXA},
+    rows:[new TableRow({children:[
+      new TableCell({
+        children:[p('PRINCÍPIOS DO PROGRAMA',{size:16,bold:true,color:BRANCO,after:0})],
+        shading:{type:ShadingType.CLEAR,color:'auto',fill:LARANJA},
+        borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+        margins:{top:80,bottom:80,left:160,right:160},
+      }),
+    ]})]
+  }));
+  children.push(p('',{after:60}));
+  notas.forEach(n=>{
+    const txt = n.replace(/^[📊🎯📈⏱️🔄📏🔋🥩🏋️]/u,'').trim();
+    children.push(p('• '+txt,{size:16,color:CINZA_MD,indent:200,after:50}));
+  });
+  children.push(p('',{after:80}));
+  children.push(p('Referências: ACSM 2026 Position Stand (137 revisões, >30.000 participantes) · Schoenfeld 2010/2024 · Israetel/RP Strength · Singer et al. 2024',{size:13,color:CINZA_LT,italics:true,after:200}));
+
+  // Rodapé
+  children.push(new Table({
+    width:{size:9360,type:WidthType.DXA},
+    rows:[new TableRow({children:[
+      new TableCell({
+        children:[
+          p('WillgomesFit — Consultoria de Treino e Nutrição Esportiva',{size:16,bold:true,color:LARANJA,after:0}),
+          p(`Documento gerado em ${hoje} | @willgomesfit`,{size:14,color:CINZA_LT,after:0}),
+        ],
+        shading:{type:ShadingType.CLEAR,color:'auto',fill:'F5F5F5'},
+        borders:{top:{style:BorderStyle.SINGLE,size:8,color:LARANJA},bottom:SEM,left:SEM,right:SEM},
+        margins:{top:120,bottom:100,left:160,right:160},
+      }),
+    ]})]
+  }));
+
+  const doc = new Document({
+    styles:{
+      default:{
+        document:{run:{font:'Calibri',size:20,color:PRETO}},
+      }
+    },
+    sections:[{
+      properties:{
+        page:{
+          margin:{top:720,right:720,bottom:720,left:720},
+        }
+      },
+      children
+    }]
+  });
+
+  const buf = await Packer.toBuffer(doc);
+  const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url;
+  a.download=`WillgomesFit_${nomeCliente.replace(/\s+/g,'_')}_FichaTreino_${hoje.replace(/\//g,'-')}.docx`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  notif('✅ Ficha de treino exportada!');
+}
+
+async function exportarGuiaWord(){
+  if(!window.docx){ notif('Carregando biblioteca Word...','#eab308'); return; }
+  const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,
+         AlignmentType,WidthType,BorderStyle,VerticalAlign,ShadingType} = docx;
+  const c = clienteAtual;
+  if(!c){ notif('Nenhum cliente selecionado.','#ef4444'); return; }
+  if(!c._questionario){ notif('Questionário não recebido ainda.','#ef4444'); return; }
+
+  const nu = MOTOR_D.nutricao||{};
+  const an = MOTOR_D.anamnese||{};
+  const cl = MOTOR_D.cliente||{};
+
+  // Cores profissionais
+  const LARANJA = 'E85D04';
+  const VERDE   = '2D6A4F';
+  const AZUL    = '1A5276';
+  const AMARELO = 'B7950B';
+  const PRETO   = '1A1A1A';
+  const CINZA_M = '555555';
+  const CINZA_L = '999999';
+  const CINZA_F = 'F8F8F8';
+  const BRANCO  = 'FFFFFF';
+  const BORDA   = {style:BorderStyle.SINGLE,size:4,color:'DDDDDD'};
+  const BORDA_H = {style:BorderStyle.SINGLE,size:6,color:'CCCCCC'};
+  const SEM     = {style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+
+  const sexo   = (cl['c-sexo']||'Masculino').toLowerCase().includes('fem') ? 'F' : 'M';
+  const peso   = parseFloat(cl['c-peso']||c.peso||75);
+  const altura = parseFloat(cl['c-altura']||c.altura||175);
+  const nasc   = cl['c-nasc']||'';
+  const idade  = nasc ? Math.max(18,Math.floor((new Date()-new Date(nasc))/31557600000)) : 30;
+  const nivel  = an.nivel||'Iniciante';
+  const nutobj = nu['nu-obj']||'Hipertrofia';
+  const no     = nutobj.toLowerCase();
+  const restr  = nu['nu-rest']||'Nenhuma';
+  const supl   = nu['nu-supl']||'Nenhum';
+  const hoje   = new Date().toLocaleDateString('pt-BR');
+
+  // TMB Mifflin-St Jeor
+  const tmb  = Math.round(sexo==='M'?(10*peso)+(6.25*altura)-(5*idade)+5:(10*peso)+(6.25*altura)-(5*idade)-161);
+  const fatAtiv = {'Sedentario':1.20,'Iniciante':1.375,'Intermediario':1.55,'Avancado':1.725,'MuitoAvancado':1.90};
+  const get  = Math.round(tmb*(fatAtiv[nivel]||1.55));
+  const isEm = no.includes('emagr')||no.includes('perda');
+  const isMa = no.includes('hipert')||no.includes('massa')||no.includes('ganho');
+  const meta = Math.round(isEm?get-400:isMa?get+300:get);
+  const tipoMeta = isEm?'Déficit (-400 kcal)':isMa?'Superávit (+300 kcal)':'Manutenção';
+  const pFat = isEm?2.2:isMa?1.8:2.0;
+  const protG = Math.round(pFat*peso);
+  const gordG = Math.round(meta*0.25/9);
+  const carbG = Math.round((meta-protG*4-gordG*9)/4);
+  const agua  = Math.round(35*peso/100)/10;
+  const protRef = Math.round(0.4*peso);
+
+  function p(text,opts={}){
+    return new Paragraph({
+      children:[new TextRun({text:String(text||''),size:opts.size||20,bold:opts.bold||false,
+        italics:opts.italics||false,color:opts.color||PRETO,font:'Calibri'})],
+      alignment:opts.align||AlignmentType.LEFT,
+      spacing:{before:opts.before||0,after:opts.after||60,line:276},
+      indent:opts.indent?{left:opts.indent}:undefined,
+    });
+  }
+
+  function c2(children,opts={}){
+    return new TableCell({
+      children:Array.isArray(children)?children:[children],
+      shading:opts.bg?{type:ShadingType.CLEAR,color:'auto',fill:opts.bg}:undefined,
+      verticalAlign:opts.va||VerticalAlign.CENTER,
+      borders:opts.borders||{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+      margins:{top:opts.mt||80,bottom:opts.mb||80,left:opts.ml||100,right:opts.mr||100},
+      width:opts.w?{size:opts.w,type:WidthType.PERCENTAGE}:undefined,
+      columnSpan:opts.span||undefined,
+    });
+  }
+
+  // ── CABEÇALHO ─────────────────────────────────────────────────────────────
+  const header = new Table({width:{size:9360,type:WidthType.DXA},rows:[
+    new TableRow({children:[
+      new TableCell({
+        children:[
+          p('WILLGOMESFIT',{size:36,bold:true,color:LARANJA,after:0}),
+          p('Personal Trainer Online',{size:15,color:CINZA_L,after:0}),
+          p('professorwillgomes@gmail.com',{size:14,color:CINZA_M}),
+        ],
+        borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+        margins:{top:0,bottom:0,left:0,right:0},
+        width:{size:60,type:WidthType.PERCENTAGE},
+      }),
+      new TableCell({
+        children:[
+          p('GUIA ALIMENTAR',{size:22,bold:true,color:BRANCO,align:AlignmentType.RIGHT,after:0}),
+          p(c.nome||'Cliente',{size:18,bold:true,color:BRANCO,align:AlignmentType.RIGHT,after:0}),
+          p(`Gerado em ${hoje}`,{size:14,color:'FFCCAA',align:AlignmentType.RIGHT}),
+        ],
+        shading:{type:ShadingType.CLEAR,color:'auto',fill:LARANJA},
+        borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+        margins:{top:120,bottom:120,left:120,right:120},
+        width:{size:40,type:WidthType.PERCENTAGE},
+      }),
+    ]}]
+  });
+
+  // ── CARDS DE DADOS ────────────────────────────────────────────────────────
+  const dadosRow = new Table({width:{size:9360,type:WidthType.DXA},rows:[
+    new TableRow({children:[
+      ['Objetivo',nutobj],['Peso',peso+'kg'],['Altura',altura+'cm'],['Restrição',restr!='Nenhuma'?restr:'—'],
+    ].map(([l,v])=>new TableCell({
+      children:[p(l,{size:13,color:CINZA_L,after:0}),p(v,{size:18,bold:true,color:PRETO,after:0})],
+      shading:{type:ShadingType.CLEAR,color:'auto',fill:CINZA_F},
+      borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+      margins:{top:80,bottom:80,left:120,right:120},
+      width:{size:25,type:WidthType.PERCENTAGE},
+    }))})
+  ]});
+
+  // ── SEÇÃO: CÁLCULO METABÓLICO ─────────────────────────────────────────────
+  const secMeta = new Table({width:{size:9360,type:WidthType.DXA},rows:[
+    // Título
+    new TableRow({children:[new TableCell({
+      children:[p('📊  CÁLCULO METABÓLICO',{size:18,bold:true,color:BRANCO,after:0})],
+      shading:{type:ShadingType.CLEAR,color:'auto',fill:AZUL},
+      borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+      margins:{top:100,bottom:100,left:160,right:160},
+      columnSpan:4,
+    })]}),
+    // Sub-cabeçalho
+    new TableRow({children:[
+      ['TMB (repouso)','Gasto Total (TDEE)','Meta Calórica','Tipo'].map(h=>
+        new TableCell({children:[p(h,{size:14,bold:true,color:BRANCO,align:AlignmentType.CENTER,after:0})],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:'1A3A5C'},
+          borders:{top:BORDA_H,bottom:BORDA_H,left:BORDA_H,right:BORDA_H},
+          margins:{top:60,bottom:60,left:80,right:80},width:{size:25,type:WidthType.PERCENTAGE}})
+      )
+    ].flat()}),
+    // Valores
+    new TableRow({children:[
+      [tmb+' kcal/dia',CINZA_M],[get+' kcal/dia',CINZA_M],[meta+' kcal/dia',LARANJA],[tipoMeta,VERDE],
+    ].map(([v,cor])=>new TableCell({
+      children:[p(v,{size:22,bold:true,color:cor,align:AlignmentType.CENTER,after:0})],
+      shading:{type:ShadingType.CLEAR,color:'auto',fill:'EAF2FF'},
+      borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},
+      margins:{top:100,bottom:100,left:80,right:80},width:{size:25,type:WidthType.PERCENTAGE},
+    }))}),
+    // Nota
+    new TableRow({children:[new TableCell({
+      children:[p('Equação: Mifflin-St Jeor (1990) · Fator de atividade ajustado ao nível de treinamento (ACSM 2026)',{size:13,italics:true,color:CINZA_L,after:0})],
+      borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+      margins:{top:60,bottom:0,left:0,right:0},columnSpan:4,
+    })]}),
+  ]});
+
+  // ── SEÇÃO: MACRONUTRIENTES ────────────────────────────────────────────────
+  const macroData = [
+    ['🥩  PROTEÍNA',   protG+'g',   protG*4+' kcal', `${pFat}g/kg/dia`,  VERDE,  'E8F8EF'],
+    ['🍞  CARBOIDRATO',carbG+'g',   carbG*4+' kcal', 'Substrato treino', AZUL,   'EAF2FF'],
+    ['🫒  GORDURA',    gordG+'g',   gordG*9+' kcal', '25% das calorias', AMARELO,'FFFDE7'],
+    ['💧  ÁGUA',       agua+'L/dia','Meta diária',   '35ml/kg + treino', '1A7AAC','E3F2FD'],
+  ];
+  const secMacros = new Table({width:{size:9360,type:WidthType.DXA},rows:[
+    // Título
+    new TableRow({children:[new TableCell({
+      children:[p('🔬  MACRONUTRIENTES DIÁRIOS',{size:18,bold:true,color:BRANCO,after:0})],
+      shading:{type:ShadingType.CLEAR,color:'auto',fill:VERDE},
+      borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+      margins:{top:100,bottom:100,left:160,right:160},columnSpan:4,
+    })]}),
+    // Cabeçalho
+    new TableRow({children:
+      ['Nutriente','Quantidade','Calorias','Referência'].map(h=>new TableCell({
+        children:[p(h,{size:14,bold:true,color:BRANCO,align:AlignmentType.CENTER,after:0})],
+        shading:{type:ShadingType.CLEAR,color:'auto',fill:'1A4A3A'},
+        borders:{top:BORDA_H,bottom:BORDA_H,left:BORDA_H,right:BORDA_H},
+        margins:{top:60,bottom:60,left:80,right:80},width:{size:25,type:WidthType.PERCENTAGE},
+      }))
+    }),
+    ...macroData.map(([nome,qtd,kcal,ref,cor,bg])=>new TableRow({children:[
+      new TableCell({children:[p(nome,{size:18,bold:true,color:cor,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:bg},borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},margins:{top:80,bottom:80,left:120,right:80},width:{size:25,type:WidthType.PERCENTAGE}}),
+      new TableCell({children:[p(qtd,{size:22,bold:true,color:cor,align:AlignmentType.CENTER,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:bg},borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},margins:{top:80,bottom:80,left:80,right:80},width:{size:25,type:WidthType.PERCENTAGE}}),
+      new TableCell({children:[p(kcal,{size:17,color:CINZA_M,align:AlignmentType.CENTER,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:CINZA_F},borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},margins:{top:80,bottom:80,left:80,right:80},width:{size:25,type:WidthType.PERCENTAGE}}),
+      new TableCell({children:[p(ref,{size:14,color:CINZA_L,italics:true,align:AlignmentType.CENTER,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:CINZA_F},borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},margins:{top:80,bottom:80,left:80,right:80},width:{size:25,type:WidthType.PERCENTAGE}}),
+    ]})),
+    new TableRow({children:[new TableCell({
+      children:[p(`Proteína por refeição para síntese proteica máxima: ~${protRef}g (0.4g/kg — ISSN 2017 · Aragon & Schoenfeld 2013)`,{size:13,italics:true,color:CINZA_L,after:0})],
+      borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},margins:{top:60,bottom:0,left:0,right:0},columnSpan:4,
+    })]}),
+  ]});
+
+  // ── REFEIÇÕES ─────────────────────────────────────────────────────────────
+  const refeicoes = isEm ? [
+    {nome:'☀️  Café da manhã  —  07:00', kcal:Math.round(meta*0.22), prot:Math.round(protG*0.24), carb:Math.round(carbG*0.20), gord:Math.round(gordG*0.22),
+     cor:LARANJA, bg:'FFF5EE',
+     itens:[{a:'Ovos inteiros',q:`${sexo==='F'?'2':'3'} unidades`,k:sexo==='F'?140:210,pr:sexo==='F'?12:18,c:1,g:sexo==='F'?10:15},{a:'Pão integral 100%',q:'1 fatia — 30g',k:75,pr:3,c:14,g:1},{a:'Fruta (maçã ou pêra)',q:'1 média — 130g',k:65,pr:0,c:16,g:0},{a:'Café preto s/açúcar',q:'200ml',k:5,pr:0,c:0,g:0}],
+     subs:['Ovos → Omelete de claras (4 claras + 1 gema) ou iogurte grego 0% (170g)','Pão → Tapioca (30g), cuscuz (40g) ou wrap integral','Maçã → Mamão papaya (100g), melão (150g) ou goiaba (100g)']},
+    {nome:'🥗  Almoço  —  12:00', kcal:Math.round(meta*0.30), prot:Math.round(protG*0.30), carb:Math.round(carbG*0.28), gord:Math.round(gordG*0.28),
+     cor:VERDE, bg:'F0FFF4',
+     itens:[{a:'Frango grelhado',q:`${Math.round(peso*0.55)}g`,k:Math.round(peso*0.55*1.5),pr:Math.round(peso*0.55*0.31),c:0,g:Math.round(peso*0.55*0.035)},{a:'Arroz integral',q:'3 col. sopa cheias — 90g cozido',k:120,pr:3,c:25,g:0},{a:'Feijão carioca ou preto',q:'1 concha — 80g cozido',k:92,pr:6,c:16,g:0},{a:'Salada verde',q:'À vontade',k:25,pr:2,c:4,g:0},{a:'Azeite de oliva e.v.',q:'1 col. chá — 5ml',k:45,pr:0,c:0,g:5}],
+     subs:['Frango → Tilápia (150g), atum escorrido (120g) ou patinho moído (100g)','Arroz integral → Batata-doce cozida (100g), quinoa (60g cru) ou inhame','Feijão → Lentilha, grão-de-bico ou ervilha']},
+    {nome:'🍎  Lanche da tarde  —  15:30', kcal:Math.round(meta*0.13), prot:Math.round(protG*0.16), carb:Math.round(carbG*0.10), gord:Math.round(gordG*0.15),
+     cor:AMARELO, bg:'FFFDE7',
+     itens:[{a:'Iogurte grego natural 0%',q:'1 pote — 170g',k:100,pr:15,c:7,g:0},{a:'Castanhas (mix)',q:'15g',k:90,pr:3,c:3,g:8},{a:'Frutas vermelhas',q:'1 xíc. — 80g',k:45,pr:1,c:10,g:0}],
+     subs:['Iogurte grego → Cottage light (150g) ou ricota temperada (100g)','Castanhas → Amendoim torrado s/sal (25g) ou amêndoas (15g)']},
+    {nome:'🌙  Jantar  —  19:30', kcal:Math.round(meta*0.25), prot:Math.round(protG*0.26), carb:Math.round(carbG*0.22), gord:Math.round(gordG*0.25),
+     cor:AZUL, bg:'EAF2FF',
+     itens:[{a:'Salmão grelhado ou atum',q:`${sexo==='F'?'120':'150'}g`,k:sexo==='F'?180:225,pr:sexo==='F'?25:31,c:0,g:sexo==='F'?8:10},{a:'Batata-doce assada',q:'1 média — 100g',k:90,pr:2,c:21,g:0},{a:'Brócolis no vapor',q:'150g',k:50,pr:4,c:8,g:0},{a:'Azeite extra-virgem',q:'1 col. sopa — 10ml',k:90,pr:0,c:0,g:10}],
+     subs:['Salmão → Sardinha (150g), bacalhau desfiado (100g) ou 3 ovos mexidos','Batata-doce → Inhame (100g), mandioca cozida (80g) ou cará','Brócolis → Couve-flor, abobrinha, espinafre ou vagem']},
+  ] : [
+    {nome:'☀️  Café da manhã  —  07:00', kcal:Math.round(meta*0.22), prot:Math.round(protG*0.20), carb:Math.round(carbG*0.22), gord:Math.round(gordG*0.20),
+     cor:LARANJA, bg:'FFF5EE',
+     itens:[{a:'Ovos inteiros',q:`${sexo==='F'?'3':'4'} unidades`,k:sexo==='F'?210:280,pr:sexo==='F'?18:24,c:1,g:sexo==='F'?15:20},{a:'Pão integral',q:`${sexo==='F'?'1':'2'} fatia(s) — ${sexo==='F'?30:60}g`,k:sexo==='F'?75:150,pr:sexo==='F'?3:6,c:sexo==='F'?14:28,g:1},{a:'Banana prata',q:'1 unidade — 100g',k:90,pr:1,c:23,g:0},{a:'Leite integral',q:'200ml',k:130,pr:7,c:10,g:5}],
+     subs:['Ovos → Omelete de frango (2 ovos + 60g frango) ou whey (30g) + aveia (40g)','Pão → Tapioca (50g com queijo cottage) ou cuscuz (60g)','Banana → Manga (130g), mamão (200g) ou uva (120g)']},
+    {nome:'🍌  Pré-treino  —  10:00', kcal:Math.round(meta*0.13), prot:Math.round(protG*0.15), carb:Math.round(carbG*0.18), gord:Math.round(gordG*0.10),
+     cor:VERDE, bg:'F0FFF4',
+     itens:[{a:'Whey protein',q:`${protRef}g (1 dose = 30g)`,k:Math.round(protRef*4),pr:Math.round(protRef*0.8),c:4,g:1},{a:'Banana madura',q:'1 grande — 120g',k:110,pr:1,c:28,g:0},{a:'Aveia em flocos finos',q:'2 col. sopa — 30g',k:120,pr:4,c:20,g:3}],
+     subs:['Whey → 3 claras cozidas + 1 gema ou iogurte grego 0% (170g)','Aveia → Granola s/açúcar (25g) ou farelo de aveia','Cafeína 3mg/kg · 45–60 min antes do treino melhora performance em 2–16%']},
+    {nome:'🥗  Almoço  —  13:00', kcal:Math.round(meta*0.28), prot:Math.round(protG*0.28), carb:Math.round(carbG*0.28), gord:Math.round(gordG*0.25),
+     cor:AZUL, bg:'EAF2FF',
+     itens:[{a:'Carne vermelha magra (patinho)',q:`${Math.round(peso*0.7)}g`,k:Math.round(peso*0.7*2.0),pr:Math.round(peso*0.7*0.26),c:0,g:Math.round(peso*0.7*0.07)},{a:'Arroz integral',q:'4 col. sopa — 120g cozido',k:160,pr:4,c:34,g:0},{a:'Feijão preto',q:'1 concha cheia — 100g',k:110,pr:7,c:19,g:0},{a:'Batata-doce cozida',q:'1 média — 100g',k:90,pr:2,c:21,g:0},{a:'Salada + azeite',q:'À vontade + 1 col. sopa',k:100,pr:1,c:4,g:10}],
+     subs:['Carne → Frango (200g), salmão (180g), atum (150g) ou carne moída magra','Arroz → Macarrão integral (80g cru), quinoa (70g cru) ou mandioca cozida','Batata-doce → Inhame, macarrão integral ou arroz extra (dias de treino pesado)']},
+    {nome:'💪  Pós-treino  —  imediato', kcal:Math.round(meta*0.14), prot:Math.round(protG*0.18), carb:Math.round(carbG*0.15), gord:Math.round(gordG*0.08),
+     cor:VERDE, bg:'F0FFF4',
+     itens:[{a:'Whey protein isolado',q:`${protRef}g com água`,k:Math.round(protRef*4),pr:Math.round(protRef*0.9),c:2,g:1},{a:'Banana ou fruta madura',q:'1 média — 100g',k:90,pr:1,c:23,g:0},{a:'Creatina monoidratada',q:'5g (misturar no whey)',k:0,pr:0,c:0,g:0}],
+     subs:['Whey → 4 claras cozidas + 1 gema ou iogurte grego 0% (170g) + banana','Banana → Suco de laranja natural (200ml) ou manga (100g)','Creatina: suplemento com maior evidência científica (meta-análise 2024 +4.43kg força)']},
+    {nome:'🌙  Jantar  —  20:00', kcal:Math.round(meta*0.20), prot:Math.round(protG*0.18), carb:Math.round(carbG*0.17), gord:Math.round(gordG*0.22),
+     cor:AZUL, bg:'EAF2FF',
+     itens:[{a:'Salmão ou frango',q:`${sexo==='F'?'150':'200'}g`,k:sexo==='F'?225:300,pr:sexo==='F'?28:36,c:0,g:sexo==='F'?10:14},{a:'Arroz integral ou quinoa',q:'3 col. sopa — 90g cozido',k:120,pr:3,c:25,g:0},{a:'Legumes variados no vapor',q:'200g (mix colorido)',k:80,pr:4,c:14,g:0},{a:'Azeite extra-virgem',q:'1 col. sopa — 10ml',k:90,pr:0,c:0,g:10}],
+     subs:['Salmão → Sardinha em lata (150g), bacalhau (150g) ou atum','Quinoa → Arroz integral, cuscuz integral ou macarrão de legumes','Legumes → Brócolis, couve-flor, abobrinha, espinafre ou cenoura']},
+    {nome:'🌛  Ceia  —  22:00', kcal:Math.round(meta*0.08), prot:Math.round(protG*0.08), carb:Math.round(carbG*0.04), gord:Math.round(gordG*0.10),
+     cor:AMARELO, bg:'FFFDE7',
+     itens:[{a:'Queijo cottage ou caseína',q:`${sexo==='F'?'150':'200'}g ou 30g caseína`,k:sexo==='F'?110:145,pr:sexo==='F'?16:21,c:3,g:4},{a:'Amêndoas ou castanhas',q:'15g',k:90,pr:3,c:2,g:8}],
+     subs:['Cottage → Iogurte grego natural integral (200g) ou caseína em pó (30g)','Amêndoas → 2 castanhas do Pará (selênio) ou pasta de amendoim natural (15g)','Proteína antes do sono: ↑ MPS noturna em 22% (Res et al. Nutr Metab 2012)']},
+  ];
+
+  function tabelaRefeicao(itens, bg){
+    const cols = [['ALIMENTO',35],['QUANTIDADE',22],['KCAL',10],['PROT.',10],['CARB.',10],['GORD.',10]];
+    return new Table({width:{size:9360,type:WidthType.DXA},rows:[
+      new TableRow({children:cols.map(([h,w])=>new TableCell({
+        children:[p(h,{size:14,bold:true,color:BRANCO,align:AlignmentType.CENTER,after:0})],
+        shading:{type:ShadingType.CLEAR,color:'auto',fill:'444444'},
+        borders:{top:BORDA_H,bottom:BORDA_H,left:BORDA_H,right:BORDA_H},
+        margins:{top:60,bottom:60,left:80,right:80},width:{size:w,type:WidthType.PERCENTAGE},
+      }))}),
+      ...itens.map((it,i)=>new TableRow({children:[
+        new TableCell({children:[p(it.a,{size:17,bold:true,color:PRETO,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:i%2===0?BRANCO:CINZA_F},borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},margins:{top:70,bottom:70,left:100,right:80},width:{size:35,type:WidthType.PERCENTAGE}}),
+        new TableCell({children:[p(it.q,{size:16,color:CINZA_M,align:AlignmentType.CENTER,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:i%2===0?BRANCO:CINZA_F},borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},margins:{top:70,bottom:70,left:60,right:60},width:{size:22,type:WidthType.PERCENTAGE}}),
+        new TableCell({children:[p(it.k+'',{size:17,bold:true,color:LARANJA,align:AlignmentType.CENTER,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:i%2===0?BRANCO:CINZA_F},borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},margins:{top:70,bottom:70,left:60,right:60},width:{size:11,type:WidthType.PERCENTAGE}}),
+        new TableCell({children:[p(it.pr+'g',{size:17,bold:true,color:VERDE,align:AlignmentType.CENTER,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:i%2===0?BRANCO:CINZA_F},borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},margins:{top:70,bottom:70,left:60,right:60},width:{size:11,type:WidthType.PERCENTAGE}}),
+        new TableCell({children:[p(it.c+'g',{size:17,bold:true,color:AZUL,align:AlignmentType.CENTER,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:i%2===0?BRANCO:CINZA_F},borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},margins:{top:70,bottom:70,left:60,right:60},width:{size:11,type:WidthType.PERCENTAGE}}),
+        new TableCell({children:[p(it.g+'g',{size:17,bold:true,color:AMARELO,align:AlignmentType.CENTER,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:i%2===0?BRANCO:CINZA_F},borders:{top:BORDA,bottom:BORDA,left:BORDA,right:BORDA},margins:{top:70,bottom:70,left:60,right:60},width:{size:11,type:WidthType.PERCENTAGE}}),
+      ]})),
+    ]});
+  }
+
+  // ── TOTAIS DO DIA ─────────────────────────────────────────────────────────
+  const totK = refeicoes.reduce((s,r)=>s+r.kcal,0);
+  const totP = refeicoes.reduce((s,r)=>s+r.prot,0);
+  const totC = refeicoes.reduce((s,r)=>s+r.carb,0);
+  const totG = refeicoes.reduce((s,r)=>s+r.gord,0);
+
+  // ── MONTAR DOCUMENTO ──────────────────────────────────────────────────────
+  const children = [
+    header,
+    p('',{after:100}),
+    dadosRow,
+    p('',{after:180}),
+    secMeta,
+    p('',{after:180}),
+    secMacros,
+    p('',{after:200}),
+    // Título cardápio
+    new Table({width:{size:9360,type:WidthType.DXA},rows:[new TableRow({children:[new TableCell({
+      children:[p('🍽️  CARDÁPIO DIÁRIO PERSONALIZADO',{size:18,bold:true,color:BRANCO,after:0})],
+      shading:{type:ShadingType.CLEAR,color:'auto',fill:LARANJA},
+      borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+      margins:{top:100,bottom:100,left:160,right:160},
+    })]})]}),
+    p('',{after:80}),
+  ];
+
+  refeicoes.forEach(r=>{
+    // Cabeçalho da refeição
+    children.push(new Table({width:{size:9360,type:WidthType.DXA},rows:[
+      new TableRow({children:[
+        new TableCell({
+          children:[p(r.nome,{size:19,bold:true,color:r.cor,after:0})],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:r.bg},
+          borders:{top:{style:BorderStyle.SINGLE,size:8,color:r.cor},bottom:BORDA,left:{style:BorderStyle.SINGLE,size:8,color:r.cor},right:BORDA},
+          margins:{top:80,bottom:80,left:140,right:80},width:{size:60,type:WidthType.PERCENTAGE},
+        }),
+        new TableCell({
+          children:[
+            p(`${r.kcal} kcal  ·  🥩 ${r.prot}g  ·  🍞 ${r.carb}g  ·  🫒 ${r.gord}g`,
+              {size:15,color:CINZA_M,align:AlignmentType.RIGHT,after:0}),
+          ],
+          shading:{type:ShadingType.CLEAR,color:'auto',fill:r.bg},
+          borders:{top:{style:BorderStyle.SINGLE,size:8,color:r.cor},bottom:BORDA,left:BORDA,right:{style:BorderStyle.SINGLE,size:8,color:r.cor}},
+          margins:{top:80,bottom:80,left:80,right:140},width:{size:40,type:WidthType.PERCENTAGE},
+          verticalAlign:VerticalAlign.CENTER,
+        }),
+      ]})
+    ]}));
+    children.push(tabelaRefeicao(r.itens, r.bg));
+    // Substituições
+    if(r.subs&&r.subs.length){
+      children.push(p('',{after:40}));
+      children.push(p('Substituições equivalentes:',{size:15,bold:true,color:CINZA_M,before:40,after:30}));
+      r.subs.forEach(s=>children.push(p('→  '+s,{size:14,color:CINZA_L,italics:true,indent:200,after:30})));
+    }
+    children.push(p('',{after:160}));
+  });
+
+  // ── TOTAIS ────────────────────────────────────────────────────────────────
+  children.push(new Table({width:{size:9360,type:WidthType.DXA},rows:[
+    new TableRow({children:[new TableCell({
+      children:[p('📊  TOTAIS DIÁRIOS',{size:18,bold:true,color:BRANCO,after:0})],
+      shading:{type:ShadingType.CLEAR,color:'auto',fill:'333333'},
+      borders:{top:SEM,bottom:SEM,left:SEM,right:SEM},
+      margins:{top:100,bottom:100,left:160,right:160},columnSpan:4,
+    })]}),
+    new TableRow({children:[
+      [['🔥 Calorias',totK+' kcal',LARANJA,'FFF5EE'],['🥩 Proteínas',totP+'g',VERDE,'F0FFF4'],['🍞 Carboidratos',totC+'g',AZUL,'EAF2FF'],['🫒 Gorduras',totG+'g',AMARELO,'FFFDE7']].map(([l,v,cor,bg])=>
+        new TableCell({children:[p(l,{size:14,color:CINZA_L,after:0}),p(v,{size:26,bold:true,color:cor,after:0})],shading:{type:ShadingType.CLEAR,color:'auto',fill:bg},borders:{top:BORDA_H,bottom:BORDA_H,left:BORDA_H,right:BORDA_H},margins:{top:100,bottom:100,left:140,right:140},width:{size:25,type:WidthType.PERCENTAGE}})
+      )
+    ].flat()}),
+  ]}));
+
+  children.push(p('',{after:120}));
+
+  // Suplementação e dicas
+  if(supl&&supl!=='Nenhum'){
+    children.push(p(`💊  Suplementação informada: ${supl}`,{size:17,bold:true,color:AZUL,before:80,after:60}));
+  }
+  children.push(p('💊  Recomendações de suplementação baseadas em evidências:',{size:16,bold:true,color:CINZA_M,before:80,after:50}));
+  [
+    `Creatina monoidratada: 3–5g/dia — maior evidência científica (meta-análise 2024, +4.43kg força)`,
+    `Ômega-3 EPA+DHA: 2–4g/dia — anti-inflamatório e suporte à recuperação muscular`,
+    `Proteína por refeição: ~${protRef}g para síntese proteica máxima (ISSN 2017)`,
+    `Cafeína: 3–6mg/kg, 45–60 min pré-treino — melhora performance em 2–16% (ISSN 2021)`,
+    `Proteína antes de dormir (caseína/cottage 30–40g): ↑ síntese proteica noturna em 22% (Res et al. 2012)`,
+  ].forEach(d=>children.push(p('•  '+d,{size:15,color:CINZA_M,indent:200,after:40})));
+
+  children.push(p('',{after:100}));
+  children.push(p('😴  Sono 7–9h/noite: 1 noite sem dormir ↓ síntese proteica 18%, ↑ cortisol 21%, ↓ testosterona 24% (Lamon et al. J Physiol 2020)',{size:14,italics:true,color:CINZA_L,before:60,after:60}));
+
+  if(restr&&restr!=='Nenhuma'){
+    children.push(p(`⚠️  Restrição alimentar: ${restr} — todas as substituições levaram isso em consideração.`,{size:16,bold:true,color:'C0392B',before:80,after:80}));
+  }
+
+  // Rodapé
+  children.push(p('',{after:100}));
+  children.push(new Table({width:{size:9360,type:WidthType.DXA},rows:[new TableRow({children:[new TableCell({
+    children:[
+      p('WillgomesFit — Consultoria de Treino e Nutrição Esportiva baseada em Evidências',{size:16,bold:true,color:LARANJA,after:0}),
+      p(`Referências: ISSN 2017 · Mifflin-St Jeor 1990 · Aragon & Schoenfeld 2013 · ACSM 2026 · Lamon et al. J Physiol 2020`,{size:12,italics:true,color:CINZA_L,after:0}),
+      p(`Documento gerado em ${hoje} | @willgomesfit`,{size:13,color:CINZA_L,after:0}),
+    ],
+    shading:{type:ShadingType.CLEAR,color:'auto',fill:'F5F5F5'},
+    borders:{top:{style:BorderStyle.SINGLE,size:8,color:LARANJA},bottom:SEM,left:SEM,right:SEM},
+    margins:{top:120,bottom:100,left:160,right:160},
+  })]})]}));
+
+  const doc = new Document({
+    styles:{default:{document:{run:{font:'Calibri',size:20,color:PRETO}}}},
+    sections:[{properties:{page:{margin:{top:720,right:720,bottom:720,left:720}}},children}],
+  });
+
+  const buf = await Packer.toBuffer(doc);
+  const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url;
+  a.download=`WillgomesFit_${(c.nome||'Cliente').replace(/\s+/g,'_')}_GuiaAlimentar_${hoje.replace(/\//g,'-')}.docx`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  notif('✅ Guia alimentar exportado!');
 }
 
 // ── RESETAR QUESTIONÁRIO ──────────────────────────────────────────────────

@@ -88,6 +88,21 @@ h1{font-family:var(--font-d);font-size:2.2rem;line-height:1;margin-bottom:8px}
       <div class="pay-step"><div class="pay-step-num">2</div><div class="pay-step-text">Após pagar, <strong>envie o comprovante pelo WhatsApp</strong>.</div></div>
       <div class="pay-step"><div class="pay-step-num">3</div><div class="pay-step-text">Após confirmação, você receberá o <strong>link do questionário completo</strong> para montagem do seu programa.</div></div>
     </div>
+    <!-- Upsell box (aparece só para Ficha Start) -->
+    <div id="upsell-box" style="display:none;background:linear-gradient(135deg,rgba(232,93,4,.08),rgba(232,93,4,.03));border:1px solid rgba(232,93,4,.3);border-radius:14px;padding:20px;margin-bottom:20px;text-align:left">
+      <div style="font-size:.72rem;font-weight:700;color:#e85d04;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">⚡ Oferta especial — só agora</div>
+      <p style="font-size:.88rem;color:#ccc;margin-bottom:12px">Adicione a <strong style="color:#fff">Ficha Premium</strong> por apenas <strong style="color:#e85d04">+R$40,00</strong> e leve:</p>
+      <ul style="font-size:.82rem;color:#999;margin-bottom:14px;padding-left:16px;line-height:1.9">
+        <li>2 fichas de treino completas</li>
+        <li>Guia alimentar básico personalizado</li>
+        <li>Suporte por e-mail</li>
+      </ul>
+      <button id="upsell-upgrade-btn" style="width:100%;background:#e85d04;color:#fff;font-weight:800;font-size:.88rem;padding:12px;border:none;border-radius:10px;cursor:pointer">
+        ✅ Sim! Quero a Premium por R$ 69,90
+      </button>
+    </div>
+
+    <div style="margin-bottom:10px;font-size:.8rem;color:#666;text-align:center">Plano selecionado: <strong id="plan-name-display" style="color:#e85d04"></strong></div>
     <a href="#" id="payment-link" class="btn-payment" target="_blank">Ir para o pagamento →</a>
     <div class="divider">Já pagou?</div>
     <a id="wa-link" href="#" target="_blank" class="btn-whatsapp">💬 Enviar comprovante pelo WhatsApp</a>
@@ -123,6 +138,8 @@ const plano = params.get('plano') || 'Ficha Start';
 const tipo = params.get('tipo') || 'Ficha de Treino';
 
 document.getElementById('plan-display').textContent = plano;
+const pnd = document.getElementById('plan-name-display');
+if(pnd) pnd.textContent = plano;
 document.getElementById('price-display').textContent = prices[plano] || '';
 document.getElementById('plano-hidden').value = plano;
 document.getElementById('tipo-hidden').value = tipo;
