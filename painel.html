@@ -6,7 +6,20 @@
 <title>WillgomesFit – Painel Administrativo</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.min.js"></script>
+<script src="https://unpkg.com/docx@8.5.0"></script>
+<script>
+  // Fallback: se window.docx não carregou, tenta jsdelivr
+  window.addEventListener('load', function(){
+    if(!window.docx || !window.docx.Document){
+      console.warn('docx não carregou via unpkg, tentando jsdelivr...');
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js';
+      s.onload = function(){ console.log('docx carregado via jsdelivr fallback'); };
+      s.onerror = function(){ console.error('Falha ao carregar docx de ambos os CDNs'); };
+      document.head.appendChild(s);
+    }
+  });
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -2200,9 +2213,29 @@ async function gerarRelatorioCliente(c){
 }
 
 
+// ── AGUARDAR DOCX CARREGAR (retry ativo, até 8s) ────────────────────────────
+function aguardarDocx(timeoutMs=8000){
+  return new Promise((resolve, reject)=>{
+    if(window.docx && window.docx.Document){ resolve(window.docx); return; }
+    const inicio = Date.now();
+    const intervalo = setInterval(()=>{
+      if(window.docx && window.docx.Document){
+        clearInterval(intervalo);
+        resolve(window.docx);
+      } else if(Date.now() - inicio > timeoutMs){
+        clearInterval(intervalo);
+        reject(new Error('Biblioteca Word (docx.js) não carregou. Verifique sua conexão e recarregue a página.'));
+      }
+    }, 200);
+  });
+}
+
 // ── EXPORTAR FICHA DE TREINO ──────────────────────────────────────────────
 async function exportarFichaTreinoCompleta(){
-  if(!window.docx){ notif('Carregando biblioteca Word...','#eab308'); return; }
+  notif('⏳ Preparando documento Word...','#eab308');
+  let docx;
+  try{ docx = await aguardarDocx(); }
+  catch(err){ notif('❌ '+err.message,'#ef4444'); return; }
   const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,
          AlignmentType,WidthType,BorderStyle,VerticalAlign,HeadingLevel,
          ShadingType,convertInchesToTwip} = docx;
@@ -2564,7 +2597,10 @@ async function exportarFichaTreinoCompleta(){
 }
 
 async function exportarGuiaWord(){
-  if(!window.docx){ notif('Carregando biblioteca Word...','#eab308'); return; }
+  notif('⏳ Preparando documento Word...','#eab308');
+  let docx;
+  try{ docx = await aguardarDocx(); }
+  catch(err){ notif('❌ '+err.message,'#ef4444'); return; }
   const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,
          AlignmentType,WidthType,BorderStyle,VerticalAlign,ShadingType} = docx;
   const c = clienteAtual;
