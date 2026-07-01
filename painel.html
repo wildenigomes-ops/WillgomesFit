@@ -1246,12 +1246,20 @@ const EX = [{"cod": "EX001", "nome": "Supino Reto Barra", "grupo": "Peitoral", "
 
 function prescreverTreino(){
   // ══════════════════════════════════════════════════════════════════════════
-  // WILLGOMESFIT PRESCRIPTION ENGINE v3.1 — Com diferenciação por gênero
-  // Base científica:
-  // • ACSM 2026 Position Stand — Currier et al. (137 revisões, >30.000 participantes)
-  // • Schoenfeld BJ 2010/2024 — mecanismos de hipertrofia
+  // WILLGOMESFIT PRESCRIPTION ENGINE v3.2 — Atualizado com literatura 2026
+  // Base científica (revisão profunda — junho 2026):
+  // • ACSM 2026 Position Stand — Currier, Phillips et al., Med Sci Sports Exerc
+  //   (137 revisões sistemáticas, >30.000 participantes, primeira atualização em 17 anos)
+  //   - Volume mínimo 10 séries/grupo/semana para hipertrofia
+  //   - Cargas de 30-100% 1RM equivalentes quando o esforço é equiparado
+  //   - RIR 2-3 tão eficaz quanto falha absoluta, com menos fadiga
+  //   - Frequência: 2x/semana todos os grupos musculares principais
+  // • Schoenfeld, Grgic & Krieger 2019 (J Sports Sci) — frequência de treino
   // • Israetel/RP Strength — Volume Landmarks (MEV/MAV/MRV)
-  // • Diferenciação por gênero: Calatayud et al. 2020 | Baz-Valle et al. 2022
+  // • Helms et al. — escala RIR-RPE para autorregulação de intensidade
+  // • Singer et al. 2024 (Front Sports Act Living) — intervalos entre séries
+  // • Wolf et al. 2025 (PeerJ) — amplitude de movimento e ênfase na porção alongada
+  // • Diferenciação por gênero: Calatayud et al. 2020 | Contreras et al. 2015
   //   Mulheres: maior proporção de fibras tipo I, maior tolerância ao volume,
   //   preferência e maior potencial de hipertrofia em glúteos/pernas
   //   Homens: maior potencial absoluto em membros superiores e tronco
@@ -1537,18 +1545,19 @@ function prescreverTreino(){
 
   // ── NOTAS CIENTÍFICAS PERSONALIZADAS POR SEXO ────────────────────────────
   const notasBase = [
-    `📊 Volume semanal alvo: ${p.mev}–${p.mav} séries/grupo/semana (MEV→MAV conforme nível)`,
-    `🎯 Proximidade à falha: pare ${rir} reps antes da falha (RIR ${rir}) — tão eficaz com menos fadiga`,
-    `📈 Progressão dupla: aumente reps até o limite da faixa, depois aumente carga e recomece`,
-    `⏱️ Descanso: ${descObj} entre séries (mínimo 60s para hipertrofia — Singer et al. 2024)`,
-    `🔄 Frequência: cada grupo muscular treinado 2× por semana (ACSM 2026)`,
-    `📏 Amplitude completa: posição de alongamento maximiza hipertrofia (ACSM 2026)`,
-    `🔋 Deload: a cada 4–6 semanas, reduza volume em 40–50% por 1 semana`,
+    `📊 Volume semanal mínimo: ${p.mev} séries/grupo/semana para hipertrofia, alvo ${p.mav} (ACSM 2026 — Currier et al., 137 revisões sistemáticas, 30.000+ participantes)`,
+    `🎯 Proximidade à falha: pare a ${rir} reps da falha (RIR ${rir}) — ACSM 2026 confirma que falha absoluta é desnecessária; o esforço importa mais que chegar ao limite`,
+    `📈 Progressão dupla: aumente reps até o limite da faixa, depois aumente carga e recomece o ciclo`,
+    `⏱️ Descanso: ${descObj} entre séries (mínimo 60s para hipertrofia — Singer et al. 2024, Front Sports Act Living)`,
+    `🔄 Frequência: cada grupo muscular treinado 2× por semana é o ponto de maior evidência (Schoenfeld, Grgic & Krieger 2019, J Sports Sci) — volume semanal total importa mais que a frequência isolada`,
+    `📏 Amplitude completa: priorize a porção alongada do movimento (estiramento) — vantagem hipertrófica confirmada em revisões sistemáticas recentes (Wolf et al. 2025, PeerJ)`,
+    `🔋 Deload: a cada 4–6 semanas, reduza volume em 40–50% por 1 semana para gerenciar fadiga acumulada`,
+    `🏋️ Carga: cargas de 30% a 100% de 1RM produzem hipertrofia equivalente quando o esforço (proximidade à falha) é equiparado — o que importa é o esforço, não a faixa de reps específica (ACSM 2026)`,
   ];
 
   const notasSexo = isFem ? [
-    `👩 Foco feminino: glúteos e membros inferiores com volume superior (${Math.min(p.mav+4,26)} sets/sem para glúteo)`,
-    `👩 Reps inferiores: ${repsInfFem} reps — mulheres têm maior proporção de fibras tipo I nas pernas (Calatayud 2020)`,
+    `👩 Foco feminino: glúteos e membros inferiores com volume superior (${Math.min(p.mav+4,26)} sets/sem para glúteo) — Contreras et al. 2015`,
+    `👩 Reps inferiores: ${repsInfFem} reps — mulheres têm maior proporção de fibras tipo I nas pernas (Calatayud et al. 2020)`,
     `👩 Exercícios-chave: Hip Thrust, Agachamento, Stiff, Passada, Leg Curl, Abdutora`,
     `🥩 Proteína: 1.8–2.0g/kg/dia — mulheres metabolizam proteína de forma eficiente para síntese muscular`,
   ] : [
@@ -1559,7 +1568,7 @@ function prescreverTreino(){
   ];
 
   const notas = [...notasBase, ...notasSexo,
-    `Refs: ACSM 2026 · Schoenfeld 2010/2024 · Israetel/RP Strength · Calatayud et al. 2020 · Singer et al. 2024`
+    `Refs: ACSM 2026 Position Stand (Currier et al., Med Sci Sports Exerc) · Schoenfeld, Grgic & Krieger 2019 · Israetel/RP Strength · Calatayud et al. 2020 · Singer et al. 2024 · Wolf et al. 2025 · Helms et al. (RIR/RPE)`
   ];
 
   const resultado = blocos;
