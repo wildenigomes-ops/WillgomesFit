@@ -471,7 +471,9 @@ tr:hover td{background:var(--card2)}
           <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
             <button class="btn btn-green" onclick="exportarFichaTreinoCompleta()" style="font-size:.85rem;padding:10px 20px">⬇ Ficha de Treino</button>
             <button class="btn" onclick="exportarGuiaWord()" style="background:rgba(234,179,8,.15);color:var(--yellow);border-color:rgba(234,179,8,.3);font-size:.85rem;padding:10px 20px">⬇ Guia Alimentar</button>
+            <button class="btn" onclick="publicarNoPortal()" style="background:rgba(139,92,246,.15);color:#a78bfa;border-color:rgba(139,92,246,.3);font-size:.85rem;padding:10px 20px">🚀 Publicar no Portal do Aluno</button>
           </div>
+          <div id="portal-status" style="display:none;margin-bottom:16px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:10px 14px;font-size:.8rem;color:#a78bfa"></div>
           <!-- Dados do cliente -->
           <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange)">Dados do Cliente</div>
@@ -2985,6 +2987,57 @@ async function exportarGuiaWord(){
 }
 
 // ── RESETAR QUESTIONÁRIO ──────────────────────────────────────────────────
+// ── PUBLICAR FICHA NO PORTAL DO ALUNO ────────────────────────────────────────
+async function publicarNoPortal(){
+  const c = clienteAtual;
+  if(!c){ notif('Selecione um cliente primeiro','#ef4444'); return; }
+  if(!c.email){ notif('Cliente sem e-mail cadastrado','#ef4444'); return; }
+  if(!SB){ notif('Supabase não conectado','#ef4444'); return; }
+
+  notif('⏳ Gerando e publicando ficha...','#8b5cf6');
+
+  // Gerar a ficha
+  const treinos = prescreverTreino();
+  const nomeCliente = c.nome||c.email;
+  const hoje = new Date().toLocaleDateString('pt-BR');
+
+  // Buscar user_id do aluno pelo e-mail na tabela auth
+  const { data: portalAluno } = await SB.from('portal_alunos').select('user_id').eq('email', c.email).limit(1);
+  const userId = portalAluno?.[0]?.user_id || null;
+
+  const payload = {
+    email: c.email,
+    user_id: userId,
+    titulo: `Ficha de Treino — ${nomeCliente}`,
+    resumo: `Treino personalizado para ${nomeCliente} · Gerado em ${hoje}`,
+    treino_json: treinos,
+    notas: treinos._notas || [],
+    criado_em: new Date().toISOString(),
+    publicado_por: 'Prof. Will Gomes'
+  };
+
+  const { error } = await SB.from('portal_fichas').insert(payload);
+  if(error){
+    notif('Erro ao publicar: '+error.message,'#ef4444');
+    return;
+  }
+
+  // Mostrar status
+  const statusEl = document.getElementById('portal-status');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = `✅ Ficha publicada no portal! O aluno já pode acessar em <strong>willgomesfit.github.io/WillgomesFit/portal.html</strong>`;
+  notif('✅ Ficha publicada no portal do aluno!','#8b5cf6');
+
+  // Verificar último acesso do aluno
+  const { data: acesso } = await SB.from('portal_alunos').select('ultimo_acesso,nome').eq('email', c.email).limit(1);
+  if(acesso?.[0]?.ultimo_acesso){
+    const dt = new Date(acesso[0].ultimo_acesso).toLocaleString('pt-BR');
+    statusEl.innerHTML += `<br>📱 Último acesso do aluno: ${dt}`;
+  } else {
+    statusEl.innerHTML += `<br>📱 Aluno ainda não acessou o portal.`;
+  }
+}
+
 async function resetarQuestionario(){
   if(!clienteAtual){ notif('Nenhum cliente selecionado.','#ef4444'); return; }
   const c = clienteAtual;

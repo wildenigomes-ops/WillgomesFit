@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>WillgomesFit — Portal do Aluno</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --orange:#e85d04;--green:#10b981;--blue:#3b82f6;--purple:#8b5cf6;
+  --red:#ef4444;--yellow:#f59e0b;
+  --bg:#080808;--card:#141414;--border:rgba(255,255,255,.08);
+  --muted:#666;--white:#f0f0f0;
+  --font-d:'Bebas Neue',sans-serif;--font-b:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--white);font-family:var(--font-b);min-height:100vh}
+
+/* ── AUTH ── */
+#auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at top,rgba(232,93,4,.08),transparent 60%)}
+.auth-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px 32px;width:100%;max-width:420px}
+.auth-logo{font-family:var(--font-d);font-size:2rem;letter-spacing:3px;color:var(--orange);margin-bottom:4px}
+.auth-sub{color:var(--muted);font-size:.85rem;margin-bottom:32px}
+.auth-tab{display:flex;gap:4px;background:rgba(255,255,255,.04);border-radius:10px;padding:4px;margin-bottom:24px}
+.auth-tab-btn{flex:1;padding:9px;border:none;background:none;color:#888;font-family:var(--font-b);font-size:.82rem;font-weight:700;border-radius:8px;cursor:pointer;transition:all .2s}
+.auth-tab-btn.active{background:var(--orange);color:#fff}
+.inp{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;padding:13px 16px;color:var(--white);font-family:var(--font-b);font-size:.9rem;margin-bottom:12px;transition:border .2s;outline:none}
+.inp:focus{border-color:var(--orange)}
+.inp::placeholder{color:#555}
+.btn-auth{width:100%;background:linear-gradient(135deg,var(--orange),#ff6b00);border:none;color:#fff;font-family:var(--font-b);font-weight:800;font-size:.95rem;padding:15px;border-radius:12px;cursor:pointer;letter-spacing:.5px;transition:all .25s;margin-top:4px}
+.btn-auth:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(232,93,4,.4)}
+.auth-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:8px;padding:10px 14px;font-size:.82rem;margin-bottom:12px;display:none}
+.auth-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399;border-radius:8px;padding:10px 14px;font-size:.82rem;margin-bottom:12px;display:none}
+
+/* ── APP ── */
+#app{display:none;min-height:100vh;flex-direction:column}
+
+/* NAV */
+nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-logo{font-family:var(--font-d);font-size:1.4rem;letter-spacing:2px;color:var(--orange)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-user{font-size:.8rem;color:#888;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-logout{background:rgba(255,255,255,.06);border:1px solid var(--border);color:#aaa;padding:7px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+
+/* SIDEBAR + CONTENT */
+.app-layout{display:flex;flex:1}
+.sidebar{width:220px;background:#0d0d0d;border-right:1px solid var(--border);padding:20px 0;flex-shrink:0}
+.sb-item{display:flex;align-items:center;gap:10px;padding:12px 20px;color:#888;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;border-left:3px solid transparent}
+.sb-item:hover{color:#fff;background:rgba(255,255,255,.04)}
+.sb-item.active{color:#fff;border-left-color:var(--orange);background:rgba(232,93,4,.08)}
+.sb-icon{font-size:1.1rem}
+.main{flex:1;padding:28px;overflow-y:auto}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
+
+/* HEADER DA PÁGINA */
+.pg-header{margin-bottom:28px}
+.pg-title{font-family:var(--font-d);font-size:2.2rem;letter-spacing:1px;margin-bottom:4px}
+.pg-sub{color:var(--muted);font-size:.88rem}
+
+/* CARDS GRID */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center}
+.metric-icon{font-size:1.8rem;margin-bottom:8px}
+.metric-val{font-family:var(--font-d);font-size:2rem;color:var(--white);line-height:1}
+.metric-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+
+/* FICHA CARD */
+.ficha-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px}
+.ficha-box-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.ficha-box-title{font-family:var(--font-d);font-size:1.4rem;letter-spacing:1px}
+.ficha-date{font-size:.75rem;color:var(--muted)}
+.treino-dia{margin-bottom:20px}
+.treino-dia-nome{font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.treino-dia-nome::after{content:'';flex:1;height:1px;background:rgba(232,93,4,.2)}
+.exercicio-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.exercicio-row:last-child{border-bottom:none}
+.ex-num{background:rgba(232,93,4,.15);color:var(--orange);font-size:.7rem;font-weight:800;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ex-info{flex:1}
+.ex-nome{font-size:.9rem;font-weight:700;color:var(--white);margin-bottom:3px}
+.ex-det{font-size:.77rem;color:#888;display:flex;gap:12px;flex-wrap:wrap}
+.ex-tag{background:rgba(255,255,255,.06);border-radius:4px;padding:2px 7px}
+
+/* NOTAS CIENTÍFICAS */
+.notas-box{background:rgba(232,93,4,.05);border:1px solid rgba(232,93,4,.15);border-radius:12px;padding:16px;margin-top:16px}
+.nota-item{font-size:.78rem;color:#aaa;padding:5px 0;display:flex;gap:8px}
+.nota-item::before{content:'📌';flex-shrink:0}
+
+/* HISTÓRICO */
+.historico-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hist-info{flex:1}
+.hist-titulo{font-weight:700;font-size:.9rem;margin-bottom:3px}
+.hist-data{font-size:.75rem;color:var(--muted)}
+.btn-ver{background:rgba(232,93,4,.1);border:1px solid rgba(232,93,4,.25);color:var(--orange);padding:7px 16px;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-ver:hover{background:var(--orange);color:#fff}
+
+/* PROGRESSO */
+.prog-form{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px}
+.prog-form h3{font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--orange)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.field label{display:block;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.field input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--white);font-size:.88rem;outline:none;transition:border .2s}
+.field input:focus{border-color:var(--orange)}
+.btn-save{background:linear-gradient(135deg,var(--green),#059669);border:none;color:#fff;padding:11px 24px;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(16,185,129,.3)}
+
+/* CHART SIMPLES */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px}
+.chart-title{font-size:.9rem;font-weight:700;margin-bottom:16px}
+.chart-bars{display:flex;align-items:flex-end;gap:6px;height:100px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar{background:linear-gradient(180deg,var(--orange),rgba(232,93,4,.3));border-radius:4px 4px 0 0;width:100%;min-height:4px;transition:height .5s}
+.bar-label{font-size:.6rem;color:var(--muted);text-align:center}
+.bar-val{font-size:.65rem;color:var(--orange);font-weight:700}
+
+/* VAZIO */
+.empty-state{text-align:center;padding:60px 20px}
+.empty-icon{font-size:3rem;margin-bottom:12px}
+.empty-title{font-size:1rem;font-weight:700;margin-bottom:6px}
+.empty-sub{font-size:.82rem;color:var(--muted)}
+
+/* NOTIF */
+#notif{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 24px;font-size:.85rem;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{padding:16px}
+  .metrics-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .metric-card{padding:14px}
+  .metric-val{font-size:1.6rem}
+  .pg-title{font-size:1.7rem}
+  .ficha-box{padding:16px}
+  .prog-form{padding:16px}
+  .form-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* BOTTOM NAV MOBILE */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#0d0d0d;border-top:1px solid var(--border);z-index:100}
+.bn-items{display:flex}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;color:#666;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:color .2s;border:none;background:none}
+.bn-item.active{color:var(--orange)}
+.bn-icon{font-size:1.3rem}
+@media(max-width:768px){
+  .bottom-nav{display:block}
+  .main{padding-bottom:80px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH ── -->
+<div id="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">WILLGOMESFIT</div>
+    <div class="auth-sub">Portal do Aluno · Acesse seu treino</div>
+
+    <div class="auth-tab">
+      <button class="auth-tab-btn active" onclick="setAuthTab('login')">Entrar</button>
+      <button class="auth-tab-btn" onclick="setAuthTab('cadastro')">Criar conta</button>
+    </div>
+
+    <div id="auth-err" class="auth-err"></div>
+    <div id="auth-ok" class="auth-ok"></div>
+
+    <div id="form-login">
+      <input class="inp" type="email" id="login-email" placeholder="Seu e-mail"/>
+      <input class="inp" type="password" id="login-pass" placeholder="Senha"/>
+      <button class="btn-auth" onclick="fazerLogin()">Entrar no portal</button>
+    </div>
+
+    <div id="form-cadastro" style="display:none">
+      <input class="inp" type="text" id="cad-nome" placeholder="Seu nome completo"/>
+      <input class="inp" type="email" id="cad-email" placeholder="Seu e-mail"/>
+      <input class="inp" type="password" id="cad-pass" placeholder="Crie uma senha (mín. 6 caracteres)"/>
+      <input class="inp" type="password" id="cad-pass2" placeholder="Confirme a senha"/>
+      <button class="btn-auth" onclick="fazerCadastro()">Criar minha conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <nav>
+    <div class="nav-logo">WILLGOMESFIT</div>
+    <div class="nav-right">
+      <div class="nav-user" id="nav-user-email"></div>
+      <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+    </div>
+  </nav>
+
+  <div class="app-layout">
+    <!-- Sidebar desktop -->
+    <div class="sidebar">
+      <div class="sb-item active" onclick="showPage('dashboard')" id="sb-dashboard">
+        <span class="sb-icon">🏠</span> Início
+      </div>
+      <div class="sb-item" onclick="showPage('ficha')" id="sb-ficha">
+        <span class="sb-icon">📋</span> Meu Treino
+      </div>
+      <div class="sb-item" onclick="showPage('nutri')" id="sb-nutri">
+        <span class="sb-icon">🍎</span> Guia Alimentar
+      </div>
+      <div class="sb-item" onclick="showPage('progresso')" id="sb-progresso">
+        <span class="sb-icon">📈</span> Progresso
+      </div>
+      <div class="sb-item" onclick="showPage('historico')" id="sb-historico">
+        <span class="sb-icon">📂</span> Histórico
+      </div>
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="pg-header">
+          <div class="pg-title" id="dash-titulo">Olá, Aluno!</div>
+          <div class="pg-sub" id="dash-plano">Carregando seu plano...</div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon">🏋️</div>
+            <div class="metric-val" id="m-fichas">0</div>
+            <div class="metric-label">Fichas recebidas</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon">📅</div>
+            <div class="metric-val" id="m-dias">0</div>
+            <div class="metric-label">Dias de treino</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon">⚖️</div>
+            <div class="metric-val" id="m-peso">—</div>
+            <div class="metric-label">Peso atual (kg)</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon">🎯</div>
+            <div class="metric-val" id="m-imc">—</div>
+            <div class="metric-label">IMC atual</div>
+          </div>
+        </div>
+
+        <div class="ficha-box" id="dash-ficha-preview">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">Nenhuma ficha disponível ainda</div>
+            <div class="empty-sub">Seu personal irá publicar seu treino em breve!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEU TREINO -->
+      <div class="page" id="page-ficha">
+        <div class="pg-header">
+          <div class="pg-title">Meu Treino</div>
+          <div class="pg-sub">Ficha atual personalizada pelo Prof. Will Gomes</div>
+        </div>
+        <div id="ficha-content">
+          <div class="empty-state">
+            <div class="empty-icon">⏳</div>
+            <div class="empty-title">Treino sendo preparado</div>
+            <div class="empty-sub">Prof. Will está montando sua ficha personalizada. Em até 48h você terá acesso aqui!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GUIA ALIMENTAR -->
+      <div class="page" id="page-nutri">
+        <div class="pg-header">
+          <div class="pg-title">Guia Alimentar</div>
+          <div class="pg-sub">Orientações de alimentação do Prof. Will Gomes</div>
+        </div>
+        <div id="nutri-content">
+          <div class="empty-state">
+            <div class="empty-icon">🍎</div>
+            <div class="empty-title">Guia alimentar não disponível</div>
+            <div class="empty-sub">Este recurso está disponível nos planos Premium, Evolução e todos os Acompanhamentos.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESSO -->
+      <div class="page" id="page-progresso">
+        <div class="pg-header">
+          <div class="pg-title">Meu Progresso</div>
+          <div class="pg-sub">Registre seu peso e medidas para acompanhar a evolução</div>
+        </div>
+
+        <div class="prog-form">
+          <h3>📝 Registrar medidas de hoje</h3>
+          <div class="form-grid">
+            <div class="field"><label>Peso (kg)</label><input type="number" id="p-peso" placeholder="ex: 72.5" step="0.1"/></div>
+            <div class="field"><label>% Gordura</label><input type="number" id="p-gordura" placeholder="ex: 18.5" step="0.1"/></div>
+            <div class="field"><label>Cintura (cm)</label><input type="number" id="p-cintura" placeholder="ex: 80"/></div>
+            <div class="field"><label>Quadril (cm)</label><input type="number" id="p-quadril" placeholder="ex: 96"/></div>
+            <div class="field"><label>Braço (cm)</label><input type="number" id="p-braco" placeholder="ex: 34"/></div>
+            <div class="field"><label>Coxa (cm)</label><input type="number" id="p-coxa" placeholder="ex: 55"/></div>
+          </div>
+          <button class="btn-save" onclick="salvarProgresso()">💾 Salvar registro de hoje</button>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-title">📊 Evolução do peso (últimos registros)</div>
+          <div class="chart-bars" id="chart-peso"></div>
+        </div>
+
+        <div id="prog-historico"></div>
+      </div>
+
+      <!-- HISTÓRICO -->
+      <div class="page" id="page-historico">
+        <div class="pg-header">
+          <div class="pg-title">Histórico</div>
+          <div class="pg-sub">Todas as fichas que você já recebeu</div>
+        </div>
+        <div id="historico-content">
+          <div class="empty-state">
+            <div class="empty-icon">📂</div>
+            <div class="empty-title">Nenhum histórico ainda</div>
+            <div class="empty-sub">Suas fichas anteriores aparecerão aqui.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /app-layout -->
+
+  <!-- Bottom nav mobile -->
+  <div class="bottom-nav">
+    <div class="bn-items">
+      <button class="bn-item active" onclick="showPage('dashboard')" id="bn-dashboard"><span class="bn-icon">🏠</span>Início</button>
+      <button class="bn-item" onclick="showPage('ficha')" id="bn-ficha"><span class="bn-icon">📋</span>Treino</button>
+      <button class="bn-item" onclick="showPage('nutri')" id="bn-nutri"><span class="bn-icon">🍎</span>Nutrição</button>
+      <button class="bn-item" onclick="showPage('progresso')" id="bn-progresso"><span class="bn-icon">📈</span>Progresso</button>
+      <button class="bn-item" onclick="showPage('historico')" id="bn-historico"><span class="bn-icon">📂</span>Histórico</button>
+    </div>
+  </div>
+</div>
+
+<div id="notif"></div>
+
+<script>
+const SB_URL = 'https://fkpgehyjwxkoyhdbhtva.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcGdlaHlqd3hrb3loZGJodHZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDE5MTQsImV4cCI6MjA5ODE3NzkxNH0.dPJGKvw0KIOOwAC-xf0djgixVSpz8J9S-L-gFsth1xk';
+let SB, usuario, dadosCliente;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async ()=>{
+  SB = window.supabase?.createClient(SB_URL, SB_KEY);
+  if(!SB){ notif('Erro de conexão','#ef4444'); return; }
+
+  const { data:{ session } } = await SB.auth.getSession();
+  if(session){ usuario = session.user; entrarNoApp(); }
+});
+
+// ── AUTH TABS ─────────────────────────────────────────────────────────────────
+function setAuthTab(tab){
+  document.querySelectorAll('.auth-tab-btn').forEach((b,i)=>b.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='cadastro')));
+  document.getElementById('form-login').style.display = tab==='login'?'block':'none';
+  document.getElementById('form-cadastro').style.display = tab==='cadastro'?'block':'none';
+  document.getElementById('auth-err').style.display='none';
+  document.getElementById('auth-ok').style.display='none';
+}
+
+function authErr(msg){ const el=document.getElementById('auth-err'); el.textContent=msg; el.style.display='block'; }
+function authOk(msg){ const el=document.getElementById('auth-ok'); el.textContent=msg; el.style.display='block'; }
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+async function fazerLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if(!email||!pass){ authErr('Preencha e-mail e senha.'); return; }
+  const { data, error } = await SB.auth.signInWithPassword({ email, password:pass });
+  if(error){ authErr('E-mail ou senha incorretos.'); return; }
+  usuario = data.user;
+  entrarNoApp();
+}
+
+// ── CADASTRO ──────────────────────────────────────────────────────────────────
+async function fazerCadastro(){
+  const nome  = document.getElementById('cad-nome').value.trim();
+  const email = document.getElementById('cad-email').value.trim();
+  const pass  = document.getElementById('cad-pass').value;
+  const pass2 = document.getElementById('cad-pass2').value;
+  if(!nome||!email||!pass){ authErr('Preencha todos os campos.'); return; }
+  if(pass.length < 6){ authErr('A senha precisa ter ao menos 6 caracteres.'); return; }
+  if(pass !== pass2){ authErr('As senhas não coincidem.'); return; }
+
+  const { data, error } = await SB.auth.signUp({ email, password:pass, options:{ data:{ nome } } });
+  if(error){ authErr('Erro ao criar conta: '+error.message); return; }
+
+  // Salvar perfil no banco
+  await SB.from('portal_alunos').upsert({ user_id: data.user.id, email, nome, criado_em: new Date().toISOString() });
+  authOk('Conta criada! Verifique seu e-mail para confirmar o cadastro.');
+}
+
+// ── LOGOUT ────────────────────────────────────────────────────────────────────
+async function fazerLogout(){
+  await SB.auth.signOut();
+  location.reload();
+}
+
+// ── ENTRAR NO APP ─────────────────────────────────────────────────────────────
+async function entrarNoApp(){
+  document.getElementById('auth-wrap').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('nav-user-email').textContent = usuario.email;
+  await carregarDados();
+}
+
+// ── CARREGAR DADOS ────────────────────────────────────────────────────────────
+async function carregarDados(){
+  // Registrar último acesso
+  await SB.from('portal_alunos').upsert({ user_id:usuario.id, email:usuario.email, ultimo_acesso: new Date().toISOString() }, { onConflict:'user_id' });
+
+  // Buscar dados do cliente (vinculado pelo e-mail)
+  const { data:clientes } = await SB.from('clientes').select('*').eq('email', usuario.email).limit(1);
+  if(clientes && clientes.length > 0){
+    dadosCliente = { ...clientes[0], ...(clientes[0].dados||{}) };
+  }
+
+  // Buscar fichas publicadas
+  const { data:fichas } = await SB.from('portal_fichas').select('*').eq('user_id', usuario.id).order('criado_em',{ascending:false});
+
+  // Buscar progresso
+  const { data:progressos } = await SB.from('portal_progresso').select('*').eq('user_id', usuario.id).order('criado_em',{ascending:false});
+
+  // Montar dashboard
+  montarDashboard(fichas||[], progressos||[]);
+  montarFicha(fichas||[]);
+  montarHistorico(fichas||[]);
+  montarGrafico(progressos||[]);
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function montarDashboard(fichas, progressos){
+  const nome = dadosCliente?.nome || usuario.user_metadata?.nome || usuario.email.split('@')[0];
+  document.getElementById('dash-titulo').textContent = `Olá, ${nome.split(' ')[0]}!`;
+  document.getElementById('dash-plano').textContent = dadosCliente?.plano ? `Plano: ${dadosCliente.plano}` : 'Bem-vindo ao portal WillgomesFit';
+
+  document.getElementById('m-fichas').textContent = fichas.length;
+
+  // Dias de treino (contagem de dias únicos de treino registrado)
+  const prog = progressos[0];
+  if(prog){
+    document.getElementById('m-peso').textContent = prog.peso || '—';
+    const altura = dadosCliente?.altura || dadosCliente?.dados?.altura;
+    if(prog.peso && altura){
+      const h = parseFloat(altura)/100;
+      document.getElementById('m-imc').textContent = (parseFloat(prog.peso)/(h*h)).toFixed(1);
+    }
+  }
+  document.getElementById('m-dias').textContent = progressos.length;
+
+  // Preview da ficha mais recente
+  if(fichas.length > 0){
+    const f = fichas[0];
+    document.getElementById('dash-ficha-preview').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:1px">${f.titulo||'Ficha de Treino'}</div>
+          <div style="font-size:.75rem;color:#666">Publicada em ${new Date(f.criado_em).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <button class="btn-ver" onclick="showPage('ficha')">Ver treino completo →</button>
+      </div>
+      <div style="background:rgba(232,93,4,.05);border:1px solid rgba(232,93,4,.1);border-radius:10px;padding:12px;font-size:.85rem;color:#aaa">
+        ${f.resumo || 'Seu treino personalizado está disponível. Toque em "Ver treino completo" para acessar!'}
+      </div>
+    `;
+  }
+}
+
+// ── FICHA DE TREINO ───────────────────────────────────────────────────────────
+function montarFicha(fichas){
+  if(!fichas.length){
+    document.getElementById('ficha-content').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⏳</div>
+        <div class="empty-title">Treino sendo preparado</div>
+        <div class="empty-sub">Prof. Will está montando sua ficha personalizada. Em até 48h você terá acesso aqui!</div>
+      </div>`;
+    return;
+  }
+
+  const f = fichas[0];
+  const treinos = f.treino_json || {};
+  let html = `<div class="ficha-box">
+    <div class="ficha-box-header">
+      <div>
+        <div class="ficha-box-title">${f.titulo||'Ficha de Treino'}</div>
+        <div class="ficha-date">📅 Publicada em ${new Date(f.criado_em).toLocaleDateString('pt-BR')}</div>
+      </div>
+    </div>`;
+
+  const dias = Object.entries(treinos).filter(([k])=>k!=='_notas');
+  if(dias.length > 0){
+    dias.forEach(([dia, exs])=>{
+      html += `<div class="treino-dia">
+        <div class="treino-dia-nome">${dia}</div>`;
+      if(Array.isArray(exs)){
+        exs.forEach((ex,i)=>{
+          html += `<div class="exercicio-row">
+            <div class="ex-num">${i+1}</div>
+            <div class="ex-info">
+              <div class="ex-nome">${ex.nome||ex.exercicio||ex}</div>
+              <div class="ex-det">
+                ${ex.series?`<span class="ex-tag">📊 ${ex.series} séries</span>`:''}
+                ${ex.reps?`<span class="ex-tag">🔁 ${ex.reps} reps</span>`:''}
+                ${ex.descanso?`<span class="ex-tag">⏱️ ${ex.descanso}</span>`:''}
+                ${ex.rir!==undefined?`<span class="ex-tag">💪 RIR ${ex.rir}</span>`:''}
+              </div>
+            </div>
+          </div>`;
+        });
+      }
+      html += `</div>`;
+    });
+  } else {
+    html += `<p style="color:#888;font-size:.88rem">${f.resumo||'Treino disponível. Consulte o e-mail que recebeu ou entre em contato com o Prof. Will.'}</p>`;
+  }
+
+  // Notas científicas
+  const notas = treinos._notas || f.notas || [];
+  if(notas.length > 0){
+    html += `<div class="notas-box"><div style="font-size:.75rem;font-weight:700;color:var(--orange);margin-bottom:8px">📚 Orientações do Prof. Will</div>`;
+    notas.forEach(n=> html += `<div class="nota-item">${n}</div>`);
+    html += `</div>`;
+  }
+  html += `</div>`;
+  document.getElementById('ficha-content').innerHTML = html;
+}
+
+// ── HISTÓRICO ─────────────────────────────────────────────────────────────────
+function montarHistorico(fichas){
+  if(!fichas.length){
+    document.getElementById('historico-content').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📂</div>
+        <div class="empty-title">Nenhum histórico ainda</div>
+        <div class="empty-sub">Suas fichas anteriores aparecerão aqui.</div>
+      </div>`;
+    return;
+  }
+  document.getElementById('historico-content').innerHTML = fichas.map((f,i)=>`
+    <div class="historico-item">
+      <div class="hist-info">
+        <div class="hist-titulo">${f.titulo||`Ficha de Treino #${fichas.length-i}`}</div>
+        <div class="hist-data">Publicada em ${new Date(f.criado_em).toLocaleDateString('pt-BR')}</div>
+      </div>
+      ${i===0?`<button class="btn-ver" onclick="showPage('ficha')">Ver atual →</button>`:`<span style="font-size:.75rem;color:#555">Arquivo</span>`}
+    </div>`).join('');
+}
+
+// ── PROGRESSO ─────────────────────────────────────────────────────────────────
+async function salvarProgresso(){
+  const peso    = document.getElementById('p-peso').value;
+  const gordura = document.getElementById('p-gordura').value;
+  const cintura = document.getElementById('p-cintura').value;
+  const quadril = document.getElementById('p-quadril').value;
+  const braco   = document.getElementById('p-braco').value;
+  const coxa    = document.getElementById('p-coxa').value;
+
+  if(!peso){ notif('Informe pelo menos o peso','#ef4444'); return; }
+
+  const { error } = await SB.from('portal_progresso').insert({
+    user_id: usuario.id,
+    email: usuario.email,
+    peso: parseFloat(peso)||null,
+    gordura: parseFloat(gordura)||null,
+    cintura: parseFloat(cintura)||null,
+    quadril: parseFloat(quadril)||null,
+    braco: parseFloat(braco)||null,
+    coxa: parseFloat(coxa)||null,
+    criado_em: new Date().toISOString()
+  });
+
+  if(error){ notif('Erro ao salvar: '+error.message,'#ef4444'); return; }
+  notif('✅ Progresso salvo!','#10b981');
+
+  // Limpar campos
+  ['p-peso','p-gordura','p-cintura','p-quadril','p-braco','p-coxa'].forEach(id=> document.getElementById(id).value='');
+
+  // Recarregar dados
+  await carregarDados();
+}
+
+function montarGrafico(progressos){
+  const el = document.getElementById('chart-peso');
+  if(!progressos.length){ el.innerHTML='<div style="color:#555;font-size:.8rem;width:100%;text-align:center">Nenhum registro ainda</div>'; return; }
+
+  const ultimos = progressos.slice(0,8).reverse();
+  const maxPeso = Math.max(...ultimos.map(p=>p.peso||0));
+  const minPeso = Math.min(...ultimos.map(p=>p.peso||0));
+  const range = maxPeso - minPeso || 1;
+
+  el.innerHTML = ultimos.map(p=>{
+    const pct = Math.max(10, ((p.peso - minPeso)/range)*90 + 10);
+    const data = new Date(p.criado_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    return `<div class="bar-col">
+      <div class="bar-val">${p.peso}kg</div>
+      <div class="bar" style="height:${pct}%"></div>
+      <div class="bar-label">${data}</div>
+    </div>`;
+  }).join('');
+
+  // Histórico em tabela
+  document.getElementById('prog-historico').innerHTML = `
+    <div class="chart-wrap">
+      <div class="chart-title">📋 Registros de progresso</div>
+      ${progressos.slice(0,10).map(p=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:.82rem;flex-wrap:wrap;gap:6px">
+          <span style="color:#888">${new Date(p.criado_em).toLocaleDateString('pt-BR')}</span>
+          ${p.peso?`<span>⚖️ <strong>${p.peso}kg</strong></span>`:''}
+          ${p.gordura?`<span>🔥 ${p.gordura}% gordura</span>`:''}
+          ${p.cintura?`<span>📏 Cintura: ${p.cintura}cm</span>`:''}
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── NAVEGAÇÃO ─────────────────────────────────────────────────────────────────
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id)?.classList.add('active');
+  document.getElementById('sb-'+id)?.classList.add('active');
+  document.getElementById('bn-'+id)?.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ── NOTIF ─────────────────────────────────────────────────────────────────────
+function notif(msg, cor='#10b981'){
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.style.borderColor = cor;
+  el.style.color = cor;
+  el.style.opacity = '1';
+  clearTimeout(window._notifT);
+  window._notifT = setTimeout(()=>el.style.opacity='0', 3000);
+}
+</script>
+</body>
+</html>
