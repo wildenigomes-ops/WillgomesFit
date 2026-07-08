@@ -124,6 +124,34 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
 .empty-title{font-size:1rem;font-weight:700;margin-bottom:6px}
 .empty-sub{font-size:.82rem;color:var(--muted)}
 
+/* BOTÃO DEGUSTAÇÃO */
+.btn-demo{width:100%;background:linear-gradient(135deg,#7c3aed,#8b5cf6);border:none;color:#fff;font-family:var(--font-b);font-weight:800;font-size:.9rem;padding:14px;border-radius:12px;cursor:pointer;transition:all .25s;letter-spacing:.3px}
+.btn-demo:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(139,92,246,.4)}
+
+/* BANNER TIMER DEGUSTAÇÃO */
+#demo-banner{display:none;position:sticky;top:57px;z-index:99;background:linear-gradient(135deg,#7c3aed,#6d28d9);padding:10px 20px;text-align:center}
+#demo-banner .demo-inner{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;max-width:900px;margin:0 auto}
+#demo-timer{font-family:var(--font-d);font-size:1.3rem;letter-spacing:2px;color:#fff}
+#demo-banner .demo-cta{background:#fff;color:#7c3aed;font-weight:800;font-size:.78rem;padding:7px 16px;border-radius:20px;text-decoration:none;letter-spacing:.5px;white-space:nowrap}
+.demo-lock{position:relative}
+.demo-lock::after{content:'🔒';position:absolute;top:8px;right:8px;font-size:1rem;pointer-events:none}
+
+/* OVERLAY EXPIRADO */
+#demo-expired{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;align-items:center;justify-content:center;padding:24px}
+.expired-box{background:var(--card);border:1px solid rgba(139,92,246,.4);border-radius:20px;padding:40px 32px;max-width:440px;width:100%;text-align:center}
+.expired-icon{font-size:3rem;margin-bottom:16px}
+.expired-title{font-family:var(--font-d);font-size:2rem;letter-spacing:2px;margin-bottom:8px;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.expired-sub{color:#aaa;font-size:.88rem;line-height:1.6;margin-bottom:28px}
+.expired-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px}
+.expired-plan{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center}
+.expired-plan.dest{border-color:var(--orange);background:rgba(232,93,4,.08)}
+.ep-name{font-size:.65rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--orange);margin-bottom:4px}
+.ep-price{font-family:var(--font-d);font-size:1.4rem;color:#fff}
+.ep-sub{font-size:.62rem;color:#666;margin-top:2px}
+.btn-assinar{display:block;background:linear-gradient(135deg,var(--orange),#ff6b00);color:#fff;font-weight:800;font-size:.95rem;padding:15px;border-radius:12px;text-decoration:none;letter-spacing:.5px;margin-bottom:12px;transition:all .25s}
+.btn-assinar:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(232,93,4,.4)}
+.btn-demo-novamente{background:rgba(255,255,255,.06);border:1px solid var(--border);color:#aaa;font-size:.8rem;padding:10px;border-radius:10px;cursor:pointer;width:100%}
+
 /* NOTIF */
 #notif{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 24px;font-size:.85rem;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 
@@ -150,6 +178,8 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
   .bottom-nav{display:block}
   .main{padding-bottom:80px}
 }
+.ex-gif{width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid rgba(16,185,129,.3);flex-shrink:0;cursor:pointer;transition:all .3s}
+.ex-gif-grande{width:200px;height:200px}
 </style>
 </head>
 <body>
@@ -160,32 +190,60 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
     <div class="auth-logo">WILLGOMESFIT</div>
     <div class="auth-sub">Portal do Aluno · Acesse seu treino</div>
 
-    <div class="auth-tab">
-      <button class="auth-tab-btn active" onclick="setAuthTab('login')">Entrar</button>
-      <button class="auth-tab-btn" onclick="setAuthTab('cadastro')">Criar conta</button>
-    </div>
-
     <div id="auth-err" class="auth-err"></div>
     <div id="auth-ok" class="auth-ok"></div>
 
     <div id="form-login">
       <input class="inp" type="email" id="login-email" placeholder="Seu e-mail"/>
-      <input class="inp" type="password" id="login-pass" placeholder="Senha"/>
+      <input class="inp" type="password" id="login-pass" placeholder="Senha enviada pelo Prof. Will"/>
       <button class="btn-auth" onclick="fazerLogin()">Entrar no portal</button>
+      <div style="text-align:center;margin-top:12px">
+        <span style="font-size:.75rem;color:#555">Não tem acesso? </span>
+        <a href="https://wildenigomes-ops.github.io/WillgomesFit/willgomesfit.html#planos" style="font-size:.75rem;color:#a78bfa;text-decoration:none;font-weight:700">Conheça os planos →</a>
+      </div>
     </div>
 
-    <div id="form-cadastro" style="display:none">
-      <input class="inp" type="text" id="cad-nome" placeholder="Seu nome completo"/>
-      <input class="inp" type="email" id="cad-email" placeholder="Seu e-mail"/>
-      <input class="inp" type="password" id="cad-pass" placeholder="Crie uma senha (mín. 6 caracteres)"/>
-      <input class="inp" type="password" id="cad-pass2" placeholder="Confirme a senha"/>
-      <button class="btn-auth" onclick="fazerCadastro()">Criar minha conta</button>
+    <div style="margin-top:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="color:#555;font-size:.75rem">ou</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(139,92,246,.05));border:1px solid rgba(139,92,246,.2);border-radius:14px;padding:20px">
+        <div style="text-align:center;margin-bottom:14px">
+          <div style="font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:4px">🎯 Experimente grátis por 20 min</div>
+          <div style="font-size:.75rem;color:#888">Veja como seria seu treino personalizado — sem precisar criar conta</div>
+        </div>
+        <input class="inp" type="text" id="demo-nome" placeholder="Seu nome completo" style="margin-bottom:10px"/>
+        <div style="position:relative;margin-bottom:14px">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#888;font-size:.88rem;pointer-events:none">🇧🇷 +55</span>
+          <input class="inp" type="tel" id="demo-whatsapp" placeholder="WhatsApp (ex: 85 99999-9999)" style="padding-left:68px;margin-bottom:0"/>
+        </div>
+        <button class="btn-demo" onclick="coletarLeadEIniciar()">
+          🚀 Quero ver meu treino de exemplo
+        </button>
+        <div style="font-size:.68rem;color:#555;margin-top:8px;text-align:center">Seus dados são usados apenas para contato sobre os planos</div>
+      </div>
     </div>
+
+
   </div>
 </div>
 
 <!-- ── APP ── -->
 <div id="app">
+  <!-- BANNER DEGUSTAÇÃO -->
+  <div id="demo-banner">
+    <div class="demo-inner">
+      <span style="color:#e9d5ff;font-size:.82rem;font-weight:700">🎯 Modo Degustação</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="color:#e9d5ff;font-size:.78rem">Expira em:</span>
+        <span id="demo-timer">20:00</span>
+      </div>
+      <a href="#" onclick="document.getElementById('demo-expired').style.display='flex'" class="demo-cta">🚀 Contratar agora</a>
+    </div>
+  </div>
+
   <nav>
     <div class="nav-logo">WILLGOMESFIT</div>
     <div class="nav-right">
@@ -193,6 +251,37 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
       <button class="btn-logout" onclick="fazerLogout()">Sair</button>
     </div>
   </nav>
+
+  <!-- OVERLAY EXPIRADO -->
+  <div id="demo-expired">
+    <div class="expired-box">
+      <div class="expired-icon">⏰</div>
+      <div class="expired-title">DEGUSTAÇÃO ENCERRADA</div>
+      <div class="expired-sub">
+        Gostou do que viu? Isso é só uma amostra do que o método WillgomesFit pode fazer por você.<br><br>
+        Com um plano de acompanhamento, você recebe sua ficha <strong style="color:#fff">100% personalizada</strong>, com GIFs de execução, suporte no WhatsApp e acompanhamento real da sua evolução.
+      </div>
+      <div class="expired-plans">
+        <div class="expired-plan">
+          <div class="ep-name">Start</div>
+          <div class="ep-price">R$79</div>
+          <div class="ep-sub">/mês</div>
+        </div>
+        <div class="expired-plan dest">
+          <div class="ep-name">⭐ Performance</div>
+          <div class="ep-price">R$119</div>
+          <div class="ep-sub">/mês</div>
+        </div>
+        <div class="expired-plan">
+          <div class="ep-name">Elite</div>
+          <div class="ep-price">R$169</div>
+          <div class="ep-sub">/mês</div>
+        </div>
+      </div>
+      <a href="https://wildenigomes-ops.github.io/WillgomesFit/willgomesfit.html#planos" class="btn-assinar">💪 QUERO MEU PLANO AGORA</a>
+      <button class="btn-demo-novamente" onclick="reiniciarDegustacao()">↩ Ver demonstração novamente (mais 20 min)</button>
+    </div>
+  </div>
 
   <div class="app-layout">
     <!-- Sidebar desktop -->
@@ -211,6 +300,9 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
       </div>
       <div class="sb-item" onclick="showPage('historico')" id="sb-historico">
         <span class="sb-icon">📂</span> Histórico
+      </div>
+      <div class="sb-item" onclick="showPage('senha')" id="sb-senha">
+        <span class="sb-icon">🔑</span> Minha Senha
       </div>
     </div>
 
@@ -244,6 +336,35 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
             <div class="metric-icon">🎯</div>
             <div class="metric-val" id="m-imc">—</div>
             <div class="metric-label">IMC atual</div>
+          </div>
+        </div>
+
+        <!-- PROPAGANDA DENTRO DA DEGUSTAÇÃO -->
+        <div id="demo-ad" style="display:none;margin-bottom:20px">
+          <div style="background:linear-gradient(135deg,rgba(232,93,4,.12),rgba(139,92,246,.08));border:1px solid rgba(232,93,4,.25);border-radius:16px;padding:20px;position:relative;overflow:hidden">
+            <div style="position:absolute;top:-20px;right:-20px;font-size:5rem;opacity:.08">💪</div>
+            <div style="font-size:.68rem;font-weight:800;letter-spacing:2px;color:var(--orange);text-transform:uppercase;margin-bottom:6px">⚡ Oferta exclusiva para você</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;margin-bottom:8px">TRANSFORME SEU CORPO DE VERDADE</div>
+            <p style="font-size:.82rem;color:#bbb;line-height:1.6;margin-bottom:16px">O que você está vendo é só uma demonstração. Com um plano de acompanhamento, você recebe <strong style="color:#fff">treino 100% personalizado</strong>, suporte diário no WhatsApp e acompanhamento real da sua evolução.</p>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+              <div style="background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
+                <div style="font-size:.62rem;font-weight:800;letter-spacing:1px;color:#f59e0b;margin-bottom:4px">START</div>
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#fff">R$79</div>
+                <div style="font-size:.6rem;color:#666">/mês</div>
+              </div>
+              <div style="background:rgba(232,93,4,.1);border:2px solid var(--orange);border-radius:10px;padding:10px;text-align:center;position:relative">
+                <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--orange);color:#fff;font-size:.55rem;font-weight:800;padding:2px 8px;border-radius:10px;white-space:nowrap">⭐ POPULAR</div>
+                <div style="font-size:.62rem;font-weight:800;letter-spacing:1px;color:var(--orange);margin-bottom:4px">PERFORMANCE</div>
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#fff">R$119</div>
+                <div style="font-size:.6rem;color:#666">/mês</div>
+              </div>
+              <div style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:10px;padding:10px;text-align:center">
+                <div style="font-size:.62rem;font-weight:800;letter-spacing:1px;color:#a78bfa;margin-bottom:4px">ELITE</div>
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#fff">R$169</div>
+                <div style="font-size:.6rem;color:#666">/mês</div>
+              </div>
+            </div>
+            <a href="https://wildenigomes-ops.github.io/WillgomesFit/willgomesfit.html#planos" style="display:block;background:linear-gradient(135deg,var(--orange),#ff6b00);color:#fff;font-weight:800;font-size:.88rem;padding:13px;border-radius:12px;text-decoration:none;text-align:center;letter-spacing:.5px">🔥 QUERO MEU PLANO AGORA</a>
           </div>
         </div>
 
@@ -329,6 +450,24 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
         </div>
       </div>
 
+      <!-- TROCAR SENHA -->
+      <div class="page" id="page-senha">
+        <div class="pg-header">
+          <div class="pg-title">Minha Senha</div>
+          <div class="pg-sub">Troque a senha temporária por uma de sua preferência</div>
+        </div>
+        <div class="prog-form" style="max-width:420px">
+          <h3>🔑 Definir nova senha</h3>
+          <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:12px;font-size:.8rem;color:#fbbf24;margin-bottom:16px">
+            Você está usando a senha temporária enviada pelo Prof. Will. Recomendamos que a troque agora.
+          </div>
+          <div class="field" style="margin-bottom:12px"><label>Senha atual</label><input type="password" id="s-atual" placeholder="Senha que você recebeu"/></div>
+          <div class="field" style="margin-bottom:12px"><label>Nova senha</label><input type="password" id="s-nova" placeholder="Mínimo 6 caracteres"/></div>
+          <div class="field" style="margin-bottom:16px"><label>Confirmar nova senha</label><input type="password" id="s-confirma" placeholder="Repita a nova senha"/></div>
+          <button class="btn-save" onclick="trocarSenha()">🔑 Salvar nova senha</button>
+        </div>
+      </div>
+
     </div><!-- /main -->
   </div><!-- /app-layout -->
 
@@ -340,6 +479,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
       <button class="bn-item" onclick="showPage('nutri')" id="bn-nutri"><span class="bn-icon">🍎</span>Nutrição</button>
       <button class="bn-item" onclick="showPage('progresso')" id="bn-progresso"><span class="bn-icon">📈</span>Progresso</button>
       <button class="bn-item" onclick="showPage('historico')" id="bn-historico"><span class="bn-icon">📂</span>Histórico</button>
+      <button class="bn-item" onclick="showPage('senha')" id="bn-senha"><span class="bn-icon">🔑</span>Senha</button>
     </div>
   </div>
 </div>
@@ -350,15 +490,180 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
 const SB_URL = 'https://fkpgehyjwxkoyhdbhtva.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcGdlaHlqd3hrb3loZGJodHZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDE5MTQsImV4cCI6MjA5ODE3NzkxNH0.dPJGKvw0KIOOwAC-xf0djgixVSpz8J9S-L-gFsth1xk';
 let SB, usuario, dadosCliente;
+let modoDemo = false;
+let demoTimer = null;
+
+// ── TREINO DEMONSTRATIVO (exemplo de excelência) ──────────────────────────────
+const TREINO_DEMO = {
+  titulo: 'Ficha Demonstrativa — WillgomesFit',
+  resumo: 'Exemplo de treino personalizado pelo método WillgomesFit',
+  criado_em: new Date().toISOString(),
+  publicado_por: 'Prof. Will Gomes',
+  gifs: {},
+  notas: [
+    '📊 Volume semanal: 12–16 séries/grupo/semana (ACSM 2026 — Currier et al.)',
+    '🎯 Intensidade: pare 2 reps antes da falha (RIR 2) — tão eficaz com menos fadiga',
+    '📈 Progressão dupla: aumente reps até o limite, depois aumente a carga',
+    '⏱️ Descanso: 90–120s entre séries para hipertrofia (Singer et al. 2024)',
+    '🔄 Frequência: cada grupo muscular 2× por semana (Schoenfeld et al. 2019)',
+    '📏 Amplitude completa: ênfase na porção alongada do movimento (Wolf et al. 2025)',
+    '🔋 Deload a cada 4–6 semanas: reduza volume em 40–50% por 1 semana',
+    'Refs: ACSM 2026 · Schoenfeld 2019 · Singer 2024 · Wolf 2025 · Helms (RIR)'
+  ],
+  treino_json: {
+    'TREINO A — PEITO & TRÍCEPS': [
+      {nome:'Supino Reto com Barra', series:'4', reps:'8–12', descanso:'2min', rir:'2', obs:'Amplitude completa — toque o peito levemente'},
+      {nome:'Supino Inclinado com Halteres', series:'3', reps:'10–12', descanso:'90s', rir:'2', obs:'Ênfase na porção superior do peitoral'},
+      {nome:'Crucifixo com Halteres', series:'3', reps:'12–15', descanso:'75s', rir:'2', obs:'Foco no alongamento no ponto final'},
+      {nome:'Tríceps Pulley Corda', series:'3', reps:'12–15', descanso:'75s', rir:'2', obs:'Abra a corda no final para isolar a cabeça longa'},
+      {nome:'Tríceps Francês com Halter', series:'3', reps:'10–12', descanso:'75s', rir:'2', obs:'Cabeça longa — posição mais favorável para hipertrofia'},
+    ],
+    'TREINO B — COSTAS & BÍCEPS': [
+      {nome:'Puxada Frontal na Polia', series:'4', reps:'8–12', descanso:'2min', rir:'2', obs:'Pegada supinada ou neutra — amplitude total'},
+      {nome:'Remada Curvada com Barra', series:'4', reps:'8–10', descanso:'2min', rir:'2', obs:'Cotovelo próximo ao corpo — foco no dorsal'},
+      {nome:'Remada Unilateral com Halter', series:'3', reps:'10–12', descanso:'90s', rir:'2', obs:'Amplitude máxima — alongamento no topo'},
+      {nome:'Rosca Direta com Barra', series:'3', reps:'10–12', descanso:'75s', rir:'2', obs:'Sem balanço — supinação total no final'},
+      {nome:'Rosca Concentrada com Halter', series:'3', reps:'12–15', descanso:'60s', rir:'2', obs:'Isole o bíceps — não balance o tronco'},
+    ],
+    'TREINO C — PERNAS & GLÚTEOS': [
+      {nome:'Agachamento Livre', series:'4', reps:'8–10', descanso:'2min', rir:'2', obs:'Profundidade máxima — glúteo abaixo do joelho'},
+      {nome:'Leg Press 45°', series:'4', reps:'10–12', descanso:'2min', rir:'2', obs:'Pés altos e afastados para maior ativação de glúteo'},
+      {nome:'Stiff com Halteres', series:'3', reps:'10–12', descanso:'90s', rir:'2', obs:'Ênfase no alongamento dos isquiotibiais'},
+      {nome:'Afundo com Halteres', series:'3', reps:'12/lado', descanso:'75s', rir:'2', obs:'Joelho traseiro quase toca o chão'},
+      {nome:'Cadeira Extensora', series:'3', reps:'15–20', descanso:'60s', rir:'2', obs:'Contração isométrica no topo por 1 segundo'},
+    ],
+    'TREINO D — OMBROS & ABDÔMEN': [
+      {nome:'Desenvolvimento com Halteres', series:'4', reps:'10–12', descanso:'90s', rir:'2', obs:'Não bloqueie os cotovelos no topo'},
+      {nome:'Elevação Lateral com Halteres', series:'4', reps:'15–20', descanso:'60s', rir:'2', obs:'Movimento lento — 3s na descida (excêntrico)'},
+      {nome:'Encolhimento com Halteres', series:'3', reps:'12–15', descanso:'75s', rir:'2', obs:'Segure 1 segundo no topo — amplitude total'},
+      {nome:'Abdominal Remador', series:'3', reps:'15–20', descanso:'60s', rir:'1', obs:'Controle total — não use impulso'},
+      {nome:'Prancha Abdominal', series:'3', reps:'30–45s', descanso:'45s', rir:'—', obs:'Core braced — respire normalmente'},
+    ]
+  }
+};
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async ()=>{
   SB = window.supabase?.createClient(SB_URL, SB_KEY);
   if(!SB){ notif('Erro de conexão','#ef4444'); return; }
-
   const { data:{ session } } = await SB.auth.getSession();
   if(session){ usuario = session.user; entrarNoApp(); }
 });
+
+// ── CAPTAÇÃO DE LEAD ANTES DA DEGUSTAÇÃO ─────────────────────────────────────
+async function coletarLeadEIniciar(){
+  const nome = document.getElementById('demo-nome').value.trim();
+  const whatsapp = document.getElementById('demo-whatsapp').value.trim().replace(/\D/g,'');
+
+  if(!nome){ authErr('Informe seu nome para continuar.'); return; }
+  if(whatsapp.length < 10){ authErr('Informe um WhatsApp válido com DDD.'); return; }
+
+  const payload = {
+    nome,
+    whatsapp,
+    numero_formatado: '55' + whatsapp,
+    status: 'novo',
+    criado_em: new Date().toISOString(),
+    origem: 'degustacao_portal'
+  };
+
+  // Salvar no Supabase (não bloqueante — se falhar, degustação continua)
+  try{
+    if(SB) await SB.from('leads_degustacao').insert(payload);
+  }catch(e){ console.warn('Erro ao salvar lead:', e); }
+
+  // Armazenar localmente para uso na degustação
+  window._leadDemo = { nome, whatsapp: '55'+whatsapp };
+  iniciarDegustacao();
+}
+
+// ── DEGUSTAÇÃO ────────────────────────────────────────────────────────────────
+function iniciarDegustacao(){
+  modoDemo = true;
+  document.getElementById('auth-wrap').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('nav-user-email').textContent = '🎯 Modo Degustação';
+  document.getElementById('demo-banner').style.display = 'block';
+  document.querySelector('.btn-logout').textContent = 'Sair';
+
+  // Montar app com treino demo
+  montarDashboardDemo();
+  montarFicha([TREINO_DEMO]);
+  montarHistorico([TREINO_DEMO]);
+
+  // Desabilitar abas de feedback/progresso no demo
+  document.getElementById('sb-progresso').style.opacity = '.4';
+  document.getElementById('sb-progresso').style.pointerEvents = 'none';
+  document.getElementById('sb-progresso').title = '🔒 Disponível nos planos de acompanhamento';
+  document.getElementById('bn-progresso').style.opacity = '.4';
+  document.getElementById('bn-progresso').style.pointerEvents = 'none';
+
+  // Iniciar countdown de 60 minutos
+  const fim = Date.now() + 20 * 60 * 1000;
+  demoTimer = setInterval(()=>{
+    const resto = fim - Date.now();
+    if(resto <= 0){
+      clearInterval(demoTimer);
+      document.getElementById('demo-expired').style.display = 'flex';
+      return;
+    }
+    const m = Math.floor(resto/60000);
+    const s = Math.floor((resto%60000)/1000);
+    document.getElementById('demo-timer').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    // Aviso nos últimos 5 minutos
+    if(resto < 5*60*1000){
+      document.getElementById('demo-timer').style.color = '#fbbf24';
+    }
+    if(resto < 60*1000){
+      document.getElementById('demo-timer').style.color = '#ef4444';
+    }
+  }, 1000);
+}
+
+function reiniciarDegustacao(){
+  document.getElementById('demo-expired').style.display = 'none';
+  clearInterval(demoTimer);
+  iniciarDegustacao();
+}
+
+function montarDashboardDemo(){
+  const primeiroNome = (window._leadDemo?.nome||'').split(' ')[0] || 'Visitante';
+  document.getElementById('dash-titulo').textContent = `Olá, ${primeiroNome}! 👋`;
+  document.getElementById('dash-plano').textContent = '🎯 Modo Degustação — Veja como seria seu treino personalizado';
+  document.getElementById('m-fichas').textContent = '1';
+  document.getElementById('m-dias').textContent = '4';
+  document.getElementById('m-peso').textContent = '—';
+  document.getElementById('m-imc').textContent = '—';
+  // Mostrar propaganda
+  const adEl = document.getElementById('demo-ad');
+  if(adEl) adEl.style.display = 'block';
+  document.getElementById('dash-ficha-preview').innerHTML = `
+    <div style="background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(232,93,4,.05));border:1px solid rgba(139,92,246,.2);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:1.2rem">🎯</span>
+        <strong style="color:#a78bfa">Isso é só uma demonstração</strong>
+      </div>
+      <p style="font-size:.84rem;color:#aaa;line-height:1.6">Com seu plano real, você recebe uma ficha <strong style="color:#fff">100% personalizada</strong> para o seu corpo, seus objetivos e sua rotina — com GIFs de execução, suporte no WhatsApp e acompanhamento do Prof. Will Gomes.</p>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:1px">Ficha Demonstrativa</div>
+        <div style="font-size:.75rem;color:#666">4 treinos · Método WillgomesFit</div>
+      </div>
+      <button class="btn-ver" onclick="showPage('ficha')">Ver treino completo →</button>
+    </div>`;
+}
+
+// ── VERIFICAR PLANO DO CLIENTE ────────────────────────────────────────────────
+function clienteTemPortal(dados){
+  const plano = (dados?.plano||'').toLowerCase();
+  return plano.includes('start') ||
+         plano.includes('performance') ||
+         plano.includes('elite') ||
+         plano.includes('acompanhamento') ||
+         plano.includes('trimestral') ||
+         plano.includes('semestral');
+}
 
 // ── AUTH TABS ─────────────────────────────────────────────────────────────────
 function setAuthTab(tab){
@@ -374,12 +679,33 @@ function authOk(msg){ const el=document.getElementById('auth-ok'); el.textConten
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 async function fazerLogin(){
-  const email = document.getElementById('login-email').value.trim();
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
   const pass  = document.getElementById('login-pass').value;
   if(!email||!pass){ authErr('Preencha e-mail e senha.'); return; }
-  const { data, error } = await SB.auth.signInWithPassword({ email, password:pass });
-  if(error){ authErr('E-mail ou senha incorretos.'); return; }
-  usuario = data.user;
+
+  // Buscar acesso na tabela portal_alunos (gerenciado pelo painel)
+  const { data, error } = await SB.from('portal_alunos').select('*').eq('email', email).limit(1);
+  if(error||!data||!data.length){ authErr('E-mail não encontrado. Verifique com o Prof. Will.'); return; }
+
+  const aluno = data[0];
+
+  // Verificar se acesso está ativo
+  if(!aluno.ativo){ authErr('Seu acesso ao portal foi desativado. Entre em contato com o Prof. Will.'); return; }
+
+  // Verificar validade
+  if(aluno.acesso_expira && new Date(aluno.acesso_expira) < new Date()){
+    authErr('Seu acesso expirou. Entre em contato com o Prof. Will para renovar.'); return;
+  }
+
+  // Verificar senha (compara com senha_temp ou senha_custom)
+  const senhaValida = (aluno.senha_custom && aluno.senha_custom === pass) || (aluno.senha_temp === pass);
+  if(!senhaValida){ authErr('Senha incorreta. Verifique a senha enviada pelo Prof. Will.'); return; }
+
+  // Login OK — registrar acesso
+  await SB.from('portal_alunos').update({ ultimo_acesso: new Date().toISOString() }).eq('email', email);
+
+  usuario = { email, id: aluno.id, nome: aluno.nome };
+  dadosCliente = aluno;
   entrarNoApp();
 }
 
@@ -401,22 +727,57 @@ async function fazerCadastro(){
   authOk('Conta criada! Verifique seu e-mail para confirmar o cadastro.');
 }
 
-// ── LOGOUT ────────────────────────────────────────────────────────────────────
-async function fazerLogout(){
-  await SB.auth.signOut();
-  location.reload();
+// ── TROCAR SENHA ──────────────────────────────────────────────────────────────
+async function trocarSenha(){
+  const atual    = document.getElementById('s-atual').value;
+  const nova     = document.getElementById('s-nova').value;
+  const confirma = document.getElementById('s-confirma').value;
+  if(!atual||!nova||!confirma){ notif('Preencha todos os campos','#ef4444'); return; }
+  if(nova.length < 6){ notif('A nova senha precisa ter ao menos 6 caracteres','#ef4444'); return; }
+  if(nova !== confirma){ notif('As senhas não coincidem','#ef4444'); return; }
+
+  // Verificar senha atual
+  const senhaAtual = dadosCliente?.senha_custom || dadosCliente?.senha_temp;
+  if(atual !== senhaAtual){ notif('Senha atual incorreta','#ef4444'); return; }
+
+  const { error } = await SB.from('portal_alunos').update({
+    senha_custom: nova,
+    senha_temp: null,
+    senha_redefinida: true
+  }).eq('email', usuario.email);
+
+  if(error){ notif('Erro ao salvar: '+error.message,'#ef4444'); return; }
+  dadosCliente.senha_custom = nova;
+  dadosCliente.senha_temp = null;
+  ['s-atual','s-nova','s-confirma'].forEach(id=>document.getElementById(id).value='');
+  notif('✅ Senha alterada com sucesso!','#10b981');
 }
 
 // ── ENTRAR NO APP ─────────────────────────────────────────────────────────────
 async function entrarNoApp(){
   document.getElementById('auth-wrap').style.display='none';
   document.getElementById('app').style.display='flex';
-  document.getElementById('nav-user-email').textContent = usuario.email;
+  const nome = dadosCliente?.nome || usuario.email;
+  document.getElementById('nav-user-email').textContent = nome.split(' ')[0] || usuario.email;
+
+  // Alertar se ainda usa senha temporária
+  if(dadosCliente?.senha_temp && !dadosCliente?.senha_redefinida){
+    setTimeout(()=> notif('🔑 Você ainda usa a senha temporária. Recomendamos trocá-la!','#f59e0b'), 1500);
+  }
   await carregarDados();
+}
+
+// ── LOGOUT ────────────────────────────────────────────────────────────────────
+async function fazerLogout(){
+  usuario = null; dadosCliente = null; modoDemo = false;
+  if(demoTimer) clearInterval(demoTimer);
+  location.reload();
 }
 
 // ── CARREGAR DADOS ────────────────────────────────────────────────────────────
 async function carregarDados(){
+  if(modoDemo) return; // Demo usa dados locais
+
   // Registrar último acesso
   await SB.from('portal_alunos').upsert({ user_id:usuario.id, email:usuario.email, ultimo_acesso: new Date().toISOString() }, { onConflict:'user_id' });
 
@@ -441,9 +802,11 @@ async function carregarDados(){
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function montarDashboard(fichas, progressos){
+  if(modoDemo){ montarDashboardDemo(); return; }
   const nome = dadosCliente?.nome || usuario.user_metadata?.nome || usuario.email.split('@')[0];
   document.getElementById('dash-titulo').textContent = `Olá, ${nome.split(' ')[0]}!`;
-  document.getElementById('dash-plano').textContent = dadosCliente?.plano ? `Plano: ${dadosCliente.plano}` : 'Bem-vindo ao portal WillgomesFit';
+  const plano = dadosCliente?.plano || '';
+  document.getElementById('dash-plano').textContent = plano ? `Plano: ${plano} · Acesso completo ao portal` : 'Bem-vindo ao portal WillgomesFit';
 
   document.getElementById('m-fichas').textContent = fichas.length;
 
@@ -506,6 +869,8 @@ function montarFicha(fichas){
         <div class="treino-dia-nome">${dia}</div>`;
       if(Array.isArray(exs)){
         exs.forEach((ex,i)=>{
+          const gifKey = 'gif__'+encodeURIComponent((ex.nome||ex.exercicio||'').toLowerCase().trim());
+          const gifData = (f.gifs||{})[gifKey] || null;
           html += `<div class="exercicio-row">
             <div class="ex-num">${i+1}</div>
             <div class="ex-info">
@@ -517,6 +882,7 @@ function montarFicha(fichas){
                 ${ex.rir!==undefined?`<span class="ex-tag">💪 RIR ${ex.rir}</span>`:''}
               </div>
             </div>
+            ${gifData ? `<img src="${gifData}" class="ex-gif" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"/>` : ''}
           </div>`;
         });
       }
@@ -532,6 +898,13 @@ function montarFicha(fichas){
     html += `<div class="notas-box"><div style="font-size:.75rem;font-weight:700;color:var(--orange);margin-bottom:8px">📚 Orientações do Prof. Will</div>`;
     notas.forEach(n=> html += `<div class="nota-item">${n}</div>`);
     html += `</div>`;
+  }
+  if(modoDemo){
+    html += `<div style="margin-top:20px;background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.04));border:1px solid rgba(16,185,129,.25);border-radius:14px;padding:20px;text-align:center">
+      <div style="font-size:1rem;font-weight:800;color:#34d399;margin-bottom:8px">✅ Gostou do treino?</div>
+      <p style="font-size:.82rem;color:#aaa;line-height:1.6;margin-bottom:14px">Isso é só uma amostra! Imagine esse treino montado <strong style="color:#fff">especificamente para o SEU corpo</strong>, com GIFs de execução, suporte do Prof. Will no WhatsApp e uma nova ficha todo mês.</p>
+      <a href="https://wildenigomes-ops.github.io/WillgomesFit/willgomesfit.html#planos" style="display:inline-block;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800;font-size:.85rem;padding:13px 28px;border-radius:12px;text-decoration:none;letter-spacing:.5px">💪 Quero meu plano personalizado</a>
+    </div>`;
   }
   html += `</div>`;
   document.getElementById('ficha-content').innerHTML = html;

@@ -242,6 +242,7 @@ tr:hover td{background:var(--card2)}
     <a class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</a>
     <a class="nav-item" onclick="showPage('clientes',this)"><span class="nav-icon">👥</span>Clientes</a>
     <a class="nav-item" onclick="showPage('vencimentos',this)"><span class="nav-icon">⏰</span>Vencimentos</a>
+    <a class="nav-item" onclick="showPage('degustacoes',this)"><span class="nav-icon">🎯</span>Degustações</a>
     <div class="sb-section">Ferramentas</div>
     <a class="nav-item" href="motor.html" target="_blank"><span class="nav-icon">⚙️</span>Motor de Fichas</a>
     <a class="nav-item" href="willgomesfit.html" target="_blank"><span class="nav-icon">🌐</span>Página de Vendas</a>
@@ -306,6 +307,48 @@ tr:hover td{background:var(--card2)}
     <div class="page" id="page-vencimentos">
       <div class="topbar"><div class="page-title">VENCI<span>MENTOS</span></div></div>
       <div class="card"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Plano</th><th>Início</th><th>Vencimento</th><th>Dias restantes</th><th>Ações</th></tr></thead><tbody id="tbody-vencimentos"></tbody></table></div></div>
+    </div>
+
+    <!-- PÁGINA DEGUSTAÇÕES -->
+    <div class="page" id="page-degustacoes">
+      <div class="topbar">
+        <div class="page-title">DEGUS<span>TAÇÕES</span></div>
+        <button class="btn btn-green" onclick="carregarDegustacoes()" style="font-size:.8rem;padding:8px 16px">🔄 Atualizar</button>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Total de Leads</div>
+            <div style="font-family:var(--font-d);font-size:2rem;color:var(--white)" id="deg-total">—</div>
+          </div>
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Não contatados</div>
+            <div style="font-family:var(--font-d);font-size:2rem;color:var(--yellow)" id="deg-novos">—</div>
+          </div>
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Convertidos</div>
+            <div style="font-family:var(--font-d);font-size:2rem;color:var(--green)" id="deg-convertidos">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>WhatsApp</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-degustacoes">
+              <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Carregando leads...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -468,11 +511,24 @@ tr:hover td{background:var(--card2)}
         </div>
         <div id="rel-content" style="display:none">
           <!-- Botões exportar -->
-          <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+          <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
             <button class="btn btn-green" onclick="exportarFichaTreinoCompleta()" style="font-size:.85rem;padding:10px 20px">⬇ Ficha de Treino</button>
             <button class="btn" onclick="exportarGuiaWord()" style="background:rgba(234,179,8,.15);color:var(--yellow);border-color:rgba(234,179,8,.3);font-size:.85rem;padding:10px 20px">⬇ Guia Alimentar</button>
-            <button class="btn" onclick="publicarNoPortal()" style="background:rgba(139,92,246,.15);color:#a78bfa;border-color:rgba(139,92,246,.3);font-size:.85rem;padding:10px 20px">🚀 Publicar no Portal do Aluno</button>
+            <button class="btn" onclick="publicarNoPortal()" style="background:rgba(139,92,246,.15);color:#a78bfa;border-color:rgba(139,92,246,.3);font-size:.85rem;padding:10px 20px">🚀 Publicar Ficha no Portal</button>
           </div>
+
+          <!-- PAINEL DE ACESSO AO PORTAL -->
+          <div id="portal-acesso-box" style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:12px;padding:18px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+              <div style="font-size:.72rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#a78bfa">🔐 Acesso ao Portal do Aluno</div>
+              <div id="portal-acesso-badge" style="font-size:.7rem;padding:4px 12px;border-radius:20px;font-weight:700"></div>
+            </div>
+            <div id="portal-acesso-info" style="font-size:.82rem;color:#888;margin-bottom:14px">Carregando status de acesso...</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap" id="portal-acesso-btns">
+              <!-- botões gerados dinamicamente -->
+            </div>
+          </div>
+
           <div id="portal-status" style="display:none;margin-bottom:16px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:10px 14px;font-size:.8rem;color:#a78bfa"></div>
           <!-- Dados do cliente -->
           <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
@@ -735,6 +791,7 @@ function renderVencimentos(){
 async function abrirCliente(id){
   clienteAtual = clientes.find(c=>c.id===id);
   if(!clienteAtual) return;
+  gifCache = {}; // Limpa GIFs ao trocar de cliente
   const c = clienteAtual;
   const l = LS.get(id);
 
@@ -995,6 +1052,7 @@ async function confirmarPagamento(){
   const elQ3=document.getElementById('m-link-q2');
   if(elQ3){ elQ3.textContent=link3; elQ3.dataset.link=link3; }
   renderDashboard(); renderClientes(); renderVencimentos();
+  if(p==='degustacoes') carregarDegustacoes();
   notif('✅ Pagamento confirmado! Envie o link ao cliente.');
 }
 
@@ -1179,6 +1237,7 @@ function showPage(id,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
+  if(id==='degustacoes') carregarDegustacoes();
 }
 function switchTab(id,el){
   document.querySelectorAll('#page-clientes .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -1197,6 +1256,7 @@ function switchMTab(id,el){
     document.getElementById('rel-sem-dados').style.display='none';
     document.getElementById('rel-content').style.display='none';
     setTimeout(()=>gerarRelatorioCliente(clienteAtual), 200);
+    setTimeout(()=>carregarStatusPortal(), 400);
   }
 }
 function fecharModal(){ document.getElementById('modal-cliente').classList.remove('open'); document.body.style.overflow=''; }
@@ -1248,6 +1308,80 @@ const EX = [{"cod": "EX001", "nome": "Supino Reto Barra", "grupo": "Peitoral", "
 
 function prescreverTreino(){
   // ══════════════════════════════════════════════════════════════════════════
+// ── BIBLIOTECA DE GIFs ───────────────────────────────────────────────────────
+let gifCache = {};
+
+function anexarGif(input, gifKey){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 8 * 1024 * 1024){ notif('GIF muito grande (máx. 8MB)','#ef4444'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    gifCache[gifKey] = e.target.result;
+    notif('✅ GIF anexado!','#10b981');
+    renderizarFichaPainel();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerGif(gifKey){
+  delete gifCache[gifKey];
+  notif('GIF removido','#f59e0b');
+  renderizarFichaPainel();
+}
+
+function verGifGrande(gifKey){
+  const data = gifCache[gifKey];
+  if(!data) return;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+  overlay.innerHTML = '<div style="position:relative;max-width:90vw;max-height:90vh"><img src="'+data+'" style="max-width:100%;max-height:90vh;border-radius:12px;border:2px solid var(--orange)"/><button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer">✕</button></div>';
+  overlay.onclick = function(ev){ if(ev.target===overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
+
+function renderizarFichaPainel(){
+  try{
+    const treinos = prescreverTreino();
+    const treinosComEx = treinos.filter(function(t){ return (t.exercicios||t.ex||[]).length>0; });
+    if(!treinosComEx.length) return;
+    var html = treinosComEx.map(function(t){
+      var rows = (t.exercicios||[]).map(function(e,i){
+        var gifKey = 'gif__'+encodeURIComponent((e.nome||'').toLowerCase().trim());
+        var gifData = gifCache[gifKey]||null;
+        var gifCell = gifData
+          ? '<div style="position:relative;display:inline-block"><img src="'+gifData+'" style="width:52px;height:52px;border-radius:6px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande(\''+gifKey+'\')" title="Ver em tela cheia"/><button onclick="removerGif(\''+gifKey+'\')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;padding:0">✕</button></div>'
+          : '<label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px;display:inline-block;font-size:.65rem;color:#777;white-space:nowrap" title="Anexar GIF para: '+(e.nome||'')+'">📎 GIF<input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGif(this,\''+gifKey+'\')"/></label>';
+        return '<tr style="'+(i%2===0?'':'background:var(--card2)')+'">'
+          +'<td style="padding:8px 10px;font-size:.78rem;color:var(--muted)">'+(i+1)+'</td>'
+          +'<td style="padding:8px 10px;font-size:.82rem;font-weight:600;color:var(--white)">'+(e.nome||'—')+'</td>'
+          +'<td style="padding:8px 10px;font-size:.78rem">'+(e.series||e.s||'—')+'</td>'
+          +'<td style="padding:8px 10px;font-size:.78rem">'+(e.reps||e.r||'—')+'</td>'
+          +'<td style="padding:8px 10px;font-size:.78rem">'+(e.descanso||e.d||'—')+'</td>'
+          +'<td style="padding:8px 10px;font-size:.75rem;color:var(--yellow);font-weight:600">'+(e.rir||'1–3')+'</td>'
+          +'<td style="padding:8px 10px;font-size:.75rem;color:var(--muted)">'+(e.obs||'—').replace(/\|.*RIR.*$/,'').trim()+'</td>'
+          +'<td style="padding:6px 8px;text-align:center;vertical-align:middle">'+gifCell+'</td>'
+          +'</tr>';
+      }).join('');
+      return '<div style="margin-bottom:20px;border:1px solid var(--border);border-radius:6px;overflow:hidden">'
+        +'<div style="background:var(--card);border-bottom:2px solid var(--green);padding:10px 14px">'
+        +'<span style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--green)">'+t.nome+'</span>'
+        +'</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+        +'<thead><tr style="background:var(--card2)">'
+        +'<th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">#</th>'
+        +'<th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Exercício</th>'
+        +'<th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Séries</th>'
+        +'<th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Reps</th>'
+        +'<th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Descanso</th>'
+        +'<th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">RIR</th>'
+        +'<th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Observações</th>'
+        +'<th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:center;border-bottom:1px solid var(--border)">GIF</th>'
+        +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+    }).join('');
+    document.getElementById('rel-treino').innerHTML = html;
+  }catch(e){ console.warn('renderizarFichaPainel:', e); }
+}
+
   // WILLGOMESFIT PRESCRIPTION ENGINE v3.2 — Atualizado com literatura 2026
   // Base científica (revisão profunda — junho 2026):
   // • ACSM 2026 Position Stand — Currier, Phillips et al., Med Sci Sports Exerc
@@ -2028,9 +2162,12 @@ async function gerarRelatorioCliente(c){
             <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Descanso</th>
             <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">RIR</th>
             <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Observações</th>
+            <th style="padding:8px 10px;font-size:.65rem;color:var(--muted);text-align:center;border-bottom:1px solid var(--border)">GIF</th>
           </tr></thead>
-          <tbody>${(t.exercicios||[]).map((e,i)=>
-            `<tr style="${i%2===0?'':'background:var(--card2)'}">
+          <tbody>${(t.exercicios||[]).map((e,i)=>{
+            const gifKey = 'gif__'+encodeURIComponent((e.nome||'').toLowerCase().trim());
+            const gifData = gifCache[gifKey] || null;
+            return `<tr style="${i%2===0?'':'background:var(--card2)'}">
               <td style="padding:8px 10px;font-size:.78rem;color:var(--muted)">${i+1}</td>
               <td style="padding:8px 10px;font-size:.82rem;font-weight:600;color:var(--white)">${e.nome||'—'}</td>
               <td style="padding:8px 10px;font-size:.78rem">${e.series||e.s||'—'}</td>
@@ -2038,7 +2175,20 @@ async function gerarRelatorioCliente(c){
               <td style="padding:8px 10px;font-size:.78rem">${e.descanso||e.d||'—'}</td>
               <td style="padding:8px 10px;font-size:.75rem;color:var(--yellow);font-weight:600">${e.rir||'1–3'}</td>
               <td style="padding:8px 10px;font-size:.75rem;color:var(--muted)">${(e.obs||'—').replace(/\|.*RIR.*$/,'').trim()}</td>
-            </tr>`).join('')}
+              <td style="padding:6px 8px;text-align:center;vertical-align:middle">
+                ${gifData
+                  ? `<div style="position:relative;display:inline-block">
+                       <img src="${gifData}" style="width:52px;height:52px;border-radius:6px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande('${gifKey}')" title="Ver em tela cheia"/>
+                       <button onclick="removerGif('${gifKey}')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;padding:0">✕</button>
+                     </div>`
+                  : `<label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px;display:inline-block;font-size:.65rem;color:#777;transition:all .2s;white-space:nowrap" title="Anexar GIF para: ${e.nome}">
+                       📎 GIF
+                       <input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGif(this,'${gifKey}')"/>
+                     </label>`
+                }
+              </td>
+            </tr>`;
+          }).join('')}
           </tbody>
         </table></div>
       </div>`).join('');
@@ -2988,6 +3138,176 @@ async function exportarGuiaWord(){
 
 // ── RESETAR QUESTIONÁRIO ──────────────────────────────────────────────────
 // ── PUBLICAR FICHA NO PORTAL DO ALUNO ────────────────────────────────────────
+// ── GERENCIAMENTO DE ACESSO AO PORTAL ────────────────────────────────────────
+
+function gerarSenhaAleatoria(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#!';
+  let s = '';
+  for(let i=0;i<10;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+async function carregarStatusPortal(){
+  if(!SB || !clienteAtual) return;
+  const c = clienteAtual;
+  const box  = document.getElementById('portal-acesso-box');
+  const info = document.getElementById('portal-acesso-info');
+  const badge = document.getElementById('portal-acesso-badge');
+  const btns  = document.getElementById('portal-acesso-btns');
+  if(!box) return;
+
+  const { data } = await SB.from('portal_alunos').select('*').eq('email', c.email).limit(1);
+  const aluno = data?.[0];
+
+  if(!aluno){
+    // Sem acesso ainda
+    badge.textContent = '⚫ Sem acesso';
+    badge.style.background = 'rgba(255,255,255,.06)';
+    badge.style.color = '#666';
+    info.textContent = 'Este aluno ainda não tem acesso ao portal.';
+    btns.innerHTML = `
+      <button class="btn btn-green" onclick="criarAcessoPortal(30)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 30 dias</button>
+      <button class="btn btn-green" onclick="criarAcessoPortal(90)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 90 dias</button>
+      <button class="btn btn-green" onclick="criarAcessoPortal(180)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 180 dias</button>`;
+    return;
+  }
+
+  const agora = new Date();
+  const expira = aluno.acesso_expira ? new Date(aluno.acesso_expira) : null;
+  const ativo  = expira ? expira > agora : false;
+  const diasRestantes = expira ? Math.max(0, Math.ceil((expira - agora)/(1000*60*60*24))) : 0;
+  const ultimoAcesso  = aluno.ultimo_acesso ? new Date(aluno.ultimo_acesso).toLocaleString('pt-BR') : 'Nunca acessou';
+
+  if(ativo){
+    badge.textContent = `✅ Ativo · ${diasRestantes} dias restantes`;
+    badge.style.background = 'rgba(16,185,129,.15)';
+    badge.style.color = '#34d399';
+    info.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.8rem">
+        <div><span style="color:#666">Expira em:</span> <strong style="color:#fff">${expira.toLocaleDateString('pt-BR')}</strong></div>
+        <div><span style="color:#666">Último acesso:</span> <strong style="color:#fff">${ultimoAcesso}</strong></div>
+        <div><span style="color:#666">E-mail:</span> <strong style="color:#fff">${aluno.email}</strong></div>
+        <div><span style="color:#666">Senha:</span> <strong style="color:#a78bfa">${aluno.senha_temp||'(definida pelo aluno)'}</strong></div>
+      </div>`;
+    btns.innerHTML = `
+      <button class="btn" onclick="renovarAcessoPortal(30)" style="font-size:.78rem;padding:8px 14px;background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 +30 dias</button>
+      <button class="btn" onclick="renovarAcessoPortal(90)" style="font-size:.78rem;padding:8px 14px;background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 +90 dias</button>
+      <button class="btn" onclick="renovarAcessoPortal(180)" style="font-size:.78rem;padding:8px 14px;background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 +180 dias</button>
+      <button class="btn" onclick="resetarSenhaPortal()" style="font-size:.78rem;padding:8px 14px;background:rgba(234,179,8,.1);color:var(--yellow);border-color:rgba(234,179,8,.3)">🔑 Resetar Senha</button>
+      <button class="btn" onclick="revogarAcessoPortal()" style="font-size:.78rem;padding:8px 14px;background:rgba(239,68,68,.08);color:#f87171;border-color:rgba(239,68,68,.2)">🚫 Revogar Acesso</button>`;
+  } else {
+    badge.textContent = expira ? '🔴 Expirado' : '⚫ Sem acesso';
+    badge.style.background = 'rgba(239,68,68,.1)';
+    badge.style.color = '#f87171';
+    info.innerHTML = expira
+      ? `Acesso expirou em <strong style="color:#fff">${expira.toLocaleDateString('pt-BR')}</strong>. Último acesso: ${ultimoAcesso}`
+      : 'Este aluno ainda não tem acesso ao portal.';
+    btns.innerHTML = `
+      <button class="btn btn-green" onclick="criarAcessoPortal(30)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 30 dias</button>
+      <button class="btn btn-green" onclick="criarAcessoPortal(90)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 90 dias</button>
+      <button class="btn btn-green" onclick="criarAcessoPortal(180)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 180 dias</button>`;
+  }
+}
+
+async function criarAcessoPortal(dias){
+  if(!SB || !clienteAtual){ notif('Selecione um cliente','#ef4444'); return; }
+  const c = clienteAtual;
+  if(!c.email){ notif('Cliente sem e-mail','#ef4444'); return; }
+
+  const senha = gerarSenhaAleatoria();
+  const expira = new Date();
+  expira.setDate(expira.getDate() + dias);
+
+  // Registrar no banco (o login real do Supabase Auth é criado pelo próprio aluno no portal)
+  const { error } = await SB.from('portal_alunos').upsert({
+    email: c.email,
+    nome: c.nome || c.email,
+    senha_temp: senha,
+    acesso_expira: expira.toISOString(),
+    acesso_dias: dias,
+    ativo: true,
+    criado_em: new Date().toISOString()
+  }, { onConflict: 'email' });
+
+  if(error){ notif('Erro: '+error.message,'#ef4444'); return; }
+
+  // Montar mensagem WhatsApp com credenciais
+  const wpp = (c.whatsapp||c.telefone||'').replace(/\D/g,'');
+  const msg = encodeURIComponent(
+    `Olá ${(c.nome||'').split(' ')[0]}! 🎉\n\nSeu acesso ao portal WillgomesFit está liberado!\n\n`+
+    `🔗 Link: https://wildenigomes-ops.github.io/WillgomesFit/portal.html\n`+
+    `📧 E-mail: ${c.email}\n`+
+    `🔑 Senha: ${senha}\n\n`+
+    `⏳ Acesso válido por ${dias} dias (até ${expira.toLocaleDateString('pt-BR')})\n\n`+
+    `Após entrar, você pode trocar essa senha por uma de sua preferência.\n\nQualquer dúvida estou aqui! 💪`
+  );
+
+  notif(`✅ Acesso criado por ${dias} dias!`, '#10b981');
+  await carregarStatusPortal();
+
+  // Abrir WhatsApp automaticamente se tiver número
+  if(wpp.length >= 10){
+    setTimeout(()=>{
+      if(confirm(`Acesso criado!\nSenha: ${senha}\n\nAbrir WhatsApp para enviar as credenciais agora?`)){
+        window.open(`https://wa.me/55${wpp}?text=${msg}`, '_blank');
+      }
+    }, 300);
+  } else {
+    alert(`Acesso criado!\n\nE-mail: ${c.email}\nSenha: ${senha}\n\nCopie e envie ao aluno pelo WhatsApp ou e-mail.`);
+  }
+}
+
+async function renovarAcessoPortal(dias){
+  if(!SB || !clienteAtual) return;
+  const c = clienteAtual;
+  const { data } = await SB.from('portal_alunos').select('acesso_expira').eq('email', c.email).limit(1);
+  const atual = data?.[0]?.acesso_expira ? new Date(data[0].acesso_expira) : new Date();
+  const base  = atual > new Date() ? atual : new Date(); // Se ainda ativo, soma sobre a data atual
+  const novaExpira = new Date(base);
+  novaExpira.setDate(novaExpira.getDate() + dias);
+
+  await SB.from('portal_alunos').update({ acesso_expira: novaExpira.toISOString(), ativo: true }).eq('email', c.email);
+  notif(`✅ Acesso renovado por mais ${dias} dias!`, '#10b981');
+  await carregarStatusPortal();
+}
+
+async function resetarSenhaPortal(){
+  if(!SB || !clienteAtual) return;
+  const c = clienteAtual;
+  const novaSenha = gerarSenhaAleatoria();
+  await SB.from('portal_alunos').update({ senha_temp: novaSenha, senha_redefinida: false }).eq('email', c.email);
+
+  const wpp = (c.whatsapp||c.telefone||'').replace(/\D/g,'');
+  const msg = encodeURIComponent(
+    `Olá ${(c.nome||'').split(' ')[0]}! 🔑\n\nSua senha do portal WillgomesFit foi redefinida:\n\n`+
+    `🔗 Link: https://wildenigomes-ops.github.io/WillgomesFit/portal.html\n`+
+    `📧 E-mail: ${c.email}\n`+
+    `🔑 Nova senha: ${novaSenha}\n\n`+
+    `Após entrar, você pode trocar por uma senha de sua preferência. 💪`
+  );
+
+  notif(`🔑 Nova senha: ${novaSenha}`, '#f59e0b');
+  await carregarStatusPortal();
+
+  if(wpp.length >= 10){
+    setTimeout(()=>{
+      if(confirm(`Nova senha gerada: ${novaSenha}\n\nAbrir WhatsApp para enviar ao aluno?`)){
+        window.open(`https://wa.me/55${wpp}?text=${msg}`, '_blank');
+      }
+    }, 300);
+  } else {
+    alert(`Nova senha: ${novaSenha}\n\nEnvie ao aluno pelo WhatsApp ou e-mail.`);
+  }
+}
+
+async function revogarAcessoPortal(){
+  if(!SB || !clienteAtual) return;
+  if(!confirm('Tem certeza que deseja revogar o acesso deste aluno ao portal?')) return;
+  await SB.from('portal_alunos').update({ ativo: false, acesso_expira: new Date().toISOString() }).eq('email', clienteAtual.email);
+  notif('🚫 Acesso revogado', '#ef4444');
+  await carregarStatusPortal();
+}
+
 async function publicarNoPortal(){
   const c = clienteAtual;
   if(!c){ notif('Selecione um cliente primeiro','#ef4444'); return; }
@@ -3012,6 +3332,8 @@ async function publicarNoPortal(){
     resumo: `Treino personalizado para ${nomeCliente} · Gerado em ${hoje}`,
     treino_json: treinos,
     notas: treinos._notas || [],
+    gifs: gifCache,
+    total_gifs: Object.keys(gifCache).length,
     criado_em: new Date().toISOString(),
     publicado_por: 'Prof. Will Gomes'
   };
@@ -3025,7 +3347,8 @@ async function publicarNoPortal(){
   // Mostrar status
   const statusEl = document.getElementById('portal-status');
   statusEl.style.display = 'block';
-  statusEl.innerHTML = `✅ Ficha publicada no portal! O aluno já pode acessar em <strong>willgomesfit.github.io/WillgomesFit/portal.html</strong>`;
+  const nGifs = Object.keys(gifCache).length;
+  statusEl.innerHTML = `✅ Ficha publicada no portal! ${nGifs > 0 ? `<strong>${nGifs} GIF(s)</strong> incluídos.` : 'Sem GIFs anexados.'} O aluno já pode acessar em <strong>wildenigomes-ops.github.io/WillgomesFit/portal.html</strong>`;
   notif('✅ Ficha publicada no portal do aluno!','#8b5cf6');
 
   // Verificar último acesso do aluno
@@ -3036,6 +3359,56 @@ async function publicarNoPortal(){
   } else {
     statusEl.innerHTML += `<br>📱 Aluno ainda não acessou o portal.`;
   }
+}
+
+// ── DEGUSTAÇÕES ───────────────────────────────────────────────────────────────
+async function carregarDegustacoes(){
+  if(!SB){ notif('Supabase não conectado','#ef4444'); return; }
+  const { data, error } = await SB.from('leads_degustacao').select('*').order('criado_em',{ascending:false});
+  if(error){ notif('Erro ao carregar leads: '+error.message,'#ef4444'); return; }
+
+  const leads = data || [];
+  document.getElementById('deg-total').textContent = leads.length;
+  document.getElementById('deg-novos').textContent = leads.filter(l=>l.status==='novo').length;
+  document.getElementById('deg-convertidos').textContent = leads.filter(l=>l.status==='convertido').length;
+
+  const tbody = document.getElementById('tbody-degustacoes');
+  if(!leads.length){
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Nenhum lead ainda. Aguardando degustações.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = leads.map(l=>{
+    const data_br = new Date(l.criado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const wpp = (l.numero_formatado||l.whatsapp||'').replace(/\D/g,'');
+    const msgWpp = encodeURIComponent(`Olá ${l.nome}! 👋 Vi que você fez a degustação do portal WillgomesFit. Que tal transformar esse treino de exemplo em um treino 100% personalizado para você? Posso te passar mais detalhes dos nossos planos! 💪`);
+    const statusColor = l.status==='convertido'?'var(--green)':l.status==='contatado'?'var(--yellow)':'var(--orange)';
+    const statusLabel = l.status==='convertido'?'✅ Convertido':l.status==='contatado'?'📞 Contatado':'🆕 Novo';
+    return `<tr>
+      <td style="padding:10px 12px;font-weight:600">${l.nome||'—'}</td>
+      <td style="padding:10px 12px;font-size:.82rem">${l.whatsapp||'—'}</td>
+      <td style="padding:10px 12px;font-size:.78rem;color:var(--muted)">${data_br}</td>
+      <td style="padding:10px 12px">
+        <select onchange="atualizarStatusLead('${l.id}',this.value)" style="background:var(--card2);border:1px solid var(--border);color:${statusColor};border-radius:6px;padding:4px 8px;font-size:.75rem;font-weight:700;cursor:pointer">
+          <option value="novo" ${l.status==='novo'?'selected':''}>🆕 Novo</option>
+          <option value="contatado" ${l.status==='contatado'?'selected':''}>📞 Contatado</option>
+          <option value="convertido" ${l.status==='convertido'?'selected':''}>✅ Convertido</option>
+        </select>
+      </td>
+      <td style="padding:10px 12px">
+        <a href="https://wa.me/${wpp}?text=${msgWpp}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25d366;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;text-decoration:none;transition:all .2s">
+          💬 WhatsApp
+        </a>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function atualizarStatusLead(id, status){
+  if(!SB) return;
+  await SB.from('leads_degustacao').update({ status }).eq('id', id);
+  notif(`Status atualizado: ${status}`,'#10b981');
+  carregarDegustacoes();
 }
 
 async function resetarQuestionario(){
