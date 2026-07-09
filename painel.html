@@ -526,12 +526,19 @@ tr:hover td{background:var(--card2)}
             </div>
             <div id="portal-aba-credenciais" style="display:none;background:rgba(0,0,0,.3);border-radius:8px;padding:12px;margin-bottom:12px">
               <div style="font-size:.65rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa;margin-bottom:8px">Credenciais de Acesso</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem">
-                <div><span style="color:#666">E-mail:</span><br><strong id="portal-aba-email" style="color:#fff"></strong></div>
-                <div><span style="color:#666">Senha atual:</span><br><strong id="portal-aba-senha" style="color:#a78bfa;font-size:1rem"></strong></div>
-                <div><span style="color:#666">Último acesso:</span><br><strong id="portal-aba-ultimo" style="color:#fff"></strong></div>
-                <div><span style="color:#666">Senha trocada?</span><br><strong id="portal-aba-redefinida" style="color:#fff"></strong></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;margin-bottom:10px">
+                <div><span style="color:#666;font-size:.7rem">LOGIN (E-MAIL)</span><br><strong id="portal-aba-email" style="color:#fff;font-size:.88rem"></strong></div>
+                <div>
+                  <span style="color:#666;font-size:.7rem">SENHA ATUAL</span><br>
+                  <strong id="portal-aba-senha" style="color:#a78bfa;font-size:1rem;letter-spacing:1px"></strong>
+                </div>
+                <div><span style="color:#666;font-size:.7rem">ÚLTIMO ACESSO</span><br><strong id="portal-aba-ultimo" style="color:#fff;font-size:.82rem"></strong></div>
+                <div><span style="color:#666;font-size:.7rem">SENHA TROCADA?</span><br><strong id="portal-aba-redefinida" style="color:#fff;font-size:.78rem"></strong></div>
               </div>
+              <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.15);border-radius:6px;padding:8px 12px;font-size:.75rem;color:#888;margin-bottom:10px">
+                🔗 Portal: <span style="color:#a78bfa">wildenigomes-ops.github.io/WillgomesFit/portal.html</span>
+              </div>
+              <button onclick="copiarCredenciais()" style="background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);color:#a78bfa;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;width:100%">📋 Copiar credenciais completas</button>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap" id="portal-aba-btns"></div>
           </div>
@@ -1440,19 +1447,43 @@ async function carregarAbaPortal(c){
   const dias   = expiraDate ? Math.max(0, Math.ceil((expiraDate-agora)/(1000*60*60*24))) : 0;
 
   if(!aluno){
-    badge.textContent = '⚫ Sem acesso';
-    badge.style.background = 'rgba(255,255,255,.06)';
-    badge.style.color = '#666';
-    expira.textContent = '';
-    creds.style.display = 'none';
-
+    // Se tem plano de acompanhamento, gerar acesso automaticamente
     if(planoTemPortal(c.plano)){
-      btns.innerHTML = `
-        <button class="btn btn-green" onclick="criarAcessoPortal(30)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 30 dias</button>
-        <button class="btn btn-green" onclick="criarAcessoPortal(90)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 90 dias</button>
-        <button class="btn btn-green" onclick="criarAcessoPortal(180)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 180 dias</button>`;
+      badge.textContent = '⏳ Gerando acesso...';
+      badge.style.background = 'rgba(139,92,246,.15)';
+      badge.style.color = '#a78bfa';
+
+      const senha = gerarSenhaAleatoria();
+      const expiraAuto = new Date();
+      expiraAuto.setDate(expiraAuto.getDate() + 30);
+
+      const { error: errInsert } = await SB.from('portal_alunos').insert({
+        email: c.email,
+        nome: c.nome || c.email,
+        senha_temp: senha,
+        acesso_expira: expiraAuto.toISOString(),
+        acesso_dias: 30,
+        ativo: true,
+        criado_em: new Date().toISOString()
+      });
+
+      if(errInsert){
+        badge.textContent = '❌ Erro ao gerar acesso';
+        badge.style.color = '#ef4444';
+        return;
+      }
+
+      // Recarregar com os dados recém criados
+      notif('✅ Acesso gerado automaticamente!','#10b981');
+      await carregarAbaPortal(c);
+      return;
     } else {
-      btns.innerHTML = `<span style="font-size:.78rem;color:#666">Plano sem acesso ao portal (apenas acompanhamentos)</span>`;
+      badge.textContent = '⚫ Sem acesso';
+      badge.style.background = 'rgba(255,255,255,.06)';
+      badge.style.color = '#666';
+      expira.textContent = '';
+      creds.style.display = 'none';
+      btns.innerHTML = `<span style="font-size:.78rem;color:#666">Plano sem acesso ao portal. Apenas planos de acompanhamento têm acesso.</span>`;
     }
   } else if(ativo){
     badge.textContent = `✅ Ativo · ${dias} dias restantes`;
@@ -1461,9 +1492,10 @@ async function carregarAbaPortal(c){
     expira.textContent = `Expira em: ${expiraDate.toLocaleDateString('pt-BR')}`;
     creds.style.display = 'block';
     document.getElementById('portal-aba-email').textContent = aluno.email;
-    document.getElementById('portal-aba-senha').textContent = aluno.senha_custom ? '(definida pelo aluno)' : (aluno.senha_temp||'—');
-    document.getElementById('portal-aba-ultimo').textContent = aluno.ultimo_acesso ? new Date(aluno.ultimo_acesso).toLocaleString('pt-BR') : 'Nunca';
-    document.getElementById('portal-aba-redefinida').textContent = aluno.senha_redefinida ? '✅ Sim' : '⚠️ Não (usa senha temporária)';
+    const senhaAtual = aluno.senha_custom ? '(aluno definiu senha própria)' : (aluno.senha_temp||'—');
+    document.getElementById('portal-aba-senha').textContent = senhaAtual;
+    document.getElementById('portal-aba-ultimo').textContent = aluno.ultimo_acesso ? new Date(aluno.ultimo_acesso).toLocaleString('pt-BR') : 'Nunca acessou';
+    document.getElementById('portal-aba-redefinida').textContent = aluno.senha_redefinida ? '✅ Sim — aluno trocou a senha' : '⚠️ Não — ainda usa senha temporária';
     btns.innerHTML = `
       <button class="btn" onclick="renovarAcessoPortal(30)" style="font-size:.78rem;padding:8px 14px;background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 +30 dias</button>
       <button class="btn" onclick="renovarAcessoPortal(90)" style="font-size:.78rem;padding:8px 14px;background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 +90 dias</button>
@@ -3763,6 +3795,20 @@ function removerGifDemo(gifKey){
   delete gifsDegustacao[gifKey];
   notif('GIF removido','#f59e0b');
   renderizarEditorDegustacao();
+}
+
+function copiarCredenciais(){
+  const email = document.getElementById('portal-aba-email')?.textContent || '';
+  const senha = document.getElementById('portal-aba-senha')?.textContent || '';
+  const texto =
+    `🎉 Seu acesso ao Portal WillgomesFit\n\n`+
+    `🔗 Link: https://wildenigomes-ops.github.io/WillgomesFit/portal.html\n`+
+    `📧 Login: ${email}\n`+
+    `🔑 Senha: ${senha}\n\n`+
+    `Após entrar, você pode trocar a senha por uma de sua preferência.\nQualquer dúvida estou aqui! 💪`;
+  navigator.clipboard.writeText(texto)
+    .then(()=> notif('✅ Credenciais copiadas!','#10b981'))
+    .catch(()=> prompt('Copie as credenciais:', texto));
 }
 
 function switchPortalTab(tab){
