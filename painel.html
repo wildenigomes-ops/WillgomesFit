@@ -903,14 +903,13 @@ async function abrirCliente(id){
   // Aba timer
   renderTimer(c, l);
 
-  // Aba MFIT
-  const mfit = l.mfit||{};
-  document.getElementById('mfit-login').value  = mfit.login||'';
-  document.getElementById('mfit-senha').value  = mfit.senha||'';
-  document.getElementById('mfit-link').value   = mfit.link||'';
-  document.getElementById('mfit-data').value   = mfit.data||'';
-  document.getElementById('mfit-status').value = mfit.status||'Pendente';
-  document.getElementById('mfit-obs').value    = mfit.obs||'';
+  // Aba Portal — limpar estado anterior
+  const portalBadge = document.getElementById('portal-aba-badge');
+  if(portalBadge){ portalBadge.textContent = '⚫ Clique na aba Portal para carregar'; portalBadge.style.color='#666'; }
+  const portalCreds = document.getElementById('portal-aba-credenciais');
+  if(portalCreds) portalCreds.style.display = 'none';
+  const portalBtns = document.getElementById('portal-aba-btns');
+  if(portalBtns) portalBtns.innerHTML = '';
 
   // Link questionário
   const payload = {sbUrl:SB_URL,sbKey:SB_KEY,clienteId:id,nome:c.nome,email:c.email,prof:'Will Gomes'};
@@ -1129,20 +1128,6 @@ async function salvarStatus(){
   if(SB) await SB.from('clientes').update({status:novoStatus,dados:c,atualizado_em:new Date().toISOString()}).eq('id',c.id);
   renderTimer(c,l); renderDashboard(); renderClientes(); renderVencimentos();
   notif('Status atualizado!');
-}
-
-function salvarMfit(){
-  if(!clienteAtual) return;
-  LS.set(clienteAtual.id,{mfit:{
-    login:document.getElementById('mfit-login').value,
-    senha:document.getElementById('mfit-senha').value,
-    link:document.getElementById('mfit-link').value,
-    data:document.getElementById('mfit-data').value,
-    status:document.getElementById('mfit-status').value,
-    obs:document.getElementById('mfit-obs').value,
-    updated_at:new Date().toLocaleString('pt-BR'),
-  }});
-  notif('Credenciais MFIT salvas!');
 }
 
 function salvarNota(){
