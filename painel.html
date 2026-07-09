@@ -778,6 +778,40 @@ function planoTemPortal(plano){
   return PLANOS_PORTAL.some(x => p.includes(x));
 }
 
+function gerarSenhaAleatoria(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#!';
+  let s = '';
+  for(let i=0;i<10;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+async function gerarAcessoAutomatico(clienteData){
+  if(!SB) return;
+  const plano = clienteData?.plano || clienteData?.dados?.plano || '';
+  if(!planoTemPortal(plano)) return;
+  const email = clienteData?.email || clienteData?.dados?.email;
+  if(!email) return;
+
+  // Verificar se já tem acesso
+  const { data } = await SB.from('portal_alunos').select('id').eq('email', email).limit(1);
+  if(data?.length) return; // Já tem acesso, não sobrescrever
+
+  const senha = gerarSenhaAleatoria();
+  const expira = new Date();
+  expira.setDate(expira.getDate() + 30);
+
+  await SB.from('portal_alunos').insert({
+    email,
+    nome: clienteData?.nome || email,
+    senha_temp: senha,
+    acesso_expira: expira.toISOString(),
+    acesso_dias: 30,
+    ativo: true,
+    criado_em: new Date().toISOString()
+  });
+  console.log('✅ Acesso ao portal criado automaticamente para', email);
+}
+
 async function loadClientes(){
   notif('Atualizando...','#3b82f6');
   clientes = [];
@@ -1810,34 +1844,6 @@ async function publicarNoPortal(){
 }
 
 // ── GERAÇÃO AUTOMÁTICA DE ACESSO AO PORTAL NO CADASTRO ───────────────────────
-async function gerarAcessoAutomatico(clienteData){
-  if(!SB) return;
-  const plano = clienteData?.plano || clienteData?.dados?.plano || '';
-  if(!planoTemPortal(plano)) return;
-  const email = clienteData?.email || clienteData?.dados?.email;
-  if(!email) return;
-
-  // Verificar se já tem acesso
-  const { data } = await SB.from('portal_alunos').select('id').eq('email', email).limit(1);
-  if(data?.length) return; // Já tem acesso, não sobrescrever
-
-  const senha = gerarSenhaAleatoria();
-  const expira = new Date();
-  expira.setDate(expira.getDate() + 30); // 30 dias por padrão
-
-  await SB.from('portal_alunos').insert({
-    email,
-    nome: clienteData?.nome || email,
-    senha_temp: senha,
-    acesso_expira: expira.toISOString(),
-    acesso_dias: 30,
-    ativo: true,
-    criado_em: new Date().toISOString()
-  });
-
-  console.log(`✅ Acesso ao portal criado automaticamente para ${email}`);
-}
-
 // ── CARREGAR ABA PORTAL QUANDO CLICADA ───────────────────────────────────────
 // ── BIBLIOTECA DE GIFs ───────────────────────────────────────────────────────
 let gifCache = {};
@@ -3670,13 +3676,6 @@ async function exportarGuiaWord(){
 // ── RESETAR QUESTIONÁRIO ──────────────────────────────────────────────────
 // ── PUBLICAR FICHA NO PORTAL DO ALUNO ────────────────────────────────────────
 // ── GERENCIAMENTO DE ACESSO AO PORTAL ────────────────────────────────────────
-
-function gerarSenhaAleatoria(){
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#!';
-  let s = '';
-  for(let i=0;i<10;i++) s += chars[Math.floor(Math.random()*chars.length)];
-  return s;
-}
 
 async function carregarStatusPortal(){
   if(!SB || !clienteAtual) return;
