@@ -558,6 +558,8 @@ tr:hover td{background:var(--card2)}
     </div><!-- /modal-body -->
     <div class="modal-footer">
       <button class="btn btn-red" onclick="excluirCliente()" style="margin-right:auto">🗑 Excluir cliente</button>
+      <button class="btn" onclick="resetarQuestionario()" style="background:rgba(239,68,68,.12);color:#f87171;border-color:rgba(239,68,68,.3);font-size:.8rem">🗑 Resetar Questionário</button>
+      <button class="btn" onclick="resetarTudoCliente()" style="background:rgba(239,68,68,.2);color:#ff4444;border-color:rgba(239,68,68,.4);font-size:.8rem">⚠️ Resetar Tudo</button>
       <button class="btn" onclick="fecharModal()">Fechar</button>
       <button class="btn btn-green" onclick="abrirWA()">💬 WhatsApp</button>
       <button class="btn btn-orange" onclick="switchMTab('relatorio',document.querySelectorAll('#modal-cliente .tab-btn')[5])">📊 Ver Relatório</button>
