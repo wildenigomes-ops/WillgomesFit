@@ -559,7 +559,9 @@ tr:hover td{background:var(--card2)}
           <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px">
             <button id="port-tab-treino" onclick="switchPortalTab('treino')" style="padding:8px 16px;background:rgba(139,92,246,.15);border:none;border-bottom:2px solid #8b5cf6;color:#a78bfa;font-family:var(--font-b);font-size:.78rem;font-weight:700;cursor:pointer;border-radius:6px 6px 0 0">🏋️ Treino & GIFs</button>
             <button id="port-tab-nutri" onclick="switchPortalTab('nutri')" style="padding:8px 16px;background:none;border:none;border-bottom:2px solid transparent;color:#666;font-family:var(--font-b);font-size:.78rem;font-weight:700;cursor:pointer;border-radius:6px 6px 0 0">🍎 Alimentação</button>
+            <button id="port-tab-progresso" onclick="switchPortalTab('progresso')" style="padding:8px 16px;background:none;border:none;border-bottom:2px solid transparent;color:#666;font-family:var(--font-b);font-size:.78rem;font-weight:700;cursor:pointer;border-radius:6px 6px 0 0">📈 Progresso</button>
           </div>
+
 
           <!-- TREINO -->
           <div id="port-panel-treino">
@@ -595,6 +597,15 @@ tr:hover td{background:var(--card2)}
               </div>
             </div>
             <button class="btn btn-green" onclick="publicarNutricaoPortal()" style="margin-top:14px;font-size:.82rem;padding:10px 20px">🍎 Publicar alimentação no portal</button>
+          </div>
+
+          <!-- PROGRESSO -->
+          <div id="port-panel-progresso" style="display:none">
+            <p style="font-size:.8rem;color:#888;margin-bottom:12px">Peso e medidas registrados pelo próprio aluno no portal. Você pode corrigir ou excluir qualquer linha, e também lançar um registro manual.</p>
+            <button class="btn" onclick="adicionarLinhaProgressoManual()" style="font-size:.78rem;padding:8px 14px;background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.3);margin-bottom:14px">➕ Lançar registro manual</button>
+            <div id="portal-aba-progresso" style="overflow-x:auto">
+              <div style="text-align:center;padding:20px;color:#555;font-size:.82rem">Carregando histórico de progresso...</div>
+            </div>
           </div>
         </div>
 
@@ -3958,15 +3969,20 @@ function copiarCredenciais(){
 }
 
 function switchPortalTab(tab){
-  document.getElementById('port-panel-treino').style.display = tab==='treino' ? 'block' : 'none';
-  document.getElementById('port-panel-nutri').style.display  = tab==='nutri'  ? 'block' : 'none';
+  document.getElementById('port-panel-treino').style.display    = tab==='treino'    ? 'block' : 'none';
+  document.getElementById('port-panel-nutri').style.display     = tab==='nutri'     ? 'block' : 'none';
+  document.getElementById('port-panel-progresso').style.display = tab==='progresso' ? 'block' : 'none';
   document.getElementById('port-tab-treino').style.borderBottomColor = tab==='treino' ? '#8b5cf6' : 'transparent';
   document.getElementById('port-tab-treino').style.color = tab==='treino' ? '#a78bfa' : '#666';
   document.getElementById('port-tab-treino').style.background = tab==='treino' ? 'rgba(139,92,246,.15)' : 'none';
   document.getElementById('port-tab-nutri').style.borderBottomColor = tab==='nutri' ? '#10b981' : 'transparent';
   document.getElementById('port-tab-nutri').style.color = tab==='nutri' ? '#10b981' : '#666';
   document.getElementById('port-tab-nutri').style.background = tab==='nutri' ? 'rgba(16,185,129,.1)' : 'none';
+  document.getElementById('port-tab-progresso').style.borderBottomColor = tab==='progresso' ? '#3b82f6' : 'transparent';
+  document.getElementById('port-tab-progresso').style.color = tab==='progresso' ? '#60a5fa' : '#666';
+  document.getElementById('port-tab-progresso').style.background = tab==='progresso' ? 'rgba(59,130,246,.1)' : 'none';
   if(tab==='treino') renderizarEditorPortalAba();
+  if(tab==='progresso') carregarProgressoPortalAba(clienteAtual);
 }
 
 async function publicarNutricaoPortal(){
@@ -4014,6 +4030,132 @@ async function carregarNutriPortalAba(c){
     const el = document.getElementById('port-nutri-'+k);
     if(el && nutri[k]) el.value = nutri[k];
   });
+}
+
+// ── ABA PROGRESSO — HISTÓRICO DE PESO E MEDIDAS DO ALUNO ─────────────────────
+const PROGRESSO_CAMPOS = [
+  {k:'peso',    label:'Peso (kg)'},
+  {k:'gordura', label:'% Gordura'},
+  {k:'cintura', label:'Cintura (cm)'},
+  {k:'quadril', label:'Quadril (cm)'},
+  {k:'braco',   label:'Braço (cm)'},
+  {k:'coxa',    label:'Coxa (cm)'}
+];
+
+async function carregarProgressoPortalAba(c){
+  const el = document.getElementById('portal-aba-progresso');
+  if(!el || !c?.email) return;
+  if(!SB){ el.innerHTML = '<div style="text-align:center;padding:20px;color:#555;font-size:.82rem">Supabase não conectado.</div>'; return; }
+
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:#555;font-size:.82rem">⏳ Carregando histórico...</div>';
+
+  const { data, error } = await SB.from('portal_progresso').select('*').eq('email', c.email).order('criado_em',{ascending:false});
+
+  if(error){
+    el.innerHTML = `<div style="color:#f87171;font-size:.82rem;padding:14px">Erro ao carregar progresso: ${error.message}</div>`;
+    return;
+  }
+
+  window._progressoAluno = data || [];
+  renderTabelaProgresso();
+}
+
+function renderTabelaProgresso(){
+  const el = document.getElementById('portal-aba-progresso');
+  if(!el) return;
+  const rows = window._progressoAluno || [];
+
+  if(!rows.length){
+    el.innerHTML = `<div style="background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.15);border-radius:8px;padding:18px;text-align:center;font-size:.82rem;color:#666">
+      Este aluno ainda não registrou nenhuma medida no portal.
+    </div>`;
+    return;
+  }
+
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:.8rem">
+    <thead><tr style="border-bottom:2px solid var(--border)">
+      <th style="text-align:left;padding:8px 10px;color:#666;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px">Data</th>
+      ${PROGRESSO_CAMPOS.map(f=>`<th style="text-align:center;padding:8px 6px;color:#666;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px">${f.label}</th>`).join('')}
+      <th style="padding:8px 6px"></th>
+    </tr></thead><tbody>`;
+
+  rows.forEach((r, idx)=>{
+    const dataFmt = r.criado_em ? new Date(r.criado_em).toLocaleDateString('pt-BR') : '—';
+    html += `<tr style="border-bottom:1px solid var(--border);${idx%2===0?'':'background:rgba(255,255,255,.02)'}">
+      <td style="padding:7px 10px;color:#aaa;white-space:nowrap">${dataFmt}</td>
+      ${PROGRESSO_CAMPOS.map(f=>`<td style="padding:5px 6px;text-align:center">
+        <input type="number" step="0.1" value="${r[f.k] ?? ''}" data-row="${idx}" data-campo="${f.k}"
+          onchange="atualizarCampoProgresso(${idx},'${f.k}',this.value)"
+          style="width:64px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 4px;color:#fff;font-size:.78rem;text-align:center;font-family:var(--font-b)"/>
+      </td>`).join('')}
+      <td style="padding:5px 6px;white-space:nowrap;text-align:right">
+        <button onclick="salvarLinhaProgresso(${idx})" title="Salvar alterações" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399;padding:5px 8px;border-radius:6px;font-size:.72rem;cursor:pointer;margin-right:4px">💾</button>
+        <button onclick="excluirLinhaProgresso(${idx})" title="Excluir registro" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:5px 8px;border-radius:6px;font-size:.72rem;cursor:pointer">✕</button>
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  el.innerHTML = html;
+}
+
+function atualizarCampoProgresso(idx, campo, valor){
+  if(!window._progressoAluno?.[idx]) return;
+  window._progressoAluno[idx][campo] = valor === '' ? null : parseFloat(valor);
+}
+
+async function salvarLinhaProgresso(idx){
+  const row = window._progressoAluno?.[idx];
+  if(!row || !SB) return;
+  notif('⏳ Salvando registro...','#3b82f6');
+
+  const payload = {};
+  PROGRESSO_CAMPOS.forEach(f=>{ payload[f.k] = row[f.k] ?? null; });
+
+  if(row.id){
+    const { error } = await SB.from('portal_progresso').update(payload).eq('id', row.id);
+    if(error){ notif('Erro ao salvar: '+error.message,'#ef4444'); return; }
+  } else {
+    // registro manual ainda não salvo no banco
+    const c = clienteAtual;
+    const { data: portalAluno } = await SB.from('portal_alunos').select('user_id').eq('email', c.email).limit(1);
+    const { data, error } = await SB.from('portal_progresso').insert({
+      email: c.email,
+      user_id: portalAluno?.[0]?.user_id || null,
+      ...payload,
+      criado_em: row.criado_em || new Date().toISOString()
+    }).select();
+    if(error){ notif('Erro ao salvar: '+error.message,'#ef4444'); return; }
+    if(data?.[0]) window._progressoAluno[idx] = data[0];
+  }
+  notif('✅ Registro atualizado!','#10b981');
+}
+
+async function excluirLinhaProgresso(idx){
+  const row = window._progressoAluno?.[idx];
+  if(!row) return;
+  if(!confirm('Excluir este registro de progresso do aluno? Esta ação não pode ser desfeita.')) return;
+
+  if(row.id && SB){
+    const { error } = await SB.from('portal_progresso').delete().eq('id', row.id);
+    if(error){ notif('Erro ao excluir: '+error.message,'#ef4444'); return; }
+  }
+  window._progressoAluno.splice(idx, 1);
+  renderTabelaProgresso();
+  notif('Registro excluído.','#ef4444');
+}
+
+function adicionarLinhaProgressoManual(){
+  if(!clienteAtual?.email){ notif('Selecione um cliente com e-mail cadastrado','#ef4444'); return; }
+  if(!window._progressoAluno) window._progressoAluno = [];
+  window._progressoAluno.unshift({
+    id: null,
+    email: clienteAtual.email,
+    peso: null, gordura: null, cintura: null, quadril: null, braco: null, coxa: null,
+    criado_em: new Date().toISOString()
+  });
+  renderTabelaProgresso();
+  notif('Preencha os valores e clique em 💾 para salvar.','#8b5cf6');
 }
 
 function switchDegTab(tab){
