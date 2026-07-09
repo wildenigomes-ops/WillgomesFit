@@ -320,13 +320,58 @@ tr:hover td{background:var(--card2)}
       <div class="card" style="margin-bottom:16px;border:1px solid rgba(139,92,246,.3);background:rgba(139,92,246,.04)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
           <div>
-            <div style="font-size:.68rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#a78bfa;margin-bottom:4px">🎯 Treino de Degustação</div>
-            <div style="font-size:.82rem;color:#888">Este é o treino que os visitantes veem ao experimentar o portal. Edite exercícios e suba os GIFs abaixo.</div>
+            <div style="font-size:.68rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#a78bfa;margin-bottom:4px">🎯 Conteúdo da Degustação</div>
+            <div style="font-size:.82rem;color:#888">Treino e alimentação exibidos para visitantes no portal. Edite e salve para atualizar.</div>
           </div>
-          <button class="btn" onclick="salvarTreinoDegustacao()" style="background:rgba(139,92,246,.15);color:#a78bfa;border-color:rgba(139,92,246,.3);font-size:.82rem">💾 Salvar alterações no portal</button>
+          <button class="btn" onclick="salvarTreinoDegustacao()" style="background:rgba(139,92,246,.15);color:#a78bfa;border-color:rgba(139,92,246,.3);font-size:.82rem">💾 Salvar tudo no portal</button>
         </div>
-        <div id="demo-treino-editor">
-          <div style="color:#666;font-size:.82rem;text-align:center;padding:20px">Carregando treino de degustação...</div>
+
+        <!-- ABAS DEGUSTAÇÃO -->
+        <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px">
+          <button id="deg-tab-treino" onclick="switchDegTab('treino')" style="padding:9px 18px;background:rgba(139,92,246,.2);border:none;border-bottom:2px solid #8b5cf6;color:#a78bfa;font-family:var(--font-b);font-size:.8rem;font-weight:700;cursor:pointer;border-radius:6px 6px 0 0">🏋️ Treino</button>
+          <button id="deg-tab-nutri" onclick="switchDegTab('nutri')" style="padding:9px 18px;background:none;border:none;border-bottom:2px solid transparent;color:#666;font-family:var(--font-b);font-size:.8rem;font-weight:700;cursor:pointer;border-radius:6px 6px 0 0">🍎 Alimentação</button>
+        </div>
+
+        <!-- EDITOR DE TREINO -->
+        <div id="deg-panel-treino">
+          <div id="demo-treino-editor">
+            <div style="color:#666;font-size:.82rem;text-align:center;padding:20px">Carregando treino de degustação...</div>
+          </div>
+        </div>
+
+        <!-- EDITOR DE ALIMENTAÇÃO -->
+        <div id="deg-panel-nutri" style="display:none">
+          <p style="font-size:.8rem;color:#888;margin-bottom:14px">Edite as orientações de alimentação que aparecerão para os visitantes durante a degustação.</p>
+          <div id="demo-nutri-editor">
+            <div style="display:grid;gap:12px">
+
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#10b981;margin-bottom:10px">🥩 Proteína Diária</div>
+                <textarea id="demo-nutri-proteina" rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:.82rem;resize:vertical;font-family:var(--font-b)">Consuma entre 1,8g e 2,2g de proteína por kg de peso corporal por dia. Priorize frango, ovos, atum, carne vermelha magra e whey protein. Distribua em 4 a 5 refeições ao longo do dia para maximizar a síntese proteica muscular.</textarea>
+              </div>
+
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#f59e0b;margin-bottom:10px">🍚 Carboidratos</div>
+                <textarea id="demo-nutri-carbo" rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:.82rem;resize:vertical;font-family:var(--font-b)">Priorize carboidratos complexos: arroz integral, batata doce, aveia e mandioca. Consuma a maior parte ao redor do treino (antes e depois) para garantir energia e recuperação. Evite ultraprocessados e açúcares simples em excesso.</textarea>
+              </div>
+
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#8b5cf6;margin-bottom:10px">🥑 Gorduras Boas</div>
+                <textarea id="demo-nutri-gordura" rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:.82rem;resize:vertical;font-family:var(--font-b)">Inclua fontes de gorduras insaturadas: azeite de oliva extra virgem, abacate, castanhas e ovos. Essas gorduras são essenciais para a produção hormonal e absorção de vitaminas lipossolúveis. Evite gorduras trans presentes em alimentos ultraprocessados.</textarea>
+              </div>
+
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#3b82f6;margin-bottom:10px">💧 Hidratação</div>
+                <textarea id="demo-nutri-hidrat" rows="2" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:.82rem;resize:vertical;font-family:var(--font-b)">Beba no mínimo 35ml de água por kg de peso corporal por dia. Nos dias de treino, aumente para 40ml/kg. A hidratação adequada melhora o desempenho, a recuperação e o metabolismo.</textarea>
+              </div>
+
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#ef4444;margin-bottom:10px">⚠️ Observações Importantes</div>
+                <textarea id="demo-nutri-obs" rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:.82rem;resize:vertical;font-family:var(--font-b)">Este guia é uma orientação geral e não substitui a avaliação de um nutricionista. Para um plano alimentar 100% personalizado com distribuição de macros e cardápio completo, consulte um profissional de nutrição. Seu plano de treino foi desenvolvido para complementar uma alimentação adequada.</textarea>
+              </div>
+
+            </div>
+          </div>
         </div>
       </div>
       <div class="card" style="margin-bottom:16px">
@@ -504,10 +549,45 @@ tr:hover td{background:var(--card2)}
 
         <!-- EDITOR DE EXERCÍCIOS E GIFs -->
         <div class="detail-section" style="margin-top:16px">
-          <div class="detail-section-title">🏋️ Exercícios & GIFs da Ficha</div>
-          <p style="font-size:.8rem;color:var(--muted);margin-bottom:12px">Edite os exercícios e suba os GIFs de execução. Após editar, clique em "Publicar ficha atual" acima.</p>
-          <div id="portal-aba-exercicios">
-            <div style="text-align:center;padding:20px;color:#555;font-size:.82rem">Gere o relatório do cliente na aba Relatório primeiro para editar a ficha.</div>
+          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px">
+            <button id="port-tab-treino" onclick="switchPortalTab('treino')" style="padding:8px 16px;background:rgba(139,92,246,.15);border:none;border-bottom:2px solid #8b5cf6;color:#a78bfa;font-family:var(--font-b);font-size:.78rem;font-weight:700;cursor:pointer;border-radius:6px 6px 0 0">🏋️ Treino & GIFs</button>
+            <button id="port-tab-nutri" onclick="switchPortalTab('nutri')" style="padding:8px 16px;background:none;border:none;border-bottom:2px solid transparent;color:#666;font-family:var(--font-b);font-size:.78rem;font-weight:700;cursor:pointer;border-radius:6px 6px 0 0">🍎 Alimentação</button>
+          </div>
+
+          <!-- TREINO -->
+          <div id="port-panel-treino">
+            <p style="font-size:.8rem;color:var(--muted);margin-bottom:12px">Edite os exercícios e suba os GIFs. Após editar, clique em "Publicar ficha atual" acima.</p>
+            <div id="portal-aba-exercicios">
+              <div style="text-align:center;padding:20px;color:#555;font-size:.82rem">Gere o relatório do cliente na aba Relatório primeiro para editar a ficha.</div>
+            </div>
+          </div>
+
+          <!-- ALIMENTAÇÃO -->
+          <div id="port-panel-nutri" style="display:none">
+            <p style="font-size:.8rem;color:#888;margin-bottom:12px">Edite as orientações de alimentação do aluno. Clique em "Publicar alimentação" para enviar ao portal.</p>
+            <div style="display:grid;gap:10px">
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px">
+                <div style="font-size:.62rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#10b981;margin-bottom:8px">🥩 Proteína</div>
+                <textarea id="port-nutri-proteina" rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:9px;color:#fff;font-size:.8rem;resize:vertical;font-family:var(--font-b)" placeholder="Orientações sobre proteína..."></textarea>
+              </div>
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px">
+                <div style="font-size:.62rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#f59e0b;margin-bottom:8px">🍚 Carboidratos</div>
+                <textarea id="port-nutri-carbo" rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:9px;color:#fff;font-size:.8rem;resize:vertical;font-family:var(--font-b)" placeholder="Orientações sobre carboidratos..."></textarea>
+              </div>
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px">
+                <div style="font-size:.62rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#8b5cf6;margin-bottom:8px">🥑 Gorduras</div>
+                <textarea id="port-nutri-gordura" rows="2" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:9px;color:#fff;font-size:.8rem;resize:vertical;font-family:var(--font-b)" placeholder="Orientações sobre gorduras..."></textarea>
+              </div>
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px">
+                <div style="font-size:.62rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#3b82f6;margin-bottom:8px">💧 Hidratação</div>
+                <textarea id="port-nutri-hidrat" rows="2" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:9px;color:#fff;font-size:.8rem;resize:vertical;font-family:var(--font-b)" placeholder="Orientações sobre hidratação..."></textarea>
+              </div>
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px">
+                <div style="font-size:.62rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#ef4444;margin-bottom:8px">⚠️ Observações</div>
+                <textarea id="port-nutri-obs" rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:9px;color:#fff;font-size:.8rem;resize:vertical;font-family:var(--font-b)" placeholder="Observações importantes..."></textarea>
+              </div>
+            </div>
+            <button class="btn btn-green" onclick="publicarNutricaoPortal()" style="margin-top:14px;font-size:.82rem;padding:10px 20px">🍎 Publicar alimentação no portal</button>
           </div>
         </div>
 
@@ -1420,6 +1500,8 @@ async function carregarAbaPortal(c){
 
   // Renderizar editor de exercícios
   renderizarEditorPortalAba();
+  // Carregar alimentação salva
+  carregarNutriPortalAba(c);
 }
 
 function enviarCredenciaisWA(){
@@ -3683,10 +3765,89 @@ function removerGifDemo(gifKey){
   renderizarEditorDegustacao();
 }
 
+function switchPortalTab(tab){
+  document.getElementById('port-panel-treino').style.display = tab==='treino' ? 'block' : 'none';
+  document.getElementById('port-panel-nutri').style.display  = tab==='nutri'  ? 'block' : 'none';
+  document.getElementById('port-tab-treino').style.borderBottomColor = tab==='treino' ? '#8b5cf6' : 'transparent';
+  document.getElementById('port-tab-treino').style.color = tab==='treino' ? '#a78bfa' : '#666';
+  document.getElementById('port-tab-treino').style.background = tab==='treino' ? 'rgba(139,92,246,.15)' : 'none';
+  document.getElementById('port-tab-nutri').style.borderBottomColor = tab==='nutri' ? '#10b981' : 'transparent';
+  document.getElementById('port-tab-nutri').style.color = tab==='nutri' ? '#10b981' : '#666';
+  document.getElementById('port-tab-nutri').style.background = tab==='nutri' ? 'rgba(16,185,129,.1)' : 'none';
+  if(tab==='treino') renderizarEditorPortalAba();
+}
+
+async function publicarNutricaoPortal(){
+  if(!SB || !clienteAtual){ notif('Selecione um cliente','#ef4444'); return; }
+  const c = clienteAtual;
+  if(!c.email){ notif('Cliente sem e-mail','#ef4444'); return; }
+
+  const nutri = {
+    proteina: document.getElementById('port-nutri-proteina')?.value || '',
+    carbo:    document.getElementById('port-nutri-carbo')?.value    || '',
+    gordura:  document.getElementById('port-nutri-gordura')?.value  || '',
+    hidrat:   document.getElementById('port-nutri-hidrat')?.value   || '',
+    obs:      document.getElementById('port-nutri-obs')?.value      || '',
+  };
+
+  notif('⏳ Publicando guia alimentar...','#10b981');
+  const { error } = await SB.from('portal_fichas')
+    .update({ nutri_json: nutri, atualizado_em: new Date().toISOString() })
+    .eq('email', c.email)
+    .order('criado_em', {ascending: false})
+    .limit(1);
+
+  if(error){
+    // Se não existe ficha ainda, inserir
+    const { error: e2 } = await SB.from('portal_fichas').insert({
+      email: c.email,
+      titulo: 'Guia Alimentar',
+      nutri_json: nutri,
+      criado_em: new Date().toISOString(),
+      publicado_por: 'Prof. Will Gomes'
+    });
+    if(e2){ notif('Erro: '+e2.message,'#ef4444'); return; }
+  }
+
+  notif('✅ Guia alimentar publicado no portal!','#10b981');
+  carregarAbaPortal(c);
+}
+
+async function carregarNutriPortalAba(c){
+  if(!SB || !c?.email) return;
+  const { data } = await SB.from('portal_fichas').select('nutri_json').eq('email', c.email).order('criado_em',{ascending:false}).limit(1);
+  const nutri = data?.[0]?.nutri_json;
+  if(!nutri) return;
+  ['proteina','carbo','gordura','hidrat','obs'].forEach(k=>{
+    const el = document.getElementById('port-nutri-'+k);
+    if(el && nutri[k]) el.value = nutri[k];
+  });
+}
+
+function switchDegTab(tab){
+  document.getElementById('deg-panel-treino').style.display = tab==='treino' ? 'block' : 'none';
+  document.getElementById('deg-panel-nutri').style.display  = tab==='nutri'  ? 'block' : 'none';
+  document.getElementById('deg-tab-treino').style.borderBottomColor = tab==='treino' ? '#8b5cf6' : 'transparent';
+  document.getElementById('deg-tab-treino').style.color = tab==='treino' ? '#a78bfa' : '#666';
+  document.getElementById('deg-tab-treino').style.background = tab==='treino' ? 'rgba(139,92,246,.2)' : 'none';
+  document.getElementById('deg-tab-nutri').style.borderBottomColor = tab==='nutri' ? '#10b981' : 'transparent';
+  document.getElementById('deg-tab-nutri').style.color = tab==='nutri' ? '#10b981' : '#666';
+  document.getElementById('deg-tab-nutri').style.background = tab==='nutri' ? 'rgba(16,185,129,.1)' : 'none';
+}
+
 async function salvarTreinoDegustacao(){
   if(!SB){ notif('Supabase não conectado','#ef4444'); return; }
   const totalGifs = Object.keys(gifsDegustacao).length;
-  notif('⏳ Salvando treino de degustação...','#8b5cf6');
+  notif('⏳ Salvando degustação...','#8b5cf6');
+
+  // Coletar alimentação
+  const nutri = {
+    proteina: document.getElementById('demo-nutri-proteina')?.value || '',
+    carbo:    document.getElementById('demo-nutri-carbo')?.value    || '',
+    gordura:  document.getElementById('demo-nutri-gordura')?.value  || '',
+    hidrat:   document.getElementById('demo-nutri-hidrat')?.value   || '',
+    obs:      document.getElementById('demo-nutri-obs')?.value      || '',
+  };
 
   const { error } = await SB.from('portal_fichas').upsert({
     email: '__degustacao__',
@@ -3695,12 +3856,13 @@ async function salvarTreinoDegustacao(){
     resumo: 'Treino de degustação exibido para visitantes do portal',
     gifs: gifsDegustacao,
     total_gifs: totalGifs,
+    nutri_json: nutri,
     criado_em: new Date().toISOString(),
     publicado_por: 'Prof. Will Gomes'
   }, { onConflict: 'email' });
 
   if(error){ notif('Erro ao salvar: '+error.message,'#ef4444'); return; }
-  notif(`✅ Treino de degustação salvo com ${totalGifs} GIF(s)!`,'#8b5cf6');
+  notif(`✅ Degustação salva! ${totalGifs} GIF(s) · Alimentação incluída`,'#8b5cf6');
 }
 
 // ── DEGUSTAÇÕES ───────────────────────────────────────────────────────────────

@@ -487,11 +487,12 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
           <div class="pg-sub">Orientações de alimentação do Prof. Will Gomes</div>
         </div>
         <div id="nutri-content">
-          <div class="empty-state">
+          <div class="empty-state" id="nutri-empty">
             <div class="empty-icon">🍎</div>
-            <div class="empty-title">Guia alimentar não disponível</div>
-            <div class="empty-sub">Este recurso está disponível nos planos Premium, Evolução e todos os Acompanhamentos.</div>
+            <div class="empty-title">Guia alimentar em preparação</div>
+            <div class="empty-sub">O Prof. Will está preparando suas orientações de alimentação. Em breve aparecerá aqui!</div>
           </div>
+          <div id="nutri-cards" style="display:none;display:flex;flex-direction:column;gap:14px"></div>
         </div>
       </div>
 
@@ -1064,6 +1065,40 @@ function fecharModoTreino(){
   document.getElementById('seletor-dia').style.display = 'none';
 }
 
+// ── GUIA ALIMENTAR ────────────────────────────────────────────────────────────
+function montarNutricao(fichas){
+  const nutri = fichas?.[0]?.nutri_json;
+  const empty = document.getElementById('nutri-empty');
+  const cards = document.getElementById('nutri-cards');
+  if(!empty || !cards) return;
+
+  if(!nutri || !Object.values(nutri).some(v=>v)){
+    empty.style.display = 'flex';
+    cards.style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  cards.style.display = 'flex';
+
+  const itens = [
+    { key:'proteina', emoji:'🥩', titulo:'Proteína Diária',    cor:'#10b981' },
+    { key:'carbo',    emoji:'🍚', titulo:'Carboidratos',        cor:'#f59e0b' },
+    { key:'gordura',  emoji:'🥑', titulo:'Gorduras Boas',       cor:'#8b5cf6' },
+    { key:'hidrat',   emoji:'💧', titulo:'Hidratação',          cor:'#3b82f6' },
+    { key:'obs',      emoji:'⚠️', titulo:'Observações Importantes', cor:'#ef4444' },
+  ];
+
+  cards.innerHTML = itens.filter(i=>nutri[i.key]).map(i=>`
+    <div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px;border-left:3px solid ${i.cor}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:1.2rem">${i.emoji}</span>
+        <span style="font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:${i.cor}">${i.titulo}</span>
+      </div>
+      <p style="font-size:.88rem;color:#ccc;line-height:1.7;white-space:pre-wrap">${nutri[i.key]}</p>
+    </div>`).join('');
+}
+
 // ── TROCAR SENHA ──────────────────────────────────────────────────────────────
 async function trocarSenha(){
   const atual    = document.getElementById('s-atual').value;
@@ -1135,6 +1170,7 @@ async function carregarDados(){
   montarFicha(fichas||[]);
   montarHistorico(fichas||[]);
   montarGrafico(progressos||[]);
+  montarNutricao(fichas||[]);
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
