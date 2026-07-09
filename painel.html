@@ -315,6 +315,20 @@ tr:hover td{background:var(--card2)}
         <div class="page-title">DEGUS<span>TAÇÕES</span></div>
         <button class="btn btn-green" onclick="carregarDegustacoes()" style="font-size:.8rem;padding:8px 16px">🔄 Atualizar</button>
       </div>
+
+      <!-- TREINO DE DEGUSTAÇÃO -->
+      <div class="card" style="margin-bottom:16px;border:1px solid rgba(139,92,246,.3);background:rgba(139,92,246,.04)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:.68rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#a78bfa;margin-bottom:4px">🎯 Treino de Degustação</div>
+            <div style="font-size:.82rem;color:#888">Este é o treino que os visitantes veem ao experimentar o portal. Edite exercícios e suba os GIFs abaixo.</div>
+          </div>
+          <button class="btn" onclick="salvarTreinoDegustacao()" style="background:rgba(139,92,246,.15);color:#a78bfa;border-color:rgba(139,92,246,.3);font-size:.82rem">💾 Salvar alterações no portal</button>
+        </div>
+        <div id="demo-treino-editor">
+          <div style="color:#666;font-size:.82rem;text-align:center;padding:20px">Carregando treino de degustação...</div>
+        </div>
+      </div>
       <div class="card" style="margin-bottom:16px">
         <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
           <div style="flex:1;min-width:200px">
@@ -1242,7 +1256,7 @@ function showPage(id,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
-  if(id==='degustacoes') carregarDegustacoes();
+  if(id==='degustacoes'){ carregarDegustacoes(); renderizarEditorDegustacao(); }
 }
 function switchTab(id,el){
   document.querySelectorAll('#page-clientes .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -3364,6 +3378,130 @@ async function publicarNoPortal(){
   } else {
     statusEl.innerHTML += `<br>📱 Aluno ainda não acessou o portal.`;
   }
+}
+
+// ── TREINO DE DEGUSTAÇÃO — EDITOR NO PAINEL ──────────────────────────────────
+let gifsDegustacao = {}; // GIFs específicos da degustação
+
+function renderizarEditorDegustacao(){
+  const el = document.getElementById('demo-treino-editor');
+  if(!el) return;
+
+  // Usar o treino demo definido no portal — replicar aqui para edição
+  const treinos = {
+    'TREINO A — PEITO & TRÍCEPS': [
+      {nome:'Supino Reto com Barra', series:'4', reps:'8–12', descanso:'2min', rir:'2'},
+      {nome:'Supino Inclinado com Halteres', series:'3', reps:'10–12', descanso:'90s', rir:'2'},
+      {nome:'Crucifixo com Halteres', series:'3', reps:'12–15', descanso:'75s', rir:'2'},
+      {nome:'Tríceps Pulley Corda', series:'3', reps:'12–15', descanso:'75s', rir:'2'},
+      {nome:'Tríceps Francês com Halter', series:'3', reps:'10–12', descanso:'75s', rir:'2'},
+    ],
+    'TREINO B — COSTAS & BÍCEPS': [
+      {nome:'Puxada Frontal na Polia', series:'4', reps:'8–12', descanso:'2min', rir:'2'},
+      {nome:'Remada Curvada com Barra', series:'4', reps:'8–10', descanso:'2min', rir:'2'},
+      {nome:'Remada Unilateral com Halter', series:'3', reps:'10–12', descanso:'90s', rir:'2'},
+      {nome:'Rosca Direta com Barra', series:'3', reps:'10–12', descanso:'75s', rir:'2'},
+      {nome:'Rosca Concentrada com Halter', series:'3', reps:'12–15', descanso:'60s', rir:'2'},
+    ],
+    'TREINO C — PERNAS & GLÚTEOS': [
+      {nome:'Agachamento Livre', series:'4', reps:'8–10', descanso:'2min', rir:'2'},
+      {nome:'Leg Press 45°', series:'4', reps:'10–12', descanso:'2min', rir:'2'},
+      {nome:'Stiff com Halteres', series:'3', reps:'10–12', descanso:'90s', rir:'2'},
+      {nome:'Afundo com Halteres', series:'3', reps:'12/lado', descanso:'75s', rir:'2'},
+      {nome:'Cadeira Extensora', series:'3', reps:'15–20', descanso:'60s', rir:'2'},
+    ],
+    'TREINO D — OMBROS & ABDÔMEN': [
+      {nome:'Desenvolvimento com Halteres', series:'4', reps:'10–12', descanso:'90s', rir:'2'},
+      {nome:'Elevação Lateral com Halteres', series:'4', reps:'15–20', descanso:'60s', rir:'2'},
+      {nome:'Encolhimento com Halteres', series:'3', reps:'12–15', descanso:'75s', rir:'2'},
+      {nome:'Abdominal Remador', series:'3', reps:'15–20', descanso:'60s', rir:'1'},
+      {nome:'Prancha Abdominal', series:'3', reps:'30–45s', descanso:'45s', rir:'—'},
+    ]
+  };
+
+  let html = '';
+  Object.entries(treinos).forEach(([dia, exercicios])=>{
+    html += `<div style="margin-bottom:20px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      <div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:10px 14px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#a78bfa">${dia}</div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:var(--card2)">
+          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">#</th>
+          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Exercício</th>
+          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Séries</th>
+          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Reps</th>
+          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Descanso</th>
+          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">RIR</th>
+          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:center;border-bottom:1px solid var(--border)">GIF</th>
+        </tr></thead>
+        <tbody>`;
+
+    exercicios.forEach((ex, i)=>{
+      const gifKey = 'demo_gif__'+encodeURIComponent(ex.nome.toLowerCase().trim());
+      const gifData = gifsDegustacao[gifKey] || null;
+      html += `<tr style="${i%2===0?'':'background:var(--card2)'}">
+        <td style="padding:8px 10px;font-size:.75rem;color:var(--muted)">${i+1}</td>
+        <td style="padding:8px 10px;font-size:.82rem;font-weight:600;color:var(--white)">${ex.nome}</td>
+        <td style="padding:8px 10px;font-size:.78rem">${ex.series}</td>
+        <td style="padding:8px 10px;font-size:.78rem">${ex.reps}</td>
+        <td style="padding:8px 10px;font-size:.78rem">${ex.descanso}</td>
+        <td style="padding:8px 10px;font-size:.75rem;color:var(--yellow);font-weight:600">${ex.rir}</td>
+        <td style="padding:6px 8px;text-align:center;vertical-align:middle">
+          ${gifData
+            ? `<div style="position:relative;display:inline-block">
+                 <img src="${gifData}" style="width:52px;height:52px;border-radius:6px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande('${gifKey}')" title="Ver em tela cheia"/>
+                 <button onclick="removerGifDemo('${gifKey}')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;padding:0">✕</button>
+               </div>`
+            : `<label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px;display:inline-block;font-size:.65rem;color:#777;white-space:nowrap">
+                 📎 GIF
+                 <input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGifDemo(this,'${gifKey}')"/>
+               </label>`
+          }
+        </td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+function anexarGifDemo(input, gifKey){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 8*1024*1024){ notif('GIF muito grande (máx. 8MB)','#ef4444'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    gifsDegustacao[gifKey] = e.target.result;
+    notif('✅ GIF anexado! Salve para publicar.','#10b981');
+    renderizarEditorDegustacao();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerGifDemo(gifKey){
+  delete gifsDegustacao[gifKey];
+  notif('GIF removido','#f59e0b');
+  renderizarEditorDegustacao();
+}
+
+async function salvarTreinoDegustacao(){
+  if(!SB){ notif('Supabase não conectado','#ef4444'); return; }
+  const totalGifs = Object.keys(gifsDegustacao).length;
+  notif('⏳ Salvando treino de degustação...','#8b5cf6');
+
+  const { error } = await SB.from('portal_fichas').upsert({
+    email: '__degustacao__',
+    user_id: null,
+    titulo: 'Treino Demonstrativo — WillgomesFit',
+    resumo: 'Treino de degustação exibido para visitantes do portal',
+    gifs: gifsDegustacao,
+    total_gifs: totalGifs,
+    criado_em: new Date().toISOString(),
+    publicado_por: 'Prof. Will Gomes'
+  }, { onConflict: 'email' });
+
+  if(error){ notif('Erro ao salvar: '+error.message,'#ef4444'); return; }
+  notif(`✅ Treino de degustação salvo com ${totalGifs} GIF(s)!`,'#8b5cf6');
 }
 
 // ── DEGUSTAÇÕES ───────────────────────────────────────────────────────────────

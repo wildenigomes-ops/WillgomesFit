@@ -66,10 +66,10 @@ section{padding:88px 24px}
 .ficha-card.featured:hover{transform:scale(1.05) translateY(-6px)}
 .ficha-card.card-green{border-color:rgba(16,185,129,.3);background:linear-gradient(160deg,rgba(16,185,129,.08),#111 30%)}
 .ficha-card.card-purple{border-color:rgba(139,92,246,.3);background:linear-gradient(160deg,rgba(139,92,246,.08),#111 30%)}
-.badge{position:absolute;top:-12px;right:20px;background:linear-gradient(135deg,#ff6b00,#ff8c42);color:#fff;font-size:.62rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 16px;border-radius:20px;box-shadow:0 4px 16px rgba(232,93,4,.5);animation:badgePulse 2s ease-in-out infinite}
+.badge{position:absolute;top:16px;right:16px;background:linear-gradient(135deg,#ff6b00,#ff8c42);color:#fff;font-size:.58rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:20px;box-shadow:0 4px 16px rgba(232,93,4,.5);animation:badgePulse 2s ease-in-out infinite}
 @keyframes badgePulse{0%,100%{box-shadow:0 4px 16px rgba(232,93,4,.5)}50%{box-shadow:0 4px 24px rgba(232,93,4,.8)}}
-.badge-green{position:absolute;top:-12px;right:20px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:.62rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 16px;border-radius:20px;box-shadow:0 4px 16px rgba(16,185,129,.5)}
-.badge-purple{position:absolute;top:-12px;right:20px;background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;font-size:.62rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 16px;border-radius:20px;box-shadow:0 4px 16px rgba(139,92,246,.5)}
+.badge-green{position:absolute;top:16px;right:16px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:.58rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:20px;box-shadow:0 4px 16px rgba(16,185,129,.5)}
+.badge-purple{position:absolute;top:16px;right:16px;background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;font-size:.58rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:20px;box-shadow:0 4px 16px rgba(139,92,246,.5)}
 .ficha-name{font-size:.68rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--orange);margin-bottom:8px}
 .ficha-title{font-family:var(--font-d);font-size:1.9rem;margin-bottom:6px;line-height:1.1}
 .ficha-price{font-family:var(--font-d);font-size:3.6rem;color:#fff;line-height:1;margin-bottom:4px;text-shadow:0 0 20px rgba(245,158,11,.5)}
@@ -197,6 +197,9 @@ footer a{color:var(--muted)}
 
 /* ── Telas pequenas: até 480px (maioria dos celulares) ── */
 @media(max-width:480px){
+
+  /* SEÇÃO DEGUSTAÇÃO — empilhar no mobile */
+  .degust-grid{grid-template-columns:1fr!important;gap:24px!important}
 
   /* NAVEGAÇÃO */
   nav{padding:10px 14px}
@@ -383,6 +386,86 @@ footer a{color:var(--muted)}
   </div>
 </div>
 
+<!-- SEÇÃO DEGUSTAÇÃO -->
+<section style="background:linear-gradient(135deg,#0d0a1a,#0a0a0a);border-top:1px solid rgba(139,92,246,.15);border-bottom:1px solid rgba(139,92,246,.15);padding:52px 24px">
+  <div style="max-width:900px;margin:0 auto">
+    <div style="display:grid;gap:40px;align-items:center" class="degust-grid">
+
+      <!-- TEXTO -->
+      <div>
+        <p style="font-size:.68rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#a78bfa;margin-bottom:10px">🎯 Experimente antes de comprar</p>
+        <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3rem);line-height:1;margin-bottom:16px">VEJA SEU TREINO<br><span style="color:#8b5cf6">ANTES DE PAGAR</span></h2>
+        <p style="font-size:.9rem;color:#aaa;line-height:1.7;margin-bottom:24px">
+          Acesse o portal do aluno gratuitamente por <strong style="color:#fff">20 minutos</strong> e veja exatamente como seria o seu treino personalizado — com exercícios, séries, repetições, descanso e orientações científicas do Prof. Will Gomes.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
+          <div style="display:flex;align-items:center;gap:10px;font-size:.85rem;color:#ccc">
+            <span style="color:#8b5cf6;font-size:1rem">✓</span> Treino demonstrativo completo com 4 dias de treino
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:.85rem;color:#ccc">
+            <span style="color:#8b5cf6;font-size:1rem">✓</span> GIFs de execução em cada exercício
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:.85rem;color:#ccc">
+            <span style="color:#8b5cf6;font-size:1rem">✓</span> Orientações científicas baseadas em ACSM 2026
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:.85rem;color:#ccc">
+            <span style="color:#8b5cf6;font-size:1rem">✓</span> Sem cadastro, sem cartão, sem compromisso
+          </div>
+        </div>
+        <a href="portal.html" style="display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;font-weight:800;font-size:.95rem;padding:16px 32px;border-radius:14px;text-decoration:none;letter-spacing:.5px;box-shadow:0 8px 24px rgba(139,92,246,.4);transition:all .25s">
+          🎯 Experimentar grátis por 20 minutos
+        </a>
+        <div style="font-size:.72rem;color:#555;margin-top:10px">Apenas nome e WhatsApp — nada mais</div>
+      </div>
+
+      <!-- PREVIEW DO PORTAL -->
+      <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:16px;padding:24px;position:relative">
+        <div style="background:#0d0d0d;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+          <!-- Barra simulando o portal -->
+          <div style="background:linear-gradient(135deg,#7c3aed,#6d28d9);padding:8px 16px;display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:#fff">WILLGOMESFIT</span>
+            <span style="background:rgba(255,255,255,.2);color:#fff;font-size:.6rem;font-weight:700;padding:3px 8px;border-radius:10px">🎯 Degustação · 20:00</span>
+          </div>
+          <!-- Preview de exercício simulado -->
+          <div style="padding:16px">
+            <div style="font-size:.6rem;font-weight:800;letter-spacing:2px;color:#e85d04;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px">
+              TREINO A — PEITO & TRÍCEPS
+              <div style="flex:1;height:1px;background:rgba(232,93,4,.2)"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+              <div style="background:rgba(232,93,4,.15);color:#e85d04;font-size:.6rem;font-weight:800;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+              <div style="flex:1">
+                <div style="font-size:.78rem;font-weight:700;color:#fff;margin-bottom:3px">Supino Reto com Barra</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <span style="background:rgba(255,255,255,.06);border-radius:4px;padding:2px 6px;font-size:.6rem;color:#aaa">📊 4 séries</span>
+                  <span style="background:rgba(255,255,255,.06);border-radius:4px;padding:2px 6px;font-size:.6rem;color:#aaa">🔁 8–12 reps</span>
+                  <span style="background:rgba(255,255,255,.06);border-radius:4px;padding:2px 6px;font-size:.6rem;color:#aaa">💪 RIR 2</span>
+                </div>
+              </div>
+              <div style="width:36px;height:36px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1rem">🎬</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+              <div style="background:rgba(232,93,4,.15);color:#e85d04;font-size:.6rem;font-weight:800;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+              <div style="flex:1">
+                <div style="font-size:.78rem;font-weight:700;color:#fff;margin-bottom:3px">Supino Inclinado com Halteres</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <span style="background:rgba(255,255,255,.06);border-radius:4px;padding:2px 6px;font-size:.6rem;color:#aaa">📊 3 séries</span>
+                  <span style="background:rgba(255,255,255,.06);border-radius:4px;padding:2px 6px;font-size:.6rem;color:#aaa">🔁 10–12 reps</span>
+                  <span style="background:rgba(255,255,255,.06);border-radius:4px;padding:2px 6px;font-size:.6rem;color:#aaa">💪 RIR 2</span>
+                </div>
+              </div>
+              <div style="width:36px;height:36px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1rem">🎬</div>
+            </div>
+            <div style="text-align:center;padding:10px 0 0;font-size:.7rem;color:#555">+ 3 exercícios mais neste treino...</div>
+          </div>
+        </div>
+        <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;font-size:.62rem;font-weight:800;padding:4px 14px;border-radius:20px;white-space:nowrap;letter-spacing:.5px">PRÉVIA DO PORTAL</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <section id="planos" class="dark-section" style="background:radial-gradient(ellipse at top,rgba(232,93,4,.08),transparent 60%),#0a0a0a;padding-top:48px">
   <div class="inner">
     <p class="s-tag" style="color:var(--orange);font-weight:800">⚡ Planos e Preços</p>
@@ -441,7 +524,7 @@ footer a{color:var(--muted)}
         </div>
 
         <!-- PREMIUM -->
-        <div class="ficha-card featured">
+        <div class="ficha-card featured" style="padding-top:52px">
           <span class="badge">⭐ MAIS ESCOLHIDO</span>
           <div class="ficha-name">🔥 Mais Popular</div>
           <div class="ficha-title">Ficha Premium</div>
@@ -461,7 +544,7 @@ footer a{color:var(--muted)}
         </div>
 
         <!-- EVOLUÇÃO -->
-        <div class="ficha-card card-purple">
+        <div class="ficha-card card-purple" style="padding-top:52px">
           <span class="badge-purple">🏆 MELHOR CUSTO-BENEFÍCIO</span>
           <div class="ficha-name" style="color:#a78bfa">🏆 Transformação Real</div>
           <div class="ficha-title">Plano Evolução</div>
@@ -485,6 +568,23 @@ footer a{color:var(--muted)}
 
     <!-- ACOMPANHAMENTOS -->
     <div class="tab-panel" id="tab-acomp">
+
+      <!-- CARD DEGUSTAÇÃO -->
+      <div style="background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(139,92,246,.05));border:2px solid rgba(139,92,246,.4);border-radius:16px;padding:24px;margin-bottom:24px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-20px;right:-20px;font-size:6rem;opacity:.06">🎯</div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div style="font-size:.68rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#a78bfa;margin-bottom:6px">⚡ Antes de comprar</div>
+            <div style="font-family:'Bebas Neue',display;font-size:1.5rem;letter-spacing:1px;color:#fff;margin-bottom:8px">EXPERIMENTE GRÁTIS POR 20 MINUTOS</div>
+            <p style="font-size:.84rem;color:#bbb;line-height:1.6;margin-bottom:0">Veja exatamente como seria o seu treino personalizado — com exercícios, séries, repetições e orientações científicas — antes de contratar qualquer plano.</p>
+          </div>
+          <div style="text-align:center;flex-shrink:0">
+            <a href="portal.html" style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;font-weight:800;font-size:.9rem;padding:14px 28px;border-radius:12px;text-decoration:none;letter-spacing:.5px;box-shadow:0 6px 20px rgba(139,92,246,.4);white-space:nowrap">🎯 Quero experimentar grátis</a>
+            <div style="font-size:.7rem;color:#666;margin-top:8px">Sem cadastro · Sem cartão · 20 minutos</div>
+          </div>
+        </div>
+      </div>
+
       <div class="acomp-grid">
         <div class="acomp-card">
           <div class="acomp-plan">Acompanhamento</div>
