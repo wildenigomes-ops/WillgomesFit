@@ -683,6 +683,14 @@ function doLogout(){
 }
 
 // ── LOAD ─────────────────────────────────────────────────────────────────────
+// ── PLANOS COM ACESSO AO PORTAL ───────────────────────────────────────────────
+const PLANOS_PORTAL = ['start','performance','elite','trimestral','semestral','acompanhamento'];
+
+function planoTemPortal(plano){
+  const p = (plano||'').toLowerCase();
+  return PLANOS_PORTAL.some(x => p.includes(x));
+}
+
 async function loadClientes(){
   notif('Atualizando...','#3b82f6');
   clientes = [];
@@ -915,9 +923,7 @@ async function abrirCliente(id){
   const payload = {sbUrl:SB_URL,sbKey:SB_KEY,clienteId:id,nome:c.nome,email:c.email,prof:'Will Gomes'};
   const token = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
   const link = BASE_URL+'/cliente.html?t='+token;
-  document.getElementById('m-link-q').textContent = link;
-  document.getElementById('m-link-q').dataset.link = link;
-  // Sincronizar com aba dados
+  // Preencher link na aba dados
   const elQ2 = document.getElementById('m-link-q2');
   if(elQ2){ elQ2.textContent=link; elQ2.dataset.link=link; }
   const inpQ = document.getElementById('m-link-input');
@@ -1198,8 +1204,7 @@ function dGrid(items){ return items.filter(([,v])=>v&&v!=='—').map(([l,v])=>`<
 
 function copiarLink(){
   const el1 = document.getElementById('m-link-q2');
-  const el2 = document.getElementById('m-link-q');
-  const link = (el1&&el1.dataset&&el1.dataset.link) || (el2&&el2.dataset&&el2.dataset.link) || '';
+  const link = (el1&&el1.dataset&&el1.dataset.link) || (el1&&el1.textContent) || '';
 
   if(!link || link==='—' || link.length < 10){
     // Tentar pegar do textContent
@@ -1234,7 +1239,8 @@ function copiarFallback(link){
 }
 function enviarLinkWA(){
   if(!clienteAtual) return;
-  const link=document.getElementById('m-link-q').dataset.link;
+  const el = document.getElementById('m-link-q2');
+  const link = (el&&el.dataset&&el.dataset.link) || (el&&el.textContent) || '';
   const msg=encodeURIComponent(`Olá ${clienteAtual.nome}! 🏋️\n\nSeu pagamento foi confirmado! Preencha o questionário completo para montagem do seu programa:\n\n${link}\n\nWill Gomes – WillgomesFit 💪`);
   window.open(`https://wa.me/55${(clienteAtual.whatsapp||'').replace(/\D/g,'')}?text=${msg}`,'_blank');
 }
@@ -1334,13 +1340,6 @@ const EX = [{"cod": "EX001", "nome": "Supino Reto Barra", "grupo": "Peitoral", "
 function prescreverTreino(){
   // ══════════════════════════════════════════════════════════════════════════
 // ── CONSTANTES DE PLANOS COM ACESSO AO PORTAL ────────────────────────────────
-const PLANOS_PORTAL = ['start','performance','elite','trimestral','semestral','acompanhamento'];
-
-function planoTemPortal(plano){
-  const p = (plano||'').toLowerCase();
-  return PLANOS_PORTAL.some(x => p.includes(x));
-}
-
 // ── ABA PORTAL — CARREGAR STATUS ─────────────────────────────────────────────
 async function carregarAbaPortal(c){
   if(!SB) return;
