@@ -392,7 +392,7 @@ tr:hover td{background:var(--card2)}
         <button class="tab-btn active" onclick="switchMTab('dados',this)">📋 Dados</button>
         <button class="tab-btn" onclick="switchMTab('anamnese',this)">🩺 Anamnese</button>
         <button class="tab-btn" onclick="switchMTab('timer',this)">⏱ Prazo</button>
-        <button class="tab-btn" onclick="switchMTab('mfit',this)">📱 MFIT</button>
+        <button class="tab-btn" onclick="switchMTab('portal',this)">🌐 Portal</button>
         <button class="tab-btn" onclick="switchMTab('notas',this)">📝 Notas</button>
         <button class="tab-btn" onclick="switchMTab('relatorio',this)">📊 Relatório</button>
       </div>
@@ -469,34 +469,48 @@ tr:hover td{background:var(--card2)}
       </div>
 
       <!-- MFIT -->
-      <div class="tab-panel" id="mt-mfit">
+      <div class="tab-panel" id="mt-portal">
+
+        <!-- STATUS DE ACESSO -->
         <div class="detail-section">
-          <div class="detail-section-title">Link do questionário completo</div>
-          <p style="font-size:.82rem;color:var(--muted);margin-bottom:10px">Envie ao cliente após confirmar o pagamento.</p>
-          <div class="link-box">
-            <span class="link-text" id="m-link-q">—</span>
-            <button class="btn btn-sm" onclick="copiarLink()">📋 Copiar</button>
-          </div>
-          <button class="btn btn-green btn-full" style="margin-top:10px" onclick="enviarLinkWA()">💬 Enviar pelo WhatsApp</button>
-        </div>
-        <div class="detail-section" style="margin-top:20px">
-          <div class="detail-section-title">Credenciais App MFIT</div>
-          <div style="background:var(--card2);border:1px solid var(--border2);border-radius:6px;padding:16px">
-            <div class="form-row">
-              <div class="form-group"><label>Login MFIT</label><input type="text" id="mfit-login" placeholder="login@mfit.com.br"/></div>
-              <div class="form-group"><label>Senha</label><input type="text" id="mfit-senha" placeholder="senha123"/></div>
+          <div class="detail-section-title">🔐 Acesso ao Portal do Aluno</div>
+          <div id="portal-status-aba" style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:16px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+              <div id="portal-aba-badge" style="font-size:.72rem;font-weight:800;padding:5px 14px;border-radius:20px;background:rgba(255,255,255,.06);color:#666">⚫ Carregando...</div>
+              <div id="portal-aba-expira" style="font-size:.78rem;color:#888"></div>
             </div>
-            <div class="form-group"><label>Link de acesso</label><input type="text" id="mfit-link" placeholder="https://mfit.pro/..."/></div>
-            <div class="form-row">
-              <div class="form-group"><label>Data envio</label><input type="date" id="mfit-data"/></div>
-              <div class="form-group"><label>Status</label>
-                <select id="mfit-status"><option>Pendente</option><option>Enviado</option><option>Ativo</option><option>Expirado</option></select>
+            <div id="portal-aba-credenciais" style="display:none;background:rgba(0,0,0,.3);border-radius:8px;padding:12px;margin-bottom:12px">
+              <div style="font-size:.65rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa;margin-bottom:8px">Credenciais de Acesso</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem">
+                <div><span style="color:#666">E-mail:</span><br><strong id="portal-aba-email" style="color:#fff"></strong></div>
+                <div><span style="color:#666">Senha atual:</span><br><strong id="portal-aba-senha" style="color:#a78bfa;font-size:1rem"></strong></div>
+                <div><span style="color:#666">Último acesso:</span><br><strong id="portal-aba-ultimo" style="color:#fff"></strong></div>
+                <div><span style="color:#666">Senha trocada?</span><br><strong id="portal-aba-redefinida" style="color:#fff"></strong></div>
               </div>
             </div>
-            <div class="form-group"><label>Observações</label><textarea id="mfit-obs"></textarea></div>
-            <button class="btn btn-orange" onclick="salvarMfit()">Salvar credenciais</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap" id="portal-aba-btns"></div>
           </div>
         </div>
+
+        <!-- FICHA NO PORTAL -->
+        <div class="detail-section" style="margin-top:16px">
+          <div class="detail-section-title">📋 Ficha Publicada no Portal</div>
+          <div id="portal-aba-ficha-status" style="font-size:.82rem;color:#888;margin-bottom:12px">Carregando...</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+            <button class="btn btn-green" onclick="publicarNoPortal()" style="font-size:.8rem;padding:9px 16px">🚀 Publicar ficha atual</button>
+            <button class="btn" onclick="verFichaPortal()" style="font-size:.8rem;padding:9px 16px;background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.3)">👁 Ver ficha publicada</button>
+          </div>
+        </div>
+
+        <!-- EDITOR DE EXERCÍCIOS E GIFs -->
+        <div class="detail-section" style="margin-top:16px">
+          <div class="detail-section-title">🏋️ Exercícios & GIFs da Ficha</div>
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:12px">Edite os exercícios e suba os GIFs de execução. Após editar, clique em "Publicar ficha atual" acima.</p>
+          <div id="portal-aba-exercicios">
+            <div style="text-align:center;padding:20px;color:#555;font-size:.82rem">Gere o relatório do cliente na aba Relatório primeiro para editar a ficha.</div>
+          </div>
+        </div>
+
       </div>
 
       <!-- NOTAS -->
@@ -576,7 +590,7 @@ tr:hover td{background:var(--card2)}
       <button class="btn" onclick="resetarTudoCliente()" style="background:rgba(239,68,68,.2);color:#ff4444;border-color:rgba(239,68,68,.4);font-size:.8rem">⚠️ Resetar Tudo</button>
       <button class="btn" onclick="fecharModal()">Fechar</button>
       <button class="btn btn-green" onclick="abrirWA()">💬 WhatsApp</button>
-      <button class="btn btn-orange" onclick="switchMTab('relatorio',document.querySelectorAll('#modal-cliente .tab-btn')[5])">📊 Ver Relatório</button>
+      <button class="btn btn-orange" onclick="switchMTab('relatorio',document.querySelector('#modal-cliente .tab-btn:last-of-type'))">📊 Ver Relatório</button>
     </div>
   </div>
 </div>
@@ -675,7 +689,11 @@ async function loadClientes(){
   if(SB){
     try{
       const { data } = await SB.from('clientes').select('*').order('criado_em',{ascending:false});
-      if(data) clientes = data.map(r=>({...r,...(r.dados||{}),id:r.id,_sb:true}));
+      if(data){
+        clientes = data.map(r=>({...r,...(r.dados||{}),id:r.id,_sb:true}));
+        // Gerar acesso automático ao portal para clientes de acompanhamento que ainda não têm
+        clientes.forEach(c => { if(planoTemPortal(c.plano)) gerarAcessoAutomatico(c); });
+      }
     }catch(e){ console.warn(e); }
 
     // Buscar questionários e mesclar com clientes
@@ -1277,6 +1295,9 @@ function switchMTab(id,el){
     setTimeout(()=>gerarRelatorioCliente(clienteAtual), 200);
     setTimeout(()=>carregarStatusPortal(), 400);
   }
+  if(id==='portal' && clienteAtual){
+    carregarAbaPortal(clienteAtual);
+  }
 }
 function fecharModal(){ document.getElementById('modal-cliente').classList.remove('open'); document.body.style.overflow=''; }
 function abrirNovoCliente(){ document.getElementById('modal-novo').classList.add('open'); document.body.style.overflow='hidden'; }
@@ -1327,6 +1348,200 @@ const EX = [{"cod": "EX001", "nome": "Supino Reto Barra", "grupo": "Peitoral", "
 
 function prescreverTreino(){
   // ══════════════════════════════════════════════════════════════════════════
+// ── CONSTANTES DE PLANOS COM ACESSO AO PORTAL ────────────────────────────────
+const PLANOS_PORTAL = ['start','performance','elite','trimestral','semestral','acompanhamento'];
+
+function planoTemPortal(plano){
+  const p = (plano||'').toLowerCase();
+  return PLANOS_PORTAL.some(x => p.includes(x));
+}
+
+// ── ABA PORTAL — CARREGAR STATUS ─────────────────────────────────────────────
+async function carregarAbaPortal(c){
+  if(!SB) return;
+  const badge   = document.getElementById('portal-aba-badge');
+  const expira  = document.getElementById('portal-aba-expira');
+  const creds   = document.getElementById('portal-aba-credenciais');
+  const btns    = document.getElementById('portal-aba-btns');
+  const fichaEl = document.getElementById('portal-aba-ficha-status');
+  if(!badge) return;
+
+  // Buscar acesso
+  const { data } = await SB.from('portal_alunos').select('*').eq('email', c.email).limit(1);
+  const aluno = data?.[0];
+
+  const agora  = new Date();
+  const expiraDate = aluno?.acesso_expira ? new Date(aluno.acesso_expira) : null;
+  const ativo  = expiraDate ? expiraDate > agora : false;
+  const dias   = expiraDate ? Math.max(0, Math.ceil((expiraDate-agora)/(1000*60*60*24))) : 0;
+
+  if(!aluno){
+    badge.textContent = '⚫ Sem acesso';
+    badge.style.background = 'rgba(255,255,255,.06)';
+    badge.style.color = '#666';
+    expira.textContent = '';
+    creds.style.display = 'none';
+
+    if(planoTemPortal(c.plano)){
+      btns.innerHTML = `
+        <button class="btn btn-green" onclick="criarAcessoPortal(30)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 30 dias</button>
+        <button class="btn btn-green" onclick="criarAcessoPortal(90)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 90 dias</button>
+        <button class="btn btn-green" onclick="criarAcessoPortal(180)" style="font-size:.78rem;padding:8px 14px">🔓 Liberar 180 dias</button>`;
+    } else {
+      btns.innerHTML = `<span style="font-size:.78rem;color:#666">Plano sem acesso ao portal (apenas acompanhamentos)</span>`;
+    }
+  } else if(ativo){
+    badge.textContent = `✅ Ativo · ${dias} dias restantes`;
+    badge.style.background = 'rgba(16,185,129,.15)';
+    badge.style.color = '#34d399';
+    expira.textContent = `Expira em: ${expiraDate.toLocaleDateString('pt-BR')}`;
+    creds.style.display = 'block';
+    document.getElementById('portal-aba-email').textContent = aluno.email;
+    document.getElementById('portal-aba-senha').textContent = aluno.senha_custom ? '(definida pelo aluno)' : (aluno.senha_temp||'—');
+    document.getElementById('portal-aba-ultimo').textContent = aluno.ultimo_acesso ? new Date(aluno.ultimo_acesso).toLocaleString('pt-BR') : 'Nunca';
+    document.getElementById('portal-aba-redefinida').textContent = aluno.senha_redefinida ? '✅ Sim' : '⚠️ Não (usa senha temporária)';
+    btns.innerHTML = `
+      <button class="btn" onclick="renovarAcessoPortal(30)" style="font-size:.78rem;padding:8px 14px;background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 +30 dias</button>
+      <button class="btn" onclick="renovarAcessoPortal(90)" style="font-size:.78rem;padding:8px 14px;background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 +90 dias</button>
+      <button class="btn" onclick="renovarAcessoPortal(180)" style="font-size:.78rem;padding:8px 14px;background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 +180 dias</button>
+      <button class="btn" onclick="resetarSenhaPortal()" style="font-size:.78rem;padding:8px 14px;background:rgba(234,179,8,.1);color:var(--yellow);border-color:rgba(234,179,8,.3)">🔑 Resetar Senha</button>
+      <button class="btn" onclick="enviarCredenciaisWA()" style="font-size:.78rem;padding:8px 14px;background:rgba(37,211,102,.1);color:#25d366;border-color:rgba(37,211,102,.3)">💬 Enviar pelo WhatsApp</button>
+      <button class="btn" onclick="revogarAcessoPortal()" style="font-size:.78rem;padding:8px 14px;background:rgba(239,68,68,.08);color:#f87171;border-color:rgba(239,68,68,.2)">🚫 Revogar</button>`;
+  } else {
+    badge.textContent = expiraDate ? '🔴 Expirado' : '⚫ Sem acesso';
+    badge.style.background = 'rgba(239,68,68,.1)';
+    badge.style.color = '#f87171';
+    expira.textContent = expiraDate ? `Expirou em: ${expiraDate.toLocaleDateString('pt-BR')}` : '';
+    creds.style.display = aluno ? 'block' : 'none';
+    if(aluno){
+      document.getElementById('portal-aba-email').textContent = aluno.email;
+      document.getElementById('portal-aba-senha').textContent = aluno.senha_temp||'—';
+      document.getElementById('portal-aba-ultimo').textContent = aluno.ultimo_acesso ? new Date(aluno.ultimo_acesso).toLocaleString('pt-BR') : 'Nunca';
+      document.getElementById('portal-aba-redefinida').textContent = aluno.senha_redefinida ? '✅ Sim' : 'Não';
+    }
+    btns.innerHTML = `
+      <button class="btn btn-green" onclick="criarAcessoPortal(30)" style="font-size:.78rem;padding:8px 14px">🔓 Renovar 30 dias</button>
+      <button class="btn btn-green" onclick="criarAcessoPortal(90)" style="font-size:.78rem;padding:8px 14px">🔓 Renovar 90 dias</button>
+      <button class="btn btn-green" onclick="criarAcessoPortal(180)" style="font-size:.78rem;padding:8px 14px">🔓 Renovar 180 dias</button>`;
+  }
+
+  // Status da ficha publicada
+  const { data: fichas } = await SB.from('portal_fichas').select('titulo,criado_em,total_gifs').eq('email', c.email).order('criado_em',{ascending:false}).limit(1);
+  if(fichas?.length){
+    const f = fichas[0];
+    fichaEl.innerHTML = `✅ Ficha publicada em <strong>${new Date(f.criado_em).toLocaleDateString('pt-BR')}</strong> · ${f.total_gifs||0} GIF(s) incluído(s)`;
+  } else {
+    fichaEl.textContent = '❌ Nenhuma ficha publicada ainda.';
+  }
+
+  // Renderizar editor de exercícios
+  renderizarEditorPortalAba();
+}
+
+function enviarCredenciaisWA(){
+  const c = clienteAtual;
+  if(!c) return;
+  const aluno = { email: c.email };
+  const senhaEl = document.getElementById('portal-aba-senha');
+  const senha = senhaEl ? senhaEl.textContent : '—';
+  const wpp = (c.whatsapp||c.telefone||'').replace(/\D/g,'');
+  const msg = encodeURIComponent(
+    `Olá ${(c.nome||'').split(' ')[0]}! 🎉\n\nSeu acesso ao portal WillgomesFit está liberado!\n\n`+
+    `🔗 Link: https://wildenigomes-ops.github.io/WillgomesFit/portal.html\n`+
+    `📧 E-mail: ${c.email}\n`+
+    `🔑 Senha: ${senha}\n\n`+
+    `Após entrar, você pode trocar essa senha por uma de sua preferência.\n\nQualquer dúvida estou aqui! 💪`
+  );
+  if(wpp.length >= 10){
+    window.open(`https://wa.me/55${wpp}?text=${msg}`, '_blank');
+  } else {
+    alert(`Envie ao aluno:\nE-mail: ${c.email}\nSenha: ${senha}\nLink: https://wildenigomes-ops.github.io/WillgomesFit/portal.html`);
+  }
+}
+
+function verFichaPortal(){
+  const c = clienteAtual;
+  if(!c?.email){ notif('Nenhum cliente selecionado','#ef4444'); return; }
+  window.open(`https://wildenigomes-ops.github.io/WillgomesFit/portal.html`, '_blank');
+}
+
+function renderizarEditorPortalAba(){
+  const el = document.getElementById('portal-aba-exercicios');
+  if(!el || !clienteAtual) return;
+
+  try{
+    const treinos = prescreverTreino();
+    const treinosComEx = treinos.filter(t=>(t.exercicios||t.ex||[]).length>0);
+    if(!treinosComEx.length){
+      el.innerHTML = '<div style="color:#555;font-size:.82rem;padding:12px">Gere o relatório na aba Relatório para ver os exercícios aqui.</div>';
+      return;
+    }
+    var html = treinosComEx.map(function(t){
+      var rows = (t.exercicios||[]).map(function(e,i){
+        var gifKey = 'gif__'+encodeURIComponent((e.nome||'').toLowerCase().trim());
+        var gifData = gifCache[gifKey]||null;
+        var gifCell = gifData
+          ? '<div style="position:relative;display:inline-block"><img src="'+gifData+'" style="width:52px;height:52px;border-radius:6px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande(\''+gifKey+'\')" title="Ver em tela cheia"/><button onclick="removerGif(\''+gifKey+'\')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;padding:0">✕</button></div>'
+          : '<label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px;display:inline-block;font-size:.65rem;color:#777;white-space:nowrap">📎 GIF<input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGif(this,\''+gifKey+'\')"/></label>';
+        return '<tr style="'+(i%2===0?'':'background:var(--card2)')+'">'
+          +'<td style="padding:7px 10px;font-size:.75rem;color:var(--muted)">'+(i+1)+'</td>'
+          +'<td style="padding:7px 10px;font-size:.8rem;font-weight:600;color:var(--white)">'+(e.nome||'—')+'</td>'
+          +'<td style="padding:7px 10px;font-size:.76rem">'+(e.series||'—')+'</td>'
+          +'<td style="padding:7px 10px;font-size:.76rem">'+(e.reps||'—')+'</td>'
+          +'<td style="padding:7px 10px;font-size:.76rem">'+(e.descanso||'—')+'</td>'
+          +'<td style="padding:7px 10px;font-size:.73rem;color:var(--yellow);font-weight:600">'+(e.rir||'—')+'</td>'
+          +'<td style="padding:5px 8px;text-align:center">'+gifCell+'</td>'
+          +'</tr>';
+      }).join('');
+      return '<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
+        +'<div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:9px 14px;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#a78bfa">'+t.nome+'</div>'
+        +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+        +'<thead><tr style="background:var(--card2)">'
+        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">#</th>'
+        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Exercício</th>'
+        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);border-bottom:1px solid var(--border)">Séries</th>'
+        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);border-bottom:1px solid var(--border)">Reps</th>'
+        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);border-bottom:1px solid var(--border)">Desc.</th>'
+        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);border-bottom:1px solid var(--border)">RIR</th>'
+        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);text-align:center;border-bottom:1px solid var(--border)">GIF</th>'
+        +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+    }).join('');
+    el.innerHTML = html;
+  }catch(e){
+    el.innerHTML = '<div style="color:#555;font-size:.82rem;padding:12px">Gere o relatório na aba Relatório para editar a ficha.</div>';
+  }
+}
+
+// ── GERAÇÃO AUTOMÁTICA DE ACESSO AO PORTAL NO CADASTRO ───────────────────────
+async function gerarAcessoAutomatico(clienteData){
+  if(!SB) return;
+  const plano = clienteData?.plano || clienteData?.dados?.plano || '';
+  if(!planoTemPortal(plano)) return;
+  const email = clienteData?.email || clienteData?.dados?.email;
+  if(!email) return;
+
+  // Verificar se já tem acesso
+  const { data } = await SB.from('portal_alunos').select('id').eq('email', email).limit(1);
+  if(data?.length) return; // Já tem acesso, não sobrescrever
+
+  const senha = gerarSenhaAleatoria();
+  const expira = new Date();
+  expira.setDate(expira.getDate() + 30); // 30 dias por padrão
+
+  await SB.from('portal_alunos').insert({
+    email,
+    nome: clienteData?.nome || email,
+    senha_temp: senha,
+    acesso_expira: expira.toISOString(),
+    acesso_dias: 30,
+    ativo: true,
+    criado_em: new Date().toISOString()
+  });
+
+  console.log(`✅ Acesso ao portal criado automaticamente para ${email}`);
+}
+
+// ── CARREGAR ABA PORTAL QUANDO CLICADA ───────────────────────────────────────
 // ── BIBLIOTECA DE GIFs ───────────────────────────────────────────────────────
 let gifCache = {};
 
