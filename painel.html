@@ -1531,7 +1531,7 @@ async function carregarAbaPortal(c){
   }
 
   // Renderizar editor de exercícios
-  renderizarEditorPortalAba();
+  await renderizarEditorPortalAba();
   // Carregar alimentação salva
   carregarNutriPortalAba(c);
 }
@@ -1563,51 +1563,254 @@ function verFichaPortal(){
   window.open(`https://wildenigomes-ops.github.io/WillgomesFit/portal.html`, '_blank');
 }
 
-function renderizarEditorPortalAba(){
+async function renderizarEditorPortalAba(){
   const el = document.getElementById('portal-aba-exercicios');
   if(!el || !clienteAtual) return;
 
-  try{
-    const treinos = prescreverTreino();
-    const treinosComEx = treinos.filter(t=>(t.exercicios||t.ex||[]).length>0);
-    if(!treinosComEx.length){
-      el.innerHTML = '<div style="color:#555;font-size:.82rem;padding:12px">Gere o relatório na aba Relatório para ver os exercícios aqui.</div>';
-      return;
-    }
-    var html = treinosComEx.map(function(t){
-      var rows = (t.exercicios||[]).map(function(e,i){
-        var gifKey = 'gif__'+encodeURIComponent((e.nome||'').toLowerCase().trim());
-        var gifData = gifCache[gifKey]||null;
-        var gifCell = gifData
-          ? '<div style="position:relative;display:inline-block"><img src="'+gifData+'" style="width:52px;height:52px;border-radius:6px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande(\''+gifKey+'\')" title="Ver em tela cheia"/><button onclick="removerGif(\''+gifKey+'\')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;padding:0">✕</button></div>'
-          : '<label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px;display:inline-block;font-size:.65rem;color:#777;white-space:nowrap">📎 GIF<input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGif(this,\''+gifKey+'\')"/></label>';
-        return '<tr style="'+(i%2===0?'':'background:var(--card2)')+'">'
-          +'<td style="padding:7px 10px;font-size:.75rem;color:var(--muted)">'+(i+1)+'</td>'
-          +'<td style="padding:7px 10px;font-size:.8rem;font-weight:600;color:var(--white)">'+(e.nome||'—')+'</td>'
-          +'<td style="padding:7px 10px;font-size:.76rem">'+(e.series||'—')+'</td>'
-          +'<td style="padding:7px 10px;font-size:.76rem">'+(e.reps||'—')+'</td>'
-          +'<td style="padding:7px 10px;font-size:.76rem">'+(e.descanso||'—')+'</td>'
-          +'<td style="padding:7px 10px;font-size:.73rem;color:var(--yellow);font-weight:600">'+(e.rir||'—')+'</td>'
-          +'<td style="padding:5px 8px;text-align:center">'+gifCell+'</td>'
-          +'</tr>';
-      }).join('');
-      return '<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-        +'<div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:9px 14px;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#a78bfa">'+t.nome+'</div>'
-        +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
-        +'<thead><tr style="background:var(--card2)">'
-        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">#</th>'
-        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Exercício</th>'
-        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);border-bottom:1px solid var(--border)">Séries</th>'
-        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);border-bottom:1px solid var(--border)">Reps</th>'
-        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);border-bottom:1px solid var(--border)">Desc.</th>'
-        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);border-bottom:1px solid var(--border)">RIR</th>'
-        +'<th style="padding:7px 10px;font-size:.6rem;color:var(--muted);text-align:center;border-bottom:1px solid var(--border)">GIF</th>'
-        +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
-    }).join('');
-    el.innerHTML = html;
-  }catch(e){
-    el.innerHTML = '<div style="color:#555;font-size:.82rem;padding:12px">Gere o relatório na aba Relatório para editar a ficha.</div>';
+  el.innerHTML = '<div style="color:#888;font-size:.82rem;padding:12px;text-align:center">⏳ Carregando ficha...</div>';
+
+  let exerciciosPorDia = null;
+
+  // 1. Tentar buscar ficha já publicada no Supabase
+  if(SB){
+    try{
+      const { data } = await SB.from('portal_fichas')
+        .select('treino_json,gifs')
+        .eq('email', clienteAtual.email)
+        .order('criado_em',{ascending:false})
+        .limit(1);
+      if(data?.[0]?.treino_json){
+        const tj = data[0].treino_json;
+        // Carregar GIFs já publicados no cache
+        if(data[0].gifs) Object.assign(gifCache, data[0].gifs);
+        // Converter para formato editável
+        exerciciosPorDia = {};
+        Object.entries(tj).forEach(([k,v])=>{
+          if(k!=='_notas' && Array.isArray(v)) exerciciosPorDia[k] = v;
+        });
+      }
+    }catch(e){ console.warn(e); }
   }
+
+  // 2. Se não tem ficha publicada, tentar gerar do motor (requer questionário)
+  if(!exerciciosPorDia){
+    try{
+      const treinos = prescreverTreino();
+      const comEx = treinos.filter(t=>(t.exercicios||t.ex||[]).length>0);
+      if(comEx.length){
+        exerciciosPorDia = {};
+        comEx.forEach(t=>{ exerciciosPorDia[t.nome] = t.exercicios||t.ex||[]; });
+      }
+    }catch(e){}
+  }
+
+  if(!exerciciosPorDia || !Object.keys(exerciciosPorDia).length){
+    el.innerHTML = `<div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.2);border-radius:8px;padding:14px;font-size:.82rem;color:#fbbf24">
+      ⚠️ Nenhuma ficha encontrada. Publique uma ficha primeiro na aba Relatório ou peça ao aluno que preencha o questionário.
+    </div>`;
+    return;
+  }
+
+  // 3. Renderizar editor com campos editáveis
+  let html = `<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:#34d399;margin-bottom:14px">
+    ✏️ Edite diretamente os campos abaixo. Após editar, clique em <strong>"🚀 Publicar ficha atual"</strong> acima para salvar no portal do aluno.
+  </div>`;
+
+  Object.entries(exerciciosPorDia).forEach(([diaNome, exercicios], dIdx)=>{
+    html += `<div style="margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="dia-block-${dIdx}">
+      <div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:10px 14px;display:flex;align-items:center;gap:8px">
+        <input type="text" value="${diaNome}" data-dia="${dIdx}" onchange="atualizarNomeDia(this)"
+          style="flex:1;background:transparent;border:none;color:#a78bfa;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-b);outline:none"/>
+        <button onclick="adicionarExercicio(${dIdx})" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">+ Exercício</button>
+      </div>
+      <div id="ex-list-${dIdx}">`;
+
+    exercicios.forEach((ex, eIdx)=>{
+      const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
+      const gifData = gifCache[gifKey]||null;
+      html += renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData);
+    });
+
+    html += `</div></div>`;
+  });
+
+  // Salvar estrutura para edição
+  window._fichaEditavel = exerciciosPorDia;
+  el.innerHTML = html;
+}
+
+function renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData){
+  return `<div id="ex-row-${dIdx}-${eIdx}" style="border-bottom:1px solid var(--border);padding:12px 14px;background:${eIdx%2===0?'transparent':'rgba(255,255,255,.02)'}">
+    <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <!-- GIF -->
+      <div style="flex-shrink:0">
+        ${gifData
+          ? `<div style="position:relative">
+               <img src="${gifData}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande('${gifKey}')"/>
+               <button onclick="removerGifEx('${gifKey}',${dIdx},${eIdx})" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;padding:0">✕</button>
+             </div>`
+          : `<label style="cursor:pointer;width:56px;height:56px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;font-size:.6rem;color:#555;text-align:center">
+               📎<span>GIF</span>
+               <input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGifEx(this,'${gifKey}',${dIdx},${eIdx})"/>
+             </label>`
+        }
+      </div>
+      <!-- CAMPOS EDITÁVEIS -->
+      <div style="flex:1;min-width:200px;display:grid;gap:6px">
+        <input type="text" value="${ex.nome||''}" placeholder="Nome do exercício"
+          onchange="atualizarExercicio(${dIdx},${eIdx},'nome',this.value)"
+          style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:#fff;font-size:.85rem;font-weight:600;font-family:var(--font-b)"/>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+          <div>
+            <div style="font-size:.58rem;color:#666;margin-bottom:3px">SÉRIES</div>
+            <input type="text" value="${ex.series||''}" placeholder="3"
+              onchange="atualizarExercicio(${dIdx},${eIdx},'series',this.value)"
+              style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
+          </div>
+          <div>
+            <div style="font-size:.58rem;color:#666;margin-bottom:3px">REPS</div>
+            <input type="text" value="${ex.reps||''}" placeholder="10-12"
+              onchange="atualizarExercicio(${dIdx},${eIdx},'reps',this.value)"
+              style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
+          </div>
+          <div>
+            <div style="font-size:.58rem;color:#666;margin-bottom:3px">DESCANSO</div>
+            <input type="text" value="${ex.descanso||''}" placeholder="90s"
+              onchange="atualizarExercicio(${dIdx},${eIdx},'descanso',this.value)"
+              style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
+          </div>
+          <div>
+            <div style="font-size:.58rem;color:#666;margin-bottom:3px">RIR</div>
+            <input type="text" value="${ex.rir||''}" placeholder="2"
+              onchange="atualizarExercicio(${dIdx},${eIdx},'rir',this.value)"
+              style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
+          </div>
+        </div>
+        <input type="text" value="${ex.obs||''}" placeholder="Observações (opcional)"
+          onchange="atualizarExercicio(${dIdx},${eIdx},'obs',this.value)"
+          style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:5px;padding:6px 10px;color:#aaa;font-size:.78rem;font-family:var(--font-b)"/>
+      </div>
+      <!-- BOTÃO REMOVER -->
+      <button onclick="removerExercicio(${dIdx},${eIdx})" title="Remover exercício"
+        style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:5px 9px;border-radius:6px;font-size:.75rem;cursor:pointer;flex-shrink:0">✕</button>
+    </div>
+  </div>`;
+}
+
+// Funções de edição da ficha
+function atualizarExercicio(dIdx, eIdx, campo, valor){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  if(dias[dIdx] && window._fichaEditavel[dias[dIdx]][eIdx]){
+    window._fichaEditavel[dias[dIdx]][eIdx][campo] = valor;
+  }
+}
+
+function atualizarNomeDia(input){
+  if(!window._fichaEditavel) return;
+  const dIdx = parseInt(input.dataset.dia);
+  const dias = Object.keys(window._fichaEditavel);
+  if(dias[dIdx]){
+    const exercicios = window._fichaEditavel[dias[dIdx]];
+    delete window._fichaEditavel[dias[dIdx]];
+    // Reinserir com novo nome mantendo ordem
+    const novaFicha = {};
+    Object.keys(window._fichaEditavel).forEach((k,i)=>{
+      if(i===dIdx) novaFicha[input.value] = exercicios;
+      else novaFicha[k] = window._fichaEditavel[k];
+    });
+    if(dIdx >= Object.keys(window._fichaEditavel).length) novaFicha[input.value] = exercicios;
+    window._fichaEditavel = novaFicha;
+  }
+}
+
+function adicionarExercicio(dIdx){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  if(!dias[dIdx]) return;
+  window._fichaEditavel[dias[dIdx]].push({nome:'Novo Exercício',series:'3',reps:'10–12',descanso:'90s',rir:'2',obs:''});
+  renderizarEditorPortalAba();
+}
+
+function removerExercicio(dIdx, eIdx){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  if(!dias[dIdx]) return;
+  window._fichaEditavel[dias[dIdx]].splice(eIdx, 1);
+  renderizarEditorPortalAba();
+}
+
+function anexarGifEx(input, gifKey, dIdx, eIdx){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 8*1024*1024){ notif('GIF muito grande (máx. 8MB)','#ef4444'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    gifCache[gifKey] = e.target.result;
+    notif('✅ GIF anexado!','#10b981');
+    renderizarEditorPortalAba();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerGifEx(gifKey, dIdx, eIdx){
+  delete gifCache[gifKey];
+  notif('GIF removido','#f59e0b');
+  renderizarEditorPortalAba();
+}
+
+// Sobrescrever publicarNoPortal para usar _fichaEditavel se disponível
+const _publicarNoPortalOriginal = publicarNoPortal;
+async function publicarNoPortal(){
+  if(!clienteAtual){ notif('Selecione um cliente primeiro','#ef4444'); return; }
+  const c = clienteAtual;
+  if(!c.email){ notif('Cliente sem e-mail cadastrado','#ef4444'); return; }
+  if(!SB){ notif('Supabase não conectado','#ef4444'); return; }
+
+  notif('⏳ Publicando ficha no portal...','#8b5cf6');
+
+  // Usar ficha editável se disponível, senão gerar do motor
+  let treinoJson;
+  if(window._fichaEditavel && Object.keys(window._fichaEditavel).length){
+    treinoJson = {...window._fichaEditavel};
+  } else {
+    try{
+      const treinos = prescreverTreino();
+      treinoJson = {};
+      treinos.filter(t=>(t.exercicios||[]).length).forEach(t=>{ treinoJson[t.nome] = t.exercicios; });
+      treinoJson._notas = treinos._notas || [];
+    }catch(e){
+      notif('Erro ao gerar ficha. O aluno precisa preencher o questionário.','#ef4444'); return;
+    }
+  }
+
+  const nomeCliente = c.nome || c.email;
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const portalAluno = await SB.from('portal_alunos').select('user_id').eq('email', c.email).limit(1);
+  const userId = portalAluno.data?.[0]?.user_id || null;
+
+  const { error } = await SB.from('portal_fichas').upsert({
+    email: c.email,
+    user_id: userId,
+    titulo: `Ficha de Treino — ${nomeCliente}`,
+    resumo: `Treino personalizado para ${nomeCliente} · Gerado em ${hoje}`,
+    treino_json: treinoJson,
+    gifs: gifCache,
+    total_gifs: Object.keys(gifCache).length,
+    criado_em: new Date().toISOString(),
+    publicado_por: 'Prof. Will Gomes'
+  }, { onConflict: 'email' });
+
+  if(error){ notif('Erro ao publicar: '+error.message,'#ef4444'); return; }
+
+  const nGifs = Object.keys(gifCache).length;
+  const statusEl = document.getElementById('portal-status');
+  if(statusEl){
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = `✅ Ficha publicada! ${nGifs} GIF(s) incluídos.`;
+  }
+  notif(`✅ Ficha publicada no portal do aluno!`,'#8b5cf6');
+  carregarAbaPortal(c);
 }
 
 // ── GERAÇÃO AUTOMÁTICA DE ACESSO AO PORTAL NO CADASTRO ───────────────────────
