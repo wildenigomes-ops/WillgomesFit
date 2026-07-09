@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<title>WillgomesFit — Diagnóstico</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:monospace;background:#0a0a0a;color:#f0f0f0;padding:24px;max-width:900px;margin:0 auto}
+h1{color:#e85d04;margin-bottom:4px}
+.ok{color:#10b981} .err{color:#ef4444} .warn{color:#f59e0b}
+.bloco{background:#111;border:1px solid #222;border-radius:8px;padding:16px;margin-bottom:14px}
+.titulo{font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:#666;margin-bottom:10px}
+pre{font-size:.78rem;white-space:pre-wrap;word-break:break-all;margin:4px 0}
+button{background:#e85d04;border:none;color:#fff;padding:10px 24px;border-radius:8px;font-size:.9rem;cursor:pointer;margin-bottom:20px}
+</style>
+</head>
+<body>
+<h1>🔍 WillgomesFit — Diagnóstico do Portal</h1>
+<p style="color:#666;font-size:.85rem;margin-bottom:20px">Essa página testa a conexão com o Supabase e verifica se as tabelas do portal existem.</p>
+<button onclick="rodarDiagnostico()">▶ Iniciar Diagnóstico</button>
+<div id="resultado"></div>
+
+<script>
+const SB_URL = 'https://fkpgehyjwxkoyhdbhtva.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcGdlaHlqd3hrb3loZGJodHZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDE5MTQsImV4cCI6MjA5ODE3NzkxNH0.dPJGKvw0KIOOwAC-xf0djgixVSpz8J9S-L-gFsth1xk';
+
+function log(html){ document.getElementById('resultado').innerHTML += html; }
+
+async function testarTabela(sb, nome){
+  try{
+    const { data, error } = await sb.from(nome).select('*').limit(1);
+    if(error) return { ok: false, msg: error.message, code: error.code };
+    return { ok: true, msg: `${data.length} registro(s) retornado(s)`, data };
+  }catch(e){
+    return { ok: false, msg: e.message };
+  }
+}
+
+async function rodarDiagnostico(){
+  document.getElementById('resultado').innerHTML = '';
+  log('<div class="bloco"><div class="titulo">1. Conexão com Supabase</div>');
+
+  let sb;
+  try{
+    sb = window.supabase?.createClient(SB_URL, SB_KEY);
+    if(!sb) throw new Error('supabase.createClient retornou undefined');
+    log('<pre class="ok">✅ Cliente Supabase criado com sucesso</pre>');
+  }catch(e){
+    log(`<pre class="err">❌ Erro ao criar cliente: ${e.message}</pre></div>`);
+    return;
+  }
+  log('</div>');
+
+  // Testar tabelas
+  const tabelas = [
+    { nome: 'clientes',          esperada: true,  desc: 'Tabela principal de clientes' },
+    { nome: 'questionarios',     esperada: true,  desc: 'Questionários dos alunos' },
+    { nome: 'portal_alunos',     esperada: true,  desc: 'Acesso dos alunos ao portal' },
+    { nome: 'portal_fichas',     esperada: true,  desc: 'Fichas publicadas no portal' },
+    { nome: 'portal_progresso',  esperada: true,  desc: 'Progresso dos alunos' },
+    { nome: 'leads_degustacao',  esperada: true,  desc: 'Leads da degustação' },
+  ];
+
+  log('<div class="bloco"><div class="titulo">2. Tabelas no Supabase</div>');
+  for(const t of tabelas){
+    const r = await testarTabela(sb, t.nome);
+    if(r.ok){
+      log(`<pre class="ok">✅ ${t.nome} — ${t.desc} — ${r.msg}</pre>`);
+    } else {
+      log(`<pre class="err">❌ ${t.nome} — ${t.desc}
+   Erro: ${r.msg}
+   ${r.msg.includes('does not exist') ? '⚠️ TABELA NÃO EXISTE — rode o SQL de criação no Supabase' : ''}
+   ${r.msg.includes('permission') || r.msg.includes('policy') || r.msg.includes('JWT') ? '⚠️ PROBLEMA DE PERMISSÃO (RLS) — adicione política pública' : ''}
+</pre>`);
+    }
+  }
+  log('</div>');
+
+  // Testar inserção na portal_alunos
+  log('<div class="bloco"><div class="titulo">3. Teste de Escrita (portal_alunos)</div>');
+  try{
+    const testEmail = '__teste_diagnostico__@willgomesfit.com';
+    const { error: ei } = await sb.from('portal_alunos').upsert({
+      email: testEmail, nome: 'TESTE', senha_temp: 'TESTE123', ativo: false,
+      criado_em: new Date().toISOString()
+    },{ onConflict:'email' });
+
+    if(ei){
+      log(`<pre class="err">❌ Escrita bloqueada: ${ei.message}
+   ${ei.message.includes('policy') ? '⚠️ RLS bloqueando escrita — adicione política WITH CHECK (true)' : ''}
+</pre>`);
+    } else {
+      log('<pre class="ok">✅ Escrita funcionando normalmente</pre>');
+      // Limpar registro de teste
+      await sb.from('portal_alunos').delete().eq('email', testEmail);
+      log('<pre class="ok">✅ Limpeza do teste feita</pre>');
+    }
+  }catch(e){
+    log(`<pre class="err">❌ Exceção: ${e.message}</pre>`);
+  }
+  log('</div>');
+
+  // Testar inserção na portal_fichas
+  log('<div class="bloco"><div class="titulo">4. Teste de Escrita (portal_fichas)</div>');
+  try{
+    const { error: ef } = await sb.from('portal_fichas').upsert({
+      email: '__teste__@willgomesfit.com', titulo: 'TESTE', criado_em: new Date().toISOString()
+    },{ onConflict:'email' });
+    if(ef){
+      log(`<pre class="err">❌ portal_fichas escrita bloqueada: ${ef.message}</pre>`);
+    } else {
+      log('<pre class="ok">✅ portal_fichas escrita OK</pre>');
+      await sb.from('portal_fichas').delete().eq('email','__teste__@willgomesfit.com');
+    }
+  }catch(e){
+    log(`<pre class="err">❌ ${e.message}</pre>`);
+  }
+  log('</div>');
+
+  // SQL para criar tabelas se necessário
+  log(`<div class="bloco"><div class="titulo">5. SQL para Criar/Corrigir Tabelas</div>
+<p style="font-size:.78rem;color:#888;margin-bottom:10px">Se alguma tabela falhou acima, rode esse SQL no Supabase → SQL Editor:</p>
+<pre style="color:#a78bfa;font-size:.72rem">
+CREATE TABLE IF NOT EXISTS portal_alunos (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  email text UNIQUE NOT NULL,
+  nome text, senha_temp text, senha_custom text,
+  senha_redefinida boolean DEFAULT false,
+  acesso_expira timestamptz, acesso_dias integer,
+  ativo boolean DEFAULT true, ultimo_acesso timestamptz,
+  criado_em timestamptz DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS portal_fichas (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  email text UNIQUE NOT NULL, user_id uuid,
+  titulo text, resumo text, treino_json jsonb,
+  nutri_json jsonb, gifs jsonb, total_gifs integer DEFAULT 0,
+  notas jsonb, publicado_por text, atualizado_em timestamptz,
+  criado_em timestamptz DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS portal_progresso (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid, email text, peso numeric, gordura numeric,
+  cintura numeric, quadril numeric, braco numeric, coxa numeric,
+  criado_em timestamptz DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS leads_degustacao (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  nome text, whatsapp text, numero_formatado text,
+  status text DEFAULT 'novo', origem text,
+  criado_em timestamptz DEFAULT now()
+);
+ALTER TABLE portal_alunos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE portal_fichas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE portal_progresso ENABLE ROW LEVEL SECURITY;
+ALTER TABLE leads_degustacao ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "pub_portal_alunos" ON portal_alunos;
+DROP POLICY IF EXISTS "pub_portal_fichas" ON portal_fichas;
+DROP POLICY IF EXISTS "pub_portal_progresso" ON portal_progresso;
+DROP POLICY IF EXISTS "pub_leads" ON leads_degustacao;
+CREATE POLICY "pub_portal_alunos" ON portal_alunos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "pub_portal_fichas" ON portal_fichas FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "pub_portal_progresso" ON portal_progresso FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "pub_leads" ON leads_degustacao FOR ALL USING (true) WITH CHECK (true);
+</pre>
+</div>`);
+
+  log('<div class="bloco ok"><b>✅ Diagnóstico concluído!</b> Veja os resultados acima.</div>');
+}
+</script>
+</body>
+</html>
