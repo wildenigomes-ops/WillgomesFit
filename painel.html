@@ -257,7 +257,10 @@ tr:hover td{background:var(--card2)}
     <div class="page active" id="page-dashboard">
       <div class="topbar">
         <div class="page-title">DASH<span>BOARD</span></div>
-        <button class="btn btn-orange" onclick="loadClientes()">↻ Atualizar</button>
+        <div class="topbar-actions">
+          <button class="btn btn-orange" onclick="abrirNovoCliente()">+ Novo Cliente</button>
+          <button class="btn" onclick="loadClientes()">↻ Atualizar</button>
+        </div>
       </div>
       <div class="stats">
         <div class="stat-card"><div class="stat-val" id="s-total" style="color:var(--orange)">0</div><div class="stat-label">Total</div></div>
@@ -334,6 +337,10 @@ tr:hover td{background:var(--card2)}
 
         <!-- EDITOR DE TREINO -->
         <div id="deg-panel-treino">
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <button id="deg-genero-feminino" onclick="trocarGeneroDegustacao('feminino')" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(236,72,153,.35);background:rgba(236,72,153,.15);color:#f472b6;font-family:var(--font-b);font-size:.8rem;font-weight:800;cursor:pointer">🚺 Treino Feminino (glúteos/pernas)</button>
+            <button id="deg-genero-masculino" onclick="trocarGeneroDegustacao('masculino')" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:#888;font-family:var(--font-b);font-size:.8rem;font-weight:800;cursor:pointer">🚹 Treino Masculino (peito/costas/braços)</button>
+          </div>
           <div id="demo-treino-editor">
             <div style="color:#666;font-size:.82rem;text-align:center;padding:20px">Carregando treino de degustação...</div>
           </div>
@@ -341,7 +348,7 @@ tr:hover td{background:var(--card2)}
 
         <!-- EDITOR DE ALIMENTAÇÃO -->
         <div id="deg-panel-nutri" style="display:none">
-          <p style="font-size:.8rem;color:#888;margin-bottom:14px">Edite as orientações de alimentação que aparecerão para os visitantes durante a degustação.</p>
+          <p style="font-size:.8rem;color:#888;margin-bottom:14px">Este guia alimentar é único e aparece igual para todos os visitantes da degustação, homens e mulheres — foco em boa alimentação e nutrientes para hipertrofia.</p>
           <div id="demo-nutri-editor">
             <div style="display:grid;gap:12px">
 
@@ -367,7 +374,7 @@ tr:hover td{background:var(--card2)}
 
               <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px">
                 <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#ef4444;margin-bottom:10px">⚠️ Observações Importantes</div>
-                <textarea id="demo-nutri-obs" rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:.82rem;resize:vertical;font-family:var(--font-b)">Este guia é uma orientação geral e não substitui a avaliação de um nutricionista. Para um plano alimentar 100% personalizado com distribuição de macros e cardápio completo, consulte um profissional de nutrição. Seu plano de treino foi desenvolvido para complementar uma alimentação adequada.</textarea>
+                <textarea id="demo-nutri-obs" rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:.82rem;resize:vertical;font-family:var(--font-b)">Suplementos que podem ajudar: whey protein (praticidade para bater a meta de proteína) e creatina monohidratada 3-5g por dia, todos os dias, inclusive em dias sem treino. Este guia é uma orientação geral e não substitui a avaliação de um nutricionista. Para um plano alimentar 100% personalizado com distribuição de macros e cardápio completo, consulte um profissional de nutrição.</textarea>
               </div>
 
             </div>
@@ -636,27 +643,17 @@ tr:hover td{background:var(--card2)}
           Após o cliente preencher o questionário, as fichas serão geradas automaticamente aqui.</div></div>
         </div>
         <div id="rel-content" style="display:none">
-          <!-- Botões exportar -->
+          <!-- Botões exportar (Word — usado para planos de Fichas Avulsas, sem portal) -->
           <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
             <button class="btn btn-green" onclick="exportarFichaTreinoCompleta()" style="font-size:.85rem;padding:10px 20px">⬇ Ficha de Treino</button>
             <button class="btn" onclick="exportarGuiaWord()" style="background:rgba(234,179,8,.15);color:var(--yellow);border-color:rgba(234,179,8,.3);font-size:.85rem;padding:10px 20px">⬇ Guia Alimentar</button>
-            <button class="btn" onclick="publicarNoPortal()" style="background:rgba(139,92,246,.15);color:#a78bfa;border-color:rgba(139,92,246,.3);font-size:.85rem;padding:10px 20px">🚀 Publicar Ficha no Portal</button>
+          </div>
+          <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:#a78bfa;margin-bottom:16px">
+            🌐 Para editar exercícios, alimentação, senha e progresso do aluno, e para publicar a ficha no portal, use a aba <strong>🌐 Portal</strong> deste cliente.
           </div>
 
-          <!-- PAINEL DE ACESSO AO PORTAL -->
-          <div id="portal-acesso-box" style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:12px;padding:18px;margin-bottom:16px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-              <div style="font-size:.72rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#a78bfa">🔐 Acesso ao Portal do Aluno</div>
-              <div id="portal-acesso-badge" style="font-size:.7rem;padding:4px 12px;border-radius:20px;font-weight:700"></div>
-            </div>
-            <div id="portal-acesso-info" style="font-size:.82rem;color:#888;margin-bottom:14px">Carregando status de acesso...</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap" id="portal-acesso-btns">
-              <!-- botões gerados dinamicamente -->
-            </div>
-          </div>
-
-          <div id="portal-status" style="display:none;margin-bottom:16px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:10px 14px;font-size:.8rem;color:#a78bfa"></div>
           <!-- Dados do cliente -->
+
           <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange)">Dados do Cliente</div>
             <div style="padding:14px 16px"><div id="rel-dados" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div></div>
@@ -1294,13 +1291,23 @@ async function salvarNovoCliente(){
   const whats=document.getElementById('n-whats').value.trim();
   const plano=document.getElementById('n-plano').value;
   const status=document.getElementById('n-status').value;
+  const obs=document.getElementById('n-obs')?.value.trim()||'';
   if(!nome||!email||!plano){ notif('Preencha nome, e-mail e plano!','#ef4444'); return; }
-  const c={id:Date.now().toString(),nome,email,whatsapp:whats,plano,status,criado_em:new Date().toISOString(),tipo:'Manual'};
+  const c={id:Date.now().toString(),nome,email,whatsapp:whats,plano,status,obs,criado_em:new Date().toISOString(),tipo:'Manual'};
   clientes.unshift(c);
   if(!local.clientes_locais) local.clientes_locais=[];
   local.clientes_locais.unshift(c);
   LS.save();
   if(SB) await SB.from('clientes').upsert({id:c.id,email,nome,status,plano,dados:c,criado_em:c.criado_em,atualizado_em:c.criado_em});
+
+  // Se o plano escolhido dá acesso ao portal, gerar login/senha na hora
+  if(planoTemPortal(plano)) await gerarAcessoAutomatico(c);
+
+  // Limpar formulário para o próximo cadastro
+  ['n-nome','n-email','n-whats','n-obs'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('n-plano').value='';
+  document.getElementById('n-status').value='pendente';
+
   document.getElementById('modal-novo').classList.remove('open');
   document.body.style.overflow='';
   renderDashboard(); renderClientes();
@@ -1467,6 +1474,337 @@ let MOTOR_D = { cliente:{}, anamnese:{}, nutricao:{}, avaliacao:{} };
 const EX = [{"cod": "EX001", "nome": "Supino Reto Barra", "grupo": "Peitoral", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Barra+banco", "nivel": "Iniciante", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Lesão manguito rotador", "substituto": "Supino halteres", "instrucao": "Retrair escápulas. Descer barra até toque leve no esterno. Cotovelos a 75°.", "erros": "Elevar quadril. Barra bater no peito. Cotovelos >90°.", "obs": "Idosos: preferir halteres."}, {"cod": "EX002", "nome": "Supino Inclinado Barra", "grupo": "Peitoral sup.", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Barra+banco incl.", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro aguda", "substituto": "Supino incl. haltere", "instrucao": "Banco 30-45°. Descer até a clavícula. Empurrar expirando.", "erros": "Banco acima 45°. Bater no peito.", "obs": "Seguro para maioria com ajuste de carga."}, {"cod": "EX003", "nome": "Supino Declinado Barra", "grupo": "Peitoral inf.", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Barra+banco decl.", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "HAS grave, glaucoma", "substituto": "Supino decl. haltere", "instrucao": "Banco -15 a -30°. Maior foco na porção inferior.", "erros": "Hiperextender pescoço. Sem spotter.", "obs": "Contraindicado em HAS grave: posição inverte PA."}, {"cod": "EX004", "nome": "Supino Reto Halteres", "grupo": "Peitoral", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Halteres+banco", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro moderada", "substituto": "Chest press máquina", "instrucao": "Maior amplitude que barra. Cotovelos 75-80°. Controlar descida 3s.", "erros": "Halteres caindo. Amplitude excessiva.", "obs": "Ideal para iniciantes. Menor risco de trauma."}, {"cod": "EX005", "nome": "Supino Inclinado Halteres", "grupo": "Peitoral sup.", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Halteres+banco incl.", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Chest press inclinado máquina", "instrucao": "Banco 30-45°. Squeeze no topo.", "erros": "Banco muito inclinado. Peso excessivo.", "obs": "Um dos mais seguros para iniciantes e idosos."}, {"cod": "EX006", "nome": "Crucifixo Halteres", "grupo": "Peitoral", "secundarios": "Peitoral menor, serrátil", "equipamento": "Halteres+banco", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro aguda", "substituto": "Crossover polia", "instrucao": "Abrir em arco mantendo cotovelo levemente fletido. Aduzir sem tocar.", "erros": "Estender cotovelo. Amplitude excessiva.", "obs": "Baixa carga. Muito seguro para isolamento."}, {"cod": "EX007", "nome": "Crossover Polia Alta", "grupo": "Peitoral inf.", "secundarios": "Peitoral menor", "equipamento": "Polia alta", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Crucifixo halteres", "instrucao": "Puxar em arco para baixo e à frente. Squeeze no cruzamento.", "erros": "Carga excessiva. Estender cotovelos.", "obs": "Baixo risco articular. Excelente para iniciantes."}, {"cod": "EX008", "nome": "Crossover Polia Baixa", "grupo": "Peitoral sup.", "secundarios": "Deltóide ant.", "equipamento": "Polia baixa", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Crucifixo inclinado halteres", "instrucao": "Polias abaixo do quadril. Puxar para cima e à frente em arco.", "erros": "Impulso do tronco. Carga excessiva.", "obs": "Ótimo para finalização e detalhe muscular."}, {"cod": "EX009", "nome": "Pullover Haltere", "grupo": "Peitoral/Latíssimo", "secundarios": "Serrátil ant., tríceps", "equipamento": "Haltere+banco", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro aguda", "substituto": "Pullover polia", "instrucao": "Transversal no banco. Descer em arco atrás da cabeça. Manter quadril abaixo do banco.", "erros": "Fletir cotovelos demais. Levantar quadril.", "obs": "Amplitude excessiva pode estressar cápsula articular."}, {"cod": "EX010", "nome": "Mergulho Paralelas (peitoral)", "grupo": "Peitoral inf.", "secundarios": "Tríceps, Deltóide ant.", "equipamento": "Paralelas", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Lesão ombro, luxação ant.", "substituto": "Supino declinado", "instrucao": "Inclinar tronco 30° à frente. Descer até alongamento no peitoral.", "erros": "Tronco muito vertical. Não completar amplitude.", "obs": "Contraindicado em síndrome de impingement."}, {"cod": "EX011", "nome": "Flexão de Braço", "grupo": "Peitoral", "secundarios": "Tríceps, deltóide ant.", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "Lesão punho", "substituto": "Supino reto barra", "instrucao": "Mãos na largura dos ombros. Corpo rígido. Descer peitoral ao chão.", "erros": "Quadril elevado/baixo. Cotovelos completamente abertos.", "obs": "Progressões: joelhos → pés → pés elevados → lastro."}, {"cod": "EX012", "nome": "Flexão Diamante", "grupo": "Tríceps/Peitoral", "secundarios": "Deltóide ant.", "equipamento": "Peso corporal", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Tríceps pulley", "instrucao": "Mãos em losango abaixo do esterno. Cotovelos próximos ao corpo.", "erros": "Abrir cotovelos. Quadril elevado.", "obs": "Progressão natural da flexão convencional."}, {"cod": "EX013", "nome": "Barra Fixa Pronada (Pullup)", "grupo": "Latíssimo/Costas", "secundarios": "Bíceps, romboides, trapézio inf.", "equipamento": "Barra fixa", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Lesão ombro aguda", "substituto": "Puxada frontal pronada", "instrucao": "Pegada pronada. Escápulas para baixo. Levar peito à barra. Descer 3s.", "erros": "Kipping. Não completar extensão. Encolher ombros.", "obs": "Usar elástico para assistência em iniciantes."}, {"cod": "EX014", "nome": "Barra Fixa Supinada (Chinup)", "grupo": "Bíceps/Latíssimo", "secundarios": "Romboides, peitoral", "equipamento": "Barra fixa", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Rosca + puxada pronada", "instrucao": "Pegada supinada. Levar queixo acima da barra.", "erros": "Balançar o corpo. Não completar extensão.", "obs": "Mais fácil que pullup. Maior ativação de bíceps."}, {"cod": "EX015", "nome": "Puxada Frontal Pronada", "grupo": "Latíssimo", "secundarios": "Bíceps, romboides", "equipamento": "Polia alta", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Barra fixa pronada", "instrucao": "Joelho pad firme. Puxar pelo cotovelo até a clavícula. Inclinar 10-15° atrás.", "erros": "Puxar atrás da nuca (risco cervical). Impulso lombar.", "obs": "Seguro para iniciantes e idosos."}, {"cod": "EX016", "nome": "Puxada Frontal Supinada", "grupo": "Latíssimo/Bíceps", "secundarios": "Romboides", "equipamento": "Polia alta", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Chinup", "instrucao": "Pegada supinada. Maior ativação de bíceps. Puxar até a clavícula.", "erros": "Impulso excessivo. Não completar extensão.", "obs": "Variação mais fácil que pronada."}, {"cod": "EX017", "nome": "Puxada Neutra (triângulo)", "grupo": "Latíssimo", "secundarios": "Bíceps, romboides", "equipamento": "Polia alta + triângulo", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Remada neutra máquina", "instrucao": "Pegada neutra. Puxar até o abdômen superior. Cotovelos passando o tronco.", "erros": "Impulso lombar. Não retrair escápulas.", "obs": "Muito confortável no punho. Ótimo para iniciantes e idosos."}, {"cod": "EX018", "nome": "Remada Curvada Barra Pronada", "grupo": "Romboides/Trapézio", "secundarios": "Bíceps, latíssimo, lombar", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Hérnia disco aguda", "substituto": "Remada na máquina", "instrucao": "45-60° de inclinação. Coluna neutra. Puxar até o abdômen. Pausa 1s.", "erros": "Arredondar lombar. Impulso das pernas. Puxar até o peito.", "obs": "Contraindicado em hérnia aguda. Idosos: máquina."}, {"cod": "EX019", "nome": "Remada Curvada Barra Supinada", "grupo": "Bíceps/Romboides", "secundarios": "Latíssimo", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Hérnia disco aguda", "substituto": "Rosca + remada máquina", "instrucao": "Pegada supinada. Maior ativação de bíceps.", "erros": "Arredondar lombar. Cotovelos muito abertos.", "obs": "Variação com maior demanda no bíceps."}, {"cod": "EX020", "nome": "Remada Unilateral Haltere", "grupo": "Romboides/Trapézio", "secundarios": "Bíceps, latíssimo", "equipamento": "Haltere + banco", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Remada na máquina", "instrucao": "Joelho e mão no banco. Puxar cotovelo em linha reta ao quadril.", "erros": "Rotação excessiva do tronco. Puxar para cima. Impulso.", "obs": "Excelente para iniciantes. Baixo stress espinhal."}, {"cod": "EX021", "nome": "Remada Máquina Sentado", "grupo": "Romboides/Trapézio", "secundarios": "Bíceps, latíssimo", "equipamento": "Máquina remada", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Remada curvada barra", "instrucao": "Peito apoiado. Puxar para o abdômen. Pausa 1s.", "erros": "Impulso do tronco. Não retrair escápulas.", "obs": "Ideal para iniciantes, idosos e pós-lesão lombar."}, {"cod": "EX022", "nome": "Remada Alta", "grupo": "Trapézio/Deltóide", "secundarios": "Bíceps, infraespinhal", "equipamento": "Barra/halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro, impingement", "substituto": "Elevação lateral", "instrucao": "Pegada afastada (>ombros). Puxar até o mento. Cotovelos acima.", "erros": "Pegada fechada (impingement). Elevar acima do mento.", "obs": "Substituir por elevação lateral em impingement."}, {"cod": "EX023", "nome": "Encolhimento de Ombros", "grupo": "Trapézio sup.", "secundarios": "Elevador da escápula", "equipamento": "Barra/halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Remada alta", "instrucao": "Erguer ombros verticalmente. Pausa 2s. Evitar rodar.", "erros": "Rodar ombros. Impulso das pernas.", "obs": "Pode ser feito em alta frequência."}, {"cod": "EX024", "nome": "Extensão de Tronco", "grupo": "Lombar/Eretor espinhal", "secundarios": "Glúteos, isquiotibiais", "equipamento": "Banco romano", "nivel": "Iniciante", "objetivo": "Saúde/Funcional", "contraindicacoes": "Hérnia disco aguda", "substituto": "Elevação pélvica no solo", "instrucao": "Quadril apoiado. Descer até 90° e retornar à linha neutra. Não hiperestender.", "erros": "Hiperestender lombar no topo.", "obs": "Fundamental para saúde lombar."}, {"cod": "EX025", "nome": "Desenvolvimento Militar Barra", "grupo": "Deltóide ant./lat.", "secundarios": "Trapézio, tríceps", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Impingement, instab. ombro", "substituto": "Desenvolvimento halteres", "instrucao": "Em pé ou sentado. Barra na frente. Pressionar até extensão quase completa.", "erros": "Hiperextender lombar. Barra atrás da nuca. Não controlar descida.", "obs": "Barra à frente é mais segura. Sentado reduz stress lombar."}, {"cod": "EX026", "nome": "Desenvolvimento Halteres", "grupo": "Deltóide ant./lat.", "secundarios": "Trapézio, tríceps", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro moderada", "substituto": "Desenvolvimento máquina", "instrucao": "Sentado ou em pé. Halteres na altura dos ombros. Pressionar acima.", "erros": "Hiperextender lombar. Não controlar descida.", "obs": "Mais seguro que barra. Permite amplitude independente."}, {"cod": "EX027", "nome": "Desenvolvimento Máquina", "grupo": "Deltóide ant./lat.", "secundarios": "Trapézio, tríceps", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Desenvolvimento halteres", "instrucao": "Movimento guiado. Bom para iniciantes.", "erros": "Carga excessiva. Não retrair escápulas.", "obs": "Ideal para iniciantes, idosos e reabilitação."}, {"cod": "EX028", "nome": "Desenvolvimento Arnold", "grupo": "Deltóide (todos)", "secundarios": "Trapézio, tríceps, peitoral", "equipamento": "Halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Impingement", "substituto": "Desenvolvimento halteres", "instrucao": "Começa com halteres na frente. Rotar para pronado enquanto pressiona.", "erros": "Realizar muito rápido. Carga excessiva.", "obs": "Maior ativação total do deltóide que o desenvolvimento convencional."}, {"cod": "EX029", "nome": "Elevação Lateral Halteres", "grupo": "Deltóide lat.", "secundarios": "Trapézio sup.", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Impingement severo", "substituto": "Polia lateral", "instrucao": "Elevar até a altura dos ombros. Cotovelo levemente fletido. Controlar 3s.", "erros": "Impulso. Elevar acima dos ombros. Carga excessiva.", "obs": "Um dos mais mal executados. Carga baixa + controle excêntrico."}, {"cod": "EX030", "nome": "Elevação Lateral Polia", "grupo": "Deltóide lat.", "secundarios": "Trapézio sup.", "equipamento": "Polia baixa", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Elevação lateral haltere", "instrucao": "Tensão constante. Elevar até o ombro. Controle excêntrico.", "erros": "Elevar acima dos ombros. Impulso do tronco.", "obs": "Tensão constante = maior estímulo que haltere."}, {"cod": "EX031", "nome": "Elevação Frontal Halteres", "grupo": "Deltóide ant.", "secundarios": "Peitoral sup.", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Impingement", "substituto": "Elevação frontal barra", "instrucao": "Alternado ou simultâneo. Elevar até a altura dos ombros.", "erros": "Rotação do punho. Impulso lombar.", "obs": "Raramente necessário se já faz supino e desenvolvimento."}, {"cod": "EX032", "nome": "Pássaro (posterior delt)", "grupo": "Deltóide post.", "secundarios": "Romboides, infraespinhal", "equipamento": "Halteres/polia", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Face pull", "instrucao": "Inclinado a 45°. Elevar halteres lateralmente. Foco no deltóide posterior.", "erros": "Impulso do tronco. Elevar muito acima da linha dos ombros.", "obs": "Deltóide posterior frequentemente negligenciado."}, {"cod": "EX033", "nome": "Face Pull", "grupo": "Deltóide post./Rotadores ext.", "secundarios": "Romboides, trapézio", "equipamento": "Polia alta + corda", "nivel": "Iniciante", "objetivo": "Saúde/Hipertrofia", "contraindicacoes": "—", "substituto": "Pássaro com halteres", "instrucao": "Polia à altura dos olhos. Puxar até o rosto abrindo os cotovelos.", "erros": "Puxar muito baixo. Carga excessiva.", "obs": "Fundamental para saúde do ombro e postura."}, {"cod": "EX034", "nome": "Rotação Externa Polia", "grupo": "Manguito rotador", "secundarios": "Infraespinhal, redondo menor", "equipamento": "Polia baixa", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "Lesão aguda manguito", "substituto": "Rotação externa elástico", "instrucao": "Cotovelo a 90° ao lado do corpo. Rotar externamente.", "erros": "Afastar cotovelo. Carga excessiva.", "obs": "Essencial em programas de saúde do ombro."}, {"cod": "EX035", "nome": "Rosca Direta Barra", "grupo": "Bíceps", "secundarios": "Braquial, braquiorradial", "equipamento": "Barra", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Rosca haltere alternada", "instrucao": "Pegada supinada. Cotovelos fixos. Flexionar até o peito. Controlar 3s.", "erros": "Mover cotovelos para frente. Impulso lombar.", "obs": "Barra EZ reduz stress no punho."}, {"cod": "EX036", "nome": "Rosca Barra EZ", "grupo": "Bíceps/Braquiorradial", "secundarios": "Braquial", "equipamento": "Barra EZ", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo severa", "substituto": "Rosca haltere", "instrucao": "Pegada semipronada. Mecânica similar à rosca reta.", "erros": "Impulso lombar. Não completar extensão.", "obs": "Mais confortável no punho que barra reta."}, {"cod": "EX037", "nome": "Rosca Alternada Haltere", "grupo": "Bíceps", "secundarios": "Braquiorradial, braquial", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca direta barra", "instrucao": "Supinar o punho durante a flexão. Alternar os lados.", "erros": "Não supinar completamente. Balançar o tronco.", "obs": "A supinação ativa a porção curta do bíceps."}, {"cod": "EX038", "nome": "Rosca Concentrada", "grupo": "Bíceps (porção curta)", "secundarios": "Braquial", "equipamento": "Haltere", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca alternada", "instrucao": "Sentado com cotovelo na coxa interna. Flexionar completamente.", "erros": "Levantar o cotovelo do apoio. Impulso do tronco.", "obs": "Exercício de isolamento. Bom para pico do bíceps."}, {"cod": "EX039", "nome": "Rosca Martelo", "grupo": "Braquiorradial/Bíceps", "secundarios": "Braquial", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca alternada", "instrucao": "Pegada neutra. Sem supinação.", "erros": "Supinar o punho. Usar impulso.", "obs": "Maior ênfase no braquiorradial e braquial."}, {"cod": "EX040", "nome": "Rosca Spider", "grupo": "Bíceps (porção longa)", "secundarios": "Braquial", "equipamento": "Halteres+banco incl.", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca Scott", "instrucao": "Peito apoiado no banco inclinado. Braços pendem para frente.", "erros": "Carga muito pesada. Não completar extensão.", "obs": "Ativa mais a cabeça longa pela pré-estensão."}, {"cod": "EX041", "nome": "Rosca Scott (preacher)", "grupo": "Bíceps (porção curta)", "secundarios": "Braquial", "equipamento": "Barra EZ + banco Scott", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão tendão distal", "substituto": "Rosca concentrada", "instrucao": "Cotovelo apoiado. NÃO completar a extensão (risco tendão distal).", "erros": "Completar extensão com carga alta (lesão tendão distal). Arremessar barra.", "obs": "Risco de lesão tendão distal se completar extensão."}, {"cod": "EX042", "nome": "Rosca 21s", "grupo": "Bíceps", "secundarios": "—", "equipamento": "Barra/halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia/Técnica", "contraindicacoes": "—", "substituto": "Rosca direta normal", "instrucao": "7 reps metade inferior, 7 superior, 7 completas.", "erros": "Carga normal (muito pesada). Perder o padrão.", "obs": "Usar carga 30-40% menor que a rosca convencional."}, {"cod": "EX043", "nome": "Rosca Inclinada Haltere", "grupo": "Bíceps (porção longa)", "secundarios": "Braquial", "equipamento": "Halteres+banco incl.", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca spider", "instrucao": "Banco 45-60°. Braços pendendo atrás do corpo. Maior pré-estiramento.", "erros": "Carga de rosca normal. Balançar os braços.", "obs": "Maior ativação da cabeça longa por pré-estiramento do ombro."}, {"cod": "EX044", "nome": "Rosca Zottman", "grupo": "Bíceps/Braquiorradial", "secundarios": "Braquial, forearm", "equipamento": "Halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca alternada", "instrucao": "Subir com supinação. Virar para pronação no topo. Descer em pronação.", "erros": "Realizar muito rápido. Não controlar excêntrico.", "obs": "Treina bíceps na subida e extensores na descida."}, {"cod": "EX045", "nome": "Tríceps Pulley Barra Reta", "grupo": "Tríceps", "secundarios": "—", "equipamento": "Polia alta", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Tríceps testa", "instrucao": "Cotovelos fixos ao lado. Estender completamente. Pausa 1s.", "erros": "Mover cotovelos. Impulso do tronco.", "obs": "Mais seguro e eficaz para a maioria dos clientes."}, {"cod": "EX046", "nome": "Tríceps Pulley Corda", "grupo": "Tríceps (cabeça lateral)", "secundarios": "—", "equipamento": "Polia alta + corda", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Tríceps barra", "instrucao": "Abrir a corda na extensão para maior amplitude.", "erros": "Não abrir a corda. Cotovelos se afastando.", "obs": "A abertura da corda aumenta ativação da cabeça lateral."}, {"cod": "EX047", "nome": "Tríceps Testa (skull crusher)", "grupo": "Tríceps", "secundarios": "—", "equipamento": "Barra EZ/halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Tríceps pulley", "instrucao": "Deitado. Barra desce até a testa. Cotovelos não se abrem.", "erros": "Abrir cotovelos. Carga excessiva.", "obs": "Contraindicado em lesão de cotovelo aguda."}, {"cod": "EX048", "nome": "Tríceps Francês Haltere", "grupo": "Tríceps (cabeça longa)", "secundarios": "—", "equipamento": "Haltere", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Tríceps pulley", "instrucao": "Em pé ou sentado. Haltere atrás da cabeça. Extensão vertical.", "erros": "Abrir cotovelos. Carga excessiva.", "obs": "A posição acima da cabeça gera maior tensão na cabeça longa."}, {"cod": "EX049", "nome": "Mergulho no Banco (bench dip)", "grupo": "Tríceps", "secundarios": "Deltóide ant., peitoral", "equipamento": "Banco", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro, impingement", "substituto": "Tríceps pulley", "instrucao": "Mãos no banco atrás. Descer até 90°. Empurrar de volta.", "erros": "Descer além de 90°. Pés muito longe.", "obs": "Versão avançada: pés elevados ou com anilha no colo."}, {"cod": "EX050", "nome": "Kickback de Tríceps", "grupo": "Tríceps (cabeça lateral)", "secundarios": "—", "equipamento": "Haltere", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Tríceps pulley", "instrucao": "Inclinado. Cotovelo a 90°. Estender paralelamente ao chão. Pausa 1s.", "erros": "Não completar a extensão. Balançar o braço.", "obs": "Carga baixa necessária para boa técnica."}, {"cod": "EX051", "nome": "Tríceps Overhead Polia", "grupo": "Tríceps (cabeça longa)", "secundarios": "—", "equipamento": "Polia baixa + corda", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Tríceps pulley normal", "instrucao": "Polia abaixo. Inclinar tronco. Braços acima da cabeça. Estender cotovelo.", "erros": "Mover o cotovelo. Carga excessiva.", "obs": "Maior alongamento e ativação da cabeça longa."}, {"cod": "EX052", "nome": "Tríceps Paralelas", "grupo": "Tríceps", "secundarios": "Peitoral, deltóide ant.", "equipamento": "Paralelas", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Lesão ombro, cotovelo", "substituto": "Tríceps no banco", "instrucao": "Tronco vertical (foco tríceps). Descer até 90°. Empurrar de volta.", "erros": "Tronco muito inclinado. Descer além de 90°.", "obs": "Progressão: lastro no colo."}, {"cod": "EX053", "nome": "Agachamento Livre Barra Alta", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, eretores", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Lesão joelho (LCA), hérnia", "substituto": "Leg press 45°", "instrucao": "Barra nas trapézios. Pés na largura dos ombros. Descer com coluna neutra até paralela.", "erros": "Joelho para dentro. Calcanhar levantando. Lombar arredondando.", "obs": "Contraindicado pós-cirurgia LCA sem liberação."}, {"cod": "EX054", "nome": "Agachamento Livre Barra Baixa", "grupo": "Quadríceps/Glúteos/Isquiotibiais", "secundarios": "Eretores", "equipamento": "Barra", "nivel": "Avançado", "objetivo": "Força", "contraindicacoes": "Lesão joelho, ombro", "substituto": "Agachamento barra alta", "instrucao": "Barra abaixo das espinhas escapulares. Maior inclinação de tronco.", "erros": "Necessita maior mobilidade de ombro. Coluna não neutra.", "obs": "Preferido por powerlifters."}, {"cod": "EX055", "nome": "Agachamento Goblet", "grupo": "Quadríceps", "secundarios": "Glúteos, core", "equipamento": "Haltere/kettlebell", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "—", "substituto": "Agachamento livre barra", "instrucao": "Haltere vertical na frente do peito. Descer com tronco mais ereto.", "erros": "Deixar o haltere cair. Não atingir profundidade.", "obs": "Ideal para iniciantes aprenderem o padrão."}, {"cod": "EX056", "nome": "Agachamento Búlgaro", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, adutores", "equipamento": "Halteres+banco", "nivel": "Intermediário", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "Lesão joelho, quadril", "substituto": "Avanço convencional", "instrucao": "Pé traseiro elevado no banco. Descer verticalmente.", "erros": "Joelho traseiro tocar o chão com impacto.", "obs": "Excelente para corrigir assimetrias."}, {"cod": "EX057", "nome": "Leg Press 45°", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Dor patelofemoral", "substituto": "Agachamento barra", "instrucao": "Pés na largura dos ombros. Descer até 90°. Empurrar sem travar.", "erros": "Tirar quadris do apoio. Travar os joelhos.", "obs": "Seguro para a maioria incluindo idosos."}, {"cod": "EX058", "nome": "Leg Press Horizontal", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais", "equipamento": "Máquina horizontal", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Leg press 45°", "instrucao": "Movimento horizontal. Menor stress cardiovascular.", "erros": "Tirar quadril do apoio. Joelhos travados.", "obs": "Indicado para hipertensos e cardiopatas com liberação médica."}, {"cod": "EX059", "nome": "Cadeira Extensora", "grupo": "Quadríceps (isolamento)", "secundarios": "—", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Condromalácia patelar", "substituto": "Agachamento com apoio", "instrucao": "Extensão completa. Pausa 1s no topo. Controlar descida 3s.", "erros": "Usar impulso. Não completar extensão.", "obs": "Condromalácia: amplitude reduzida (0-60°)."}, {"cod": "EX060", "nome": "Agachamento Hack", "grupo": "Quadríceps", "secundarios": "Glúteos, isquiotibiais", "equipamento": "Máquina hack", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão joelho", "substituto": "Leg press 45°", "instrucao": "Costas apoiadas. Pés à frente. Descer até 90°.", "erros": "Pés muito atrás (stress patelar).", "obs": "Ótima opção para quem tem dificuldade no agachamento livre."}, {"cod": "EX061", "nome": "Passada Halteres", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, adutores", "equipamento": "Halteres", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "Lesão joelho grave", "substituto": "Agachamento búlgaro", "instrucao": "Passo à frente. Joelho traseiro quase no chão. Tronco ereto.", "erros": "Joelho da frente ultrapassar o tornozelo. Tronco excessivamente inclinado.", "obs": "Idosos: split squat estático para melhor equilíbrio."}, {"cod": "EX062", "nome": "Passada Caminhando", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, core", "equipamento": "Halteres/barra", "nivel": "Intermediário", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "Lesão joelho, equilíbrio", "substituto": "Passada estática", "instrucao": "Alternando os lados enquanto avança. Maior demanda de equilíbrio.", "erros": "Perder equilíbrio. Joelho da frente colapsar.", "obs": "Excelente para atletismo e condicionamento."}, {"cod": "EX063", "nome": "Stepup", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais", "equipamento": "Caixa/step+halteres", "nivel": "Iniciante", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "Lesão joelho grave", "substituto": "Leg press", "instrucao": "Subir a caixa com um pé. Empurrar com o mesmo pé.", "erros": "Usar o pé do chão como impulso.", "obs": "Muito seguro para idosos quando altura adequada."}, {"cod": "EX064", "nome": "Agachamento Sumô", "grupo": "Adutores/Glúteos/Quadríceps", "secundarios": "Isquiotibiais", "equipamento": "Haltere/barra", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Leg press pés afastados", "instrucao": "Pés muito afastados. Joelhos na linha dos pés.", "erros": "Joelhos para dentro. Coluna não neutra.", "obs": "Maior ênfase em adutores e glúteos."}, {"cod": "EX065", "nome": "Elevação de Quadril (Hip Thrust)", "grupo": "Glúteo máximo", "secundarios": "Isquiotibiais, eretores", "equipamento": "Barra+banco", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Ponte pélvica no chão", "instrucao": "Costas no banco na linha das escápulas. Barra com proteção. Extensão completa. Squeeze 2s.", "erros": "Não atingir extensão completa. Usar lombar em vez de glúteos.", "obs": "Melhor exercício para glúteo máximo (Contreras et al., 2011)."}, {"cod": "EX066", "nome": "Ponte Pélvica no Chão", "grupo": "Glúteo máximo", "secundarios": "Isquiotibiais", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Hipertrofia", "contraindicacoes": "—", "substituto": "Elevação de quadril barra", "instrucao": "Deitado. Joelhos a 90°. Elevar quadril. Squeeze máximo.", "erros": "Usar lombar para elevar. Não manter extensão.", "obs": "Versão mais acessível do hip thrust."}, {"cod": "EX067", "nome": "Mesa Flexora", "grupo": "Isquiotibiais", "secundarios": "Gastrocnêmio", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão joelho (LCA/PCL)", "substituto": "Stiff halteres", "instrucao": "Deitado. Flexionar joelhos até 90° ou mais. Controlar descida 3s.", "erros": "Levantar quadril. Não completar extensão.", "obs": "Cuidado pós-cirurgia de LCA: consultar fisio."}, {"cod": "EX068", "nome": "Cadeira Flexora", "grupo": "Isquiotibiais", "secundarios": "Gastrocnêmio", "equipamento": "Máquina sentado", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Mesa flexora", "instrucao": "Versão sentada. Menor stress na coluna.", "erros": "Não completar amplitude. Levantar quadris.", "obs": "Menor stress espinhal que a mesa flexora deitada."}, {"cod": "EX069", "nome": "Stiff Halteres (RDL)", "grupo": "Isquiotibiais/Glúteos", "secundarios": "Lombar, eretores", "equipamento": "Halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Hérnia disco aguda", "substituto": "Mesa flexora", "instrucao": "Em pé. Inclinação com joelho levemente fletido e coluna neutra.", "erros": "Arredondar lombar. Joelhos muito fletidos.", "obs": "Contraindicado em hérnia de disco aguda."}, {"cod": "EX070", "nome": "Stiff Barra (RDL)", "grupo": "Isquiotibiais/Glúteos", "secundarios": "Lombar, eretores", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Hérnia disco aguda", "substituto": "Stiff halteres", "instrucao": "Mesma mecânica com barra. Permite maior carga.", "erros": "Arredondar lombar. Barra afastando do corpo.", "obs": "Avançados podem progredir para deadlift romeno."}, {"cod": "EX071", "nome": "Abdução de Quadril Máquina", "grupo": "Glúteo médio", "secundarios": "TFL, glúteo mínimo", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Abdução com elástico", "instrucao": "Sentado. Abduzir contra a resistência. Controlar a volta 3s.", "erros": "Velocidade excessiva. Não controlar excêntrico.", "obs": "Fundamental para equilíbrio muscular do quadril."}, {"cod": "EX072", "nome": "Adução de Quadril Máquina", "grupo": "Adutores", "secundarios": "Pectíneo, grácil", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Agachamento sumô", "instrucao": "Sentado. Aduzi contra a resistência. Controlar a volta.", "erros": "Velocidade excessiva. Carga excessiva.", "obs": "Par com abdução para equilíbrio muscular."}, {"cod": "EX073", "nome": "Elevação Calcanhares em Pé", "grupo": "Gastrocnêmio", "secundarios": "Sóleo", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Elevação no degrau", "instrucao": "Amplitude máxima: calcanhar abaixo da linha + pausa 2s no topo.", "erros": "Não completar amplitude. Quicar no fundo.", "obs": "Alta frequência tolerada (3-5x/sem)."}, {"cod": "EX074", "nome": "Elevação Calcanhares Sentado", "grupo": "Sóleo", "secundarios": "Gastrocnêmio (parcial)", "equipamento": "Máquina sentado", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Elevação em pé", "instrucao": "Com joelhos flexionados: maior ativação do sóleo.", "erros": "Não completar amplitude. Sem pausa no topo.", "obs": "Par com elevação em pé para trabalho completo."}, {"cod": "EX075", "nome": "Prancha Isométrica", "grupo": "Core/Transverso", "secundarios": "Lombar, glúteos, serrátil", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Funcional/Saúde", "contraindicacoes": "Lesão lombar aguda", "substituto": "Abdominal tradicional", "instrucao": "Cotovelos e pontas dos pés. Corpo em linha reta. 30-60s.", "erros": "Elevar ou baixar quadril. Prender a respiração.", "obs": "Fundamental para todos. Progressões variadas."}, {"cod": "EX076", "nome": "Prancha Lateral", "grupo": "Oblíquos/Quadrado lombar", "secundarios": "Glúteo médio, adutores", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Funcional", "contraindicacoes": "Lesão lombar", "substituto": "Prancha frontal", "instrucao": "Apoio no antebraço lateral. Corpo em linha lateral. Quadril elevado.", "erros": "Quadril caindo. Pescoço em flexão lateral.", "obs": "Excelente para oblíquos e estabilidade lateral."}, {"cod": "EX077", "nome": "Abdominal Crunch", "grupo": "Reto abdominal", "secundarios": "Oblíquos", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Hérnia cervical", "substituto": "Prancha isométrica", "instrucao": "Joelhos dobrados. Enrolar o tronco. Expirar na contração.", "erros": "Puxar pescoço com as mãos. Usar impulso.", "obs": "Baixo risco. Indicado para todos."}, {"cod": "EX078", "nome": "Abdominal Bicicleta", "grupo": "Reto abdominal/Oblíquos", "secundarios": "Flexores do quadril", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão cervical", "substituto": "Crunch + rotação", "instrucao": "Alternar cotovelo ao joelho oposto. Lento e controlado.", "erros": "Puxar o pescoço. Movimento muito rápido.", "obs": "Alta ativação por EMG (ACE). Um dos melhores para oblíquos."}, {"cod": "EX079", "nome": "Elevação de Pernas Pendurado", "grupo": "Reto abdominal inf.", "secundarios": "Flexores do quadril", "equipamento": "Barra fixa", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão lombar aguda", "substituto": "Elevação de pernas deitado", "instrucao": "Suspenso na barra. Elevar pernas até 90°. Controlar descida 3s.", "erros": "Usar impulso do tronco. Não controlar excêntrico.", "obs": "Iniciante: joelhos dobrados. Avançado: pernas estendidas."}, {"cod": "EX080", "nome": "Roda Abdominal (ab wheel)", "grupo": "Reto abdominal/Transverso", "secundarios": "Ombros, tríceps, lombar", "equipamento": "Roda abdominal", "nivel": "Avançado", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão lombar, ombro", "substituto": "Prancha", "instrucao": "De joelhos. Rolar para frente mantendo coluna neutra.", "erros": "Lombar afundar. Realizar em pé sem base de força.", "obs": "Apenas para avançados com lombar forte."}, {"cod": "EX081", "nome": "Levantamento Terra Convencional", "grupo": "Lombar/Glúteos/Isquiotibiais", "secundarios": "Quadríceps, trapézio, antebraços", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Força/Hipertrofia", "contraindicacoes": "Hérnia disco, lombar fraca", "substituto": "Stiff halteres", "instrucao": "Pés na largura do quadril. Barra sobre o médio-pé. Coluna neutra. Extensão simultânea.", "erros": "Lombar arredondando. Barra afastando do corpo.", "obs": "Somente após boa técnica de agachamento."}, {"cod": "EX082", "nome": "Levantamento Terra Sumô", "grupo": "Quadríceps/Glúteos/Adutores", "secundarios": "Lombar, trapézio", "equipamento": "Barra", "nivel": "Avançado", "objetivo": "Força", "contraindicacoes": "Lesão virilha, quadril", "substituto": "Levantamento terra convencional", "instrucao": "Pés muito afastados. Menor inclinação de tronco.", "erros": "Joelhos cedendo para dentro. Não atingir lockout.", "obs": "Preferido por levantadores com tronco longo."}, {"cod": "EX083", "nome": "Levantamento Terra Romeno (RDL)", "grupo": "Isquiotibiais/Glúteos", "secundarios": "Lombar", "equipamento": "Barra/halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Hérnia disco", "substituto": "Stiff halteres", "instrucao": "Começa em pé. Descer mantendo barra na perna. Quadril recua.", "erros": "Confundir com stiff. Arredondar lombar.", "obs": "Um dos melhores para posterior."}, {"cod": "EX084", "nome": "Swing com Kettlebell", "grupo": "Glúteos/Isquiotibiais/Core", "secundarios": "Deltóides, lombar", "equipamento": "Kettlebell", "nivel": "Intermediário", "objetivo": "Condicionamento/Potência", "contraindicacoes": "Lesão lombar aguda", "substituto": "Hip thrust", "instrucao": "Movimento de quadril. Kettlebell impulsionada pela extensão explosiva.", "erros": "Agachar em vez de articular o quadril.", "obs": "Excelente para condicionamento e potência."}, {"cod": "EX085", "nome": "Monster Walk com Elástico", "grupo": "Glúteo médio", "secundarios": "TFL, glúteo mínimo", "equipamento": "Elástico", "nivel": "Iniciante", "objetivo": "Funcional/Reabilitação", "contraindicacoes": "—", "substituto": "Abdução de quadril máquina", "instrucao": "Elástico acima dos joelhos. Meio agachamento. Passos laterais.", "erros": "Joelhos cedendo para dentro.", "obs": "Muito usado em protocolos de joelho e quadril."}, {"cod": "EX086", "nome": "Clamshell com Elástico", "grupo": "Glúteo médio/mínimo", "secundarios": "Rotadores externos do quadril", "equipamento": "Elástico", "nivel": "Iniciante", "objetivo": "Reabilitação/Funcional", "contraindicacoes": "—", "substituto": "Abdução máquina", "instrucao": "Deitado de lado. Elástico acima dos joelhos. Abrir o joelho.", "erros": "Rodar o quadril. Usar impulso.", "obs": "Protocolo padrão de reabilitação de joelho e quadril."}, {"cod": "EX087", "nome": "Farmer Walk", "grupo": "Forearms/Core", "secundarios": "Trapézio, deltóides", "equipamento": "Halteres/Kettlebell", "nivel": "Iniciante", "objetivo": "Funcional/Força", "contraindicacoes": "Lesão punho", "substituto": "Nenhum", "instrucao": "Segurar pesos em cada mão. Caminhar com postura ereta.", "erros": "Inclinar o tronco. Arrastar os pés.", "obs": "Excelente para grip, core e condicionamento."}, {"cod": "EX088", "nome": "Press Pallof", "grupo": "Core/Anti-rotação", "secundarios": "Oblíquos, transverso", "equipamento": "Polia", "nivel": "Iniciante", "objetivo": "Funcional/Saúde", "contraindicacoes": "—", "substituto": "Prancha com rotação", "instrucao": "De lado para a polia. Pressionar o cabo para frente resistindo à rotação.", "erros": "Rotar o tronco. Usar impulso.", "obs": "Excelente anti-rotação. Indicado para reabilitação lombar."}, {"cod": "EX089", "nome": "Dead Bug", "grupo": "Core/Coordenação", "secundarios": "Transverso abdominal", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "—", "substituto": "Prancha isométrica", "instrucao": "Deitado. Estender braço oposto à perna oposta simultaneamente. Alternar.", "erros": "Levantar a lombar do chão. Prender a respiração.", "obs": "Excelente para ativação de core. Seguro para lesão lombar."}, {"cod": "EX090", "nome": "Bird Dog", "grupo": "Core/Lombar/Equilíbrio", "secundarios": "Glúteos, eretores", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "—", "substituto": "Dead bug", "instrucao": "De quatro apoios. Estender braço oposto à perna. Manter 3s. Alternar.", "erros": "Rotar o quadril ao elevar a perna.", "obs": "Excelente em programas de saúde lombar (McGill)."}, {"cod": "EX091", "nome": "Rotação com Cabo", "grupo": "Oblíquos", "secundarios": "Reto abdominal, eretores", "equipamento": "Polia", "nivel": "Iniciante", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "Hérnia disco", "substituto": "Prancha lateral", "instrucao": "Em pé ou sentado. Rotar o tronco contra resistência. Quadril estável.", "erros": "Mover o quadril junto. Velocidade excessiva com carga.", "obs": "Fundamental para esportes e funcional."}, {"cod": "EX092", "nome": "Hip Thrust Unilateral", "grupo": "Glúteo máximo (unilateral)", "secundarios": "Isquiotibiais", "equipamento": "Barra/haltere", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Hip thrust bilateral", "instrucao": "Mesmo padrão com apenas uma perna no chão.", "erros": "Rotar o quadril. Não completar a extensão.", "obs": "Excelente para detectar e corrigir assimetrias."}, {"cod": "EX093", "nome": "Agachamento Assistido (TRX)", "grupo": "Quadríceps/Glúteos", "secundarios": "Core, equilíbrio", "equipamento": "TRX/fita de suspensão", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "—", "substituto": "Agachamento goblet", "instrucao": "Segurar as alças. Usar a tensão como assistência.", "erros": "Tração excessiva das alças.", "obs": "Perfeito para idosos e equilíbrio comprometido."}, {"cod": "EX094", "nome": "Agachamento Parede (wall squat)", "grupo": "Quadríceps", "secundarios": "Glúteos", "equipamento": "Peso corporal/parede", "nivel": "Iniciante", "objetivo": "Reabilitação/Saúde", "contraindicacoes": "—", "substituto": "Leg press", "instrucao": "Costas na parede. Descer até 90°. Manter 30-60s.", "erros": "Joelhos além dos dedos dos pés.", "obs": "Excelente para reabilitação e fortalecimento inicial de idosos."}, {"cod": "EX095", "nome": "Dead Bug", "grupo": "Core/Coordenação", "secundarios": "Transverso abdominal", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "—", "substituto": "Prancha", "instrucao": "Deitado. Costas planas. Estender braço oposto à perna. Alternar.", "erros": "Levantar a lombar. Prender a respiração.", "obs": "Muito seguro. Indicado para lesão lombar."}, {"cod": "EX096", "nome": "Superman", "grupo": "Lombar/Glúteos/Eretores", "secundarios": "Isquiotibiais", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Reabilitação", "contraindicacoes": "Hérnia disco aguda", "substituto": "Extensão de tronco", "instrucao": "Deitado de bruços. Elevar braços e pernas. Manter 2-3s.", "erros": "Com dor lombar aguda. Velocidade excessiva.", "obs": "Extensão lombar de baixa intensidade."}, {"cod": "EX097", "nome": "Dissociação Lombo-Pélvica (cat-camel)", "grupo": "Lombar/Quadril", "secundarios": "Core geral", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Mobilidade/Saúde", "contraindicacoes": "—", "substituto": "Nenhum", "instrucao": "De quatro apoios. Alternar extensão (cat) e flexão (camel).", "erros": "Movimento brusco. Amplitude excessiva.", "obs": "Fundamental no aquecimento e saúde lombar."}, {"cod": "EX098", "nome": "Hip Hinge com Bastão", "grupo": "Isquiotibiais/Glúteos", "secundarios": "Lombar", "equipamento": "Bastão/parede", "nivel": "Iniciante", "objetivo": "Mobilidade/Técnica", "contraindicacoes": "—", "substituto": "Stiff", "instrucao": "Bastão ao longo da coluna (3 pontos de contato). Inclinar tronco.", "erros": "Perder contato dos 3 pontos.", "obs": "Ensina o padrão de dobradiça antes do deadlift/stiff."}, {"cod": "EX099", "nome": "Agachamento Aéreo (air squat)", "grupo": "Quadríceps/Glúteos", "secundarios": "Core, isquiotibiais", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Funcional/Saúde", "contraindicacoes": "—", "substituto": "Agachamento livre barra", "instrucao": "Braços à frente. Descer até paralela. Coluna neutra.", "erros": "Joelhos cedendo para dentro. Calcanhar levantando.", "obs": "Base para o agachamento livre. Avaliação de mobilidade."}, {"cod": "EX100", "nome": "Remada TRX", "grupo": "Romboides/Latíssimo", "secundarios": "Bíceps, core", "equipamento": "TRX/fita de suspensão", "nivel": "Iniciante", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "—", "substituto": "Remada inclinada barra", "instrucao": "Corpo inclinado abaixo das alças. Puxar o peito até as mãos.", "erros": "Quadril caindo. Não completar retração escapular.", "obs": "Excelente para home training. Dificuldade pelo ângulo."}, {"cod": "EX101", "nome": "Flexão Declinada (pés elevados)", "grupo": "Peitoral sup./Deltóide", "secundarios": "Tríceps, serrátil", "equipamento": "Banco+peso corporal", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro", "substituto": "Supino inclinado", "instrucao": "Pés elevados no banco. Mãos no chão. Tronco inclinado negativamente.", "erros": "Quadril elevado. Colapsar o tronco.", "obs": "Alternativa ao supino inclinado sem equipamento."}, {"cod": "EX102", "nome": "Levantamento Terra Trap Bar", "grupo": "Quadríceps/Glúteos/Lombar", "secundarios": "Trapézio, bíceps", "equipamento": "Trap bar", "nivel": "Intermediário", "objetivo": "Força/Funcional", "contraindicacoes": "—", "substituto": "Leg press + remada", "instrucao": "Posição neutra. Menor stress na coluna que o convencional.", "erros": "Arredondar lombar. Não completar lockout.", "obs": "Mais seguro que o levantamento terra convencional."}, {"cod": "EX103", "nome": "Agachamento Frontal", "grupo": "Quadríceps", "secundarios": "Glúteos, core, eretores", "equipamento": "Barra", "nivel": "Avançado", "objetivo": "Força/Hipertrofia", "contraindicacoes": "Lesão punho, ombro", "substituto": "Goblet + agachamento barra alta", "instrucao": "Barra sobre os deltóides anteriores. Tronco mais ereto.", "erros": "Deixar a barra cair. Cotovelos caírem.", "obs": "Ótimo para quadríceps e atletas de crossfit/halterofilia."}, {"cod": "EX104", "nome": "Agachamento com Pausa", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, eretores", "equipamento": "Barra/halteres", "nivel": "Avançado", "objetivo": "Força/Técnica", "contraindicacoes": "Lesão joelho", "substituto": "Agachamento normal", "instrucao": "Pausa de 2-3s na posição mais baixa. Elimina o reflexo miotático.", "erros": "Relaxar completamente no fundo.", "obs": "Técnica avançada para aumentar dificuldade sem aumentar carga."}, {"cod": "EX105", "nome": "Agachamento Pistol", "grupo": "Quadríceps/Glúteos", "secundarios": "Core, tornozelo", "equipamento": "Peso corporal", "nivel": "Avançado", "objetivo": "Funcional/Força", "contraindicacoes": "Lesão joelho, tornozelo", "substituto": "Agachamento búlgaro", "instrucao": "Em pé em uma perna. Descer até o paralelo. Perna livre à frente.", "erros": "Pé do chão se mover. Joelho ceder para dentro.", "obs": "Alta exigência de equilíbrio, mobilidade e força unilateral."}, {"cod": "EX106", "nome": "Good Morning", "grupo": "Isquiotibiais/Lombar", "secundarios": "Glúteos, eretores", "equipamento": "Barra", "nivel": "Avançado", "objetivo": "Força/Funcional", "contraindicacoes": "Hérnia disco, lombar fraca", "substituto": "Stiff halteres", "instrucao": "Barra nas costas. Inclinar com joelhos levemente fletidos.", "erros": "Arredondar lombar. Carga excessiva.", "obs": "Somente para avançados com lombar forte."}, {"cod": "EX107", "nome": "Turkish Get-Up", "grupo": "Full body/Core/Ombros", "secundarios": "Estabilizadores gerais", "equipamento": "Kettlebell/haltere", "nivel": "Avançado", "objetivo": "Funcional/Mobilidade", "contraindicacoes": "Lesão ombro, joelho", "substituto": "Nenhum substituto direto", "instrucao": "Sequência: deitado → sentado → ajoelhado → em pé com kettlebell acima.", "erros": "Perder o alinhamento do punho. Realizar rápido.", "obs": "Requer aprendizado antes de adicionar carga."}, {"cod": "EX108", "nome": "Remada Landmine", "grupo": "Romboides/Latíssimo", "secundarios": "Bíceps, trapézio", "equipamento": "Barra (landmine)", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Remada unilateral haltere", "instrucao": "Barra presa em um canto. Puxar a extremidade livre até o abdômen.", "erros": "Rotar o tronco. Não retrair escápulas.", "obs": "Menor stress lombar. Variação interessante."}, {"cod": "EX109", "nome": "Hip Thrust com Banda", "grupo": "Glúteo máximo/médio", "secundarios": "Isquiotibiais", "equipamento": "Barra+elástico+banco", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Hip thrust normal", "instrucao": "Hip thrust com banda acima dos joelhos. Adiciona trabalho de abdução.", "erros": "Joelhos cedendo para dentro.", "obs": "Adiciona trabalho de glúteo médio simultâneo."}, {"cod": "EX110", "nome": "Face Pull com Rotação", "grupo": "Deltóide post./Manguito", "secundarios": "Romboides, trapézio", "equipamento": "Polia alta + corda", "nivel": "Intermediário", "objetivo": "Saúde/Hipertrofia", "contraindicacoes": "—", "substituto": "Face pull convencional", "instrucao": "Mesmo padrão com rotação externa adicional no final.", "erros": "Carga excessiva. Não completar a rotação.", "obs": "Ainda maior ativação de rotadores externos."}, {"cod": "EX111", "nome": "Passada Lateral", "grupo": "Adutores/Abdutores/Glúteos", "secundarios": "Quadríceps, isquiotibiais", "equipamento": "Peso corporal/halteres", "nivel": "Iniciante", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "Lesão joelho, virilha", "substituto": "Agachamento sumô", "instrucao": "Passo lateral amplo. Dobrar o joelho do lado que vai. Outro pé estendido.", "erros": "Perder equilíbrio. Joelho cedendo para dentro.", "obs": "Excelente para adutores e glúteo médio."}, {"cod": "EX112", "nome": "Stiff Unilateral (single leg RDL)", "grupo": "Isquiotibiais/Glúteos", "secundarios": "Lombar, tibial ant.", "equipamento": "Haltere/peso corporal", "nivel": "Intermediário", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "Lesão joelho, equilíbrio comprometido", "substituto": "Stiff bilateral", "instrucao": "Em pé em uma perna. Inclinar o tronco. Perna de trás estendida para trás.", "erros": "Rotar o quadril. Perder equilíbrio.", "obs": "Detecta e corrige assimetrias."}, {"cod": "EX113", "nome": "Agachamento Sissy", "grupo": "Quadríceps (isolamento)", "secundarios": "Joelho, tendão patelar", "equipamento": "Peso corporal/apoio", "nivel": "Avançado", "objetivo": "Hipertrofia", "contraindicacoes": "Condromalácia, tendinopatia patelar", "substituto": "Cadeira extensora", "instrucao": "Inclinação do tronco para trás enquanto joelhos avançam.", "erros": "Sem base de força. Condromalácia moderada/severa.", "obs": "Alta carga no tendão patelar. Apenas avançados."}, {"cod": "EX114", "nome": "Chin-up com Lastro", "grupo": "Bíceps/Latíssimo", "secundarios": "Romboides", "equipamento": "Barra fixa+cinto", "nivel": "Avançado", "objetivo": "Força", "contraindicacoes": "Lesão ombro", "substituto": "Barra fixa sem lastro", "instrucao": "Mesmo técnica com peso adicional no cinto de lastro.", "erros": "Usar carga antes de dominar o peso corporal.", "obs": "Progressão avançada do chinup."}, {"cod": "EX115", "nome": "Carga Excêntrica (negativo barra fixa)", "grupo": "Latíssimo/Bíceps", "secundarios": "Romboides", "equipamento": "Barra fixa", "nivel": "Intermediário", "objetivo": "Força/Hipertrofia", "contraindicacoes": "Lesão cotovelo", "substituto": "Puxada normal", "instrucao": "Subir com auxílio e descer muito lentamente (5-8s).", "erros": "Descer muito rápido.", "obs": "Potente estímulo de hipertrofia. Útil para quem não faz pullup."}, {"cod": "EX116", "nome": "Burpee", "grupo": "Full body condicionamento", "secundarios": "Core, peitoral, quadríceps", "equipamento": "Peso corporal", "nivel": "Intermediário", "objetivo": "Condicionamento", "contraindicacoes": "Lesão joelho, lombar, ombro", "substituto": "Air squat + flexão separados", "instrucao": "Agachar, apoiar mãos, chutar pernas, flexão, voltar e saltar.", "erros": "Arredondar lombar ao chutar as pernas.", "obs": "Modificar para idosos: remover o salto."}, {"cod": "EX117", "nome": "Salto Caixote (box jump)", "grupo": "Quadríceps/Glúteos/Potência", "secundarios": "Gastrocnêmio, core", "equipamento": "Caixote", "nivel": "Intermediário", "objetivo": "Potência/Funcional", "contraindicacoes": "Lesão joelho, tornozelo", "substituto": "Leg press explosivo", "instrucao": "Saltar explosivamente. Pousar com joelhos levemente dobrados.", "erros": "Descer saltando da caixa (risco de lesão).", "obs": "Descida: sempre caminhar ou salto suave lateral."}, {"cod": "EX118", "nome": "Battle Rope", "grupo": "Condicionamento full body", "secundarios": "Deltóides, core, bíceps", "equipamento": "Corda grossa", "nivel": "Iniciante", "objetivo": "Condicionamento", "contraindicacoes": "Lesão ombro bilateral", "substituto": "Cardio convencional", "instrucao": "Ondas alternadas ou simultâneas com a corda.", "erros": "Perder a postura. Não variar os padrões.", "obs": "Excelente condicionamento sem impacto articular."}, {"cod": "EX119", "nome": "Bicicleta Ergométrica", "grupo": "Condicionamento cardio", "secundarios": "Quadríceps, glúteos", "equipamento": "Bicicleta ergométrica", "nivel": "Iniciante", "objetivo": "Condicionamento/Saúde", "contraindicacoes": "—", "substituto": "Corrida", "instrucao": "Ajustar selim para extensão quase completa. Pedalar cadenciado.", "erros": "Selim muito baixo (stress patelar).", "obs": "Menor impacto que corrida. Indicado para obesos, idosos e hipertensos."}, {"cod": "EX120", "nome": "Caminhada na Esteira", "grupo": "Condicionamento leve", "secundarios": "Quadríceps, glúteos", "equipamento": "Esteira", "nivel": "Iniciante", "objetivo": "Saúde/Condicionamento", "contraindicacoes": "—", "substituto": "Corrida", "instrucao": "5-10 km/h. Postura ereta. Braços balançando naturalmente.", "erros": "Segurar na esteira. Inclinação excessiva para iniciantes.", "obs": "Excelente para sedentários, idosos e início de programa."}, {"cod": "EX121", "nome": "Elíptico", "grupo": "Condicionamento cardio", "secundarios": "Full body cardio", "equipamento": "Elíptico", "nivel": "Iniciante", "objetivo": "Condicionamento/Saúde", "contraindicacoes": "—", "substituto": "Bicicleta ergométrica", "instrucao": "Mover os braços e pernas simultaneamente. Postura ereta.", "erros": "Segurar muito firme nas alças. Inclinar o tronco.", "obs": "Zero impacto. Ótimo para todas as populações especiais."}, {"cod": "EX122", "nome": "HIIT na Bicicleta", "grupo": "Condicionamento", "secundarios": "Quadríceps, glúteos", "equipamento": "Bicicleta ergométrica", "nivel": "Intermediário", "objetivo": "Condicionamento/Emagrecimento", "contraindicacoes": "HAS não controlada", "substituto": "HIIT na esteira", "instrucao": "Alternar sprint (30-60s) com recuperação (60-120s). 8-12 ciclos.", "erros": "Velocidade excessiva sem base cardiovascular.", "obs": "Eficaz para queima calórica. Menor impacto que esteira."}, {"cod": "EX123", "nome": "Remo Ergométrico", "grupo": "Condicionamento cardio", "secundarios": "Costas, glúteos, isquiotibiais", "equipamento": "Remo ergométrico", "nivel": "Intermediário", "objetivo": "Condicionamento/Força", "contraindicacoes": "Hérnia disco, lesão ombro", "substituto": "Elíptico", "instrucao": "Empurrar com as pernas primeiro, depois puxar os braços.", "erros": "Arredondar lombar. Puxar os braços antes das pernas.", "obs": "Excelente condicionamento de corpo inteiro. Baixo impacto."}, {"cod": "EX124", "nome": "Corrida", "grupo": "Condicionamento cardio", "secundarios": "Quadríceps, isquiotibiais, glúteos", "equipamento": "Esteira/rua", "nivel": "Iniciante", "objetivo": "Condicionamento", "contraindicacoes": "Lesão joelho, tornozelo", "substituto": "Bicicleta ergométrica", "instrucao": "Manter postura ereta. Passada eficiente. Respiração cadenciada.", "erros": "Passada de calcanhar. Tronco muito inclinado.", "obs": "Ajustar intensidade por FC ou RPE. Usar tênis adequado."}, {"cod": "EX125", "nome": "Salto com Corda", "grupo": "Condicionamento/Cardio", "secundarios": "Gastrocnêmio, core, deltóides", "equipamento": "Corda de pular", "nivel": "Iniciante", "objetivo": "Condicionamento", "contraindicacoes": "Lesão tornozelo, joelho", "substituto": "Corrida estacionária", "instrucao": "Cotovelos próximos ao corpo. Pulso fazendo o giro.", "erros": "Saltar muito alto. Pouso com joelhos travados.", "obs": "Excelente cardio. Modificar para alternância de pés em idosos."}, {"cod": "EX126", "nome": "Puxada com Elástico", "grupo": "Latíssimo/Costas", "secundarios": "Bíceps", "equipamento": "Elástico", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "—", "substituto": "Puxada frontal máquina", "instrucao": "Elástico preso acima. Puxar para baixo como na puxada frontal.", "erros": "Não retrair escápulas. Soltar o elástico sem controle.", "obs": "Ótima alternativa sem academia."}, {"cod": "EX127", "nome": "Agachamento com Elástico", "grupo": "Quadríceps/Glúteos", "secundarios": "—", "equipamento": "Elástico", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "—", "substituto": "Agachamento livre", "instrucao": "Elástico sob os pés e sobre os ombros. Agachar com resistência crescente.", "erros": "Deixar o elástico escorregar.", "obs": "Opção de treino em casa. Boa variação de estímulo."}, {"cod": "EX128", "nome": "Supino com Elástico", "grupo": "Peitoral/Tríceps", "secundarios": "Deltóide ant.", "equipamento": "Elástico", "nivel": "Iniciante", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "—", "substituto": "Flexão de braço", "instrucao": "Elástico nas costas. Pressionar para frente como no supino.", "erros": "Deixar o elástico escorregar. Não controlar retorno.", "obs": "Overload acomodado: maior resistência no pico da contração."}, {"cod": "EX129", "nome": "Press com Bolas Medicinais", "grupo": "Peitoral/Deltóide", "secundarios": "Tríceps", "equipamento": "Bola medicinal", "nivel": "Intermediário", "objetivo": "Funcional/Potência", "contraindicacoes": "Lesão ombro", "substituto": "Supino convencional", "instrucao": "Arremessar ou pressionar a bola contra parede ou parceiro.", "erros": "Usar bola muito pesada. Perder o padrão.", "obs": "Excelente para potência e treino funcional."}, {"cod": "EX130", "nome": "Vacuum Abdominal", "grupo": "Transverso abdominal", "secundarios": "—", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Saúde/Funcional", "contraindicacoes": "Gestação", "substituto": "Prancha isométrica", "instrucao": "Expirar completamente e retrair o abdômen. Manter 10-30s.", "erros": "Prender a respiração. Realizar após refeição.", "obs": "Excelente para ativar o transverso."}, {"cod": "EX131", "nome": "Remada Serafim", "grupo": "Romboides/Trapézio médio", "secundarios": "Deltóide post., bíceps", "equipamento": "Halteres", "nivel": "Intermediário", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Face pull", "instrucao": "Inclinado. Halteres em posição de supino. Retrair as escápulas puxando cotovelos para trás.", "erros": "Usar carga de supino. Não retrair as escápulas.", "obs": "Excelente para saúde postural e equilíbrio de ombro."}, {"cod": "EX132", "nome": "Chest Fly Máquina (peck deck)", "grupo": "Peitoral", "secundarios": "Peitoral menor, serrátil", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro", "substituto": "Crucifixo halteres", "instrucao": "Apoiar os braços. Fechar na frente. Pausa 1s. Controlar retorno.", "erros": "Carga excessiva. Hiperextender o ombro.", "obs": "Mais seguro que crucifixo para iniciantes e idosos."}, {"cod": "EX133", "nome": "Pullover Máquina", "grupo": "Latíssimo/Peitoral", "secundarios": "Serrátil, tríceps", "equipamento": "Máquina pullover", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "Lesão ombro aguda", "substituto": "Pullover haltere", "instrucao": "Movimento guiado. Menor risco que a versão livre.", "erros": "Carga excessiva. Não completar amplitude.", "obs": "Mais seguro que o pullover com haltere."}, {"cod": "EX134", "nome": "Remada T-Bar (com apoio)", "grupo": "Romboides/Trapézio", "secundarios": "Bíceps, latíssimo", "equipamento": "Barra t-bar+apoio", "nivel": "Intermediário", "objetivo": "Hipertrofia/Força", "contraindicacoes": "Hérnia disco", "substituto": "Remada curvada barra", "instrucao": "Peito apoiado no suporte. Puxar até o abdômen.", "erros": "Arredondar lombar. Impulso. Carga excessiva.", "obs": "Versão com apoio de peito mais segura para a coluna."}, {"cod": "EX135", "nome": "Agachamento Overhead (OHS)", "grupo": "Quadríceps/Glúteos/Core", "secundarios": "Deltóides, eretores", "equipamento": "Barra/PVC", "nivel": "Avançado", "objetivo": "Funcional/Mobilidade", "contraindicacoes": "Lesão ombro, quadril", "substituto": "Agachamento frontal", "instrucao": "Barra acima da cabeça. Agachar mantendo braços verticais.", "erros": "Braços caírem à frente. Calcanhar levantar.", "obs": "Excelente teste de mobilidade global. Usar PVC para aprendizado."}, {"cod": "EX136", "nome": "Press Landmine", "grupo": "Peitoral/Deltóide", "secundarios": "Tríceps", "equipamento": "Barra (landmine)", "nivel": "Intermediário", "objetivo": "Hipertrofia/Funcional", "contraindicacoes": "—", "substituto": "Supino com halteres", "instrucao": "Barra presa em um canto. Pressionar a extremidade livre à frente ou acima.", "erros": "Não controlar o arco de movimento. Usar impulso.", "obs": "Menor risco de impingement: excelente para ombro sensível."}, {"cod": "EX137", "nome": "Iso-hold Agachamento (isometria)", "grupo": "Quadríceps/Glúteos", "secundarios": "—", "equipamento": "Barra/halteres", "nivel": "Intermediário", "objetivo": "Força/Técnica", "contraindicacoes": "Lesão joelho", "substituto": "Agachamento normal", "instrucao": "Descer até paralela e manter isometricamente por 20-60s.", "erros": "Perder a postura. Usar carga excessiva.", "obs": "Técnica de intensidade para aumentar recrutamento muscular."}, {"cod": "EX138", "nome": "Corrida Estacionária Joelhos Altos", "grupo": "Condicionamento/Cardio", "secundarios": "Flexores do quadril, core", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Condicionamento", "contraindicacoes": "Lesão joelho, tornozelo", "substituto": "Salto com corda", "instrucao": "Elevar os joelhos até a altura do quadril alternadamente.", "erros": "Quedas de impacto. Inclinar o tronco.", "obs": "Excelente aquecimento. Ajustar amplitude para idosos."}, {"cod": "EX139", "nome": "Extensão de Quadril Polia", "grupo": "Glúteo máximo", "secundarios": "Isquiotibiais", "equipamento": "Polia baixa", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Hip thrust", "instrucao": "Polia presa no tornozelo. Estender o quadril para trás.", "erros": "Inclinar o tronco. Usar impulso.", "obs": "Exercício de isolamento do glúteo."}, {"cod": "EX140", "nome": "Afundo com Barra (split squat)", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais", "equipamento": "Barra", "nivel": "Intermediário", "objetivo": "Força/Hipertrofia", "contraindicacoes": "Lesão joelho", "substituto": "Passada halteres", "instrucao": "Posição de afundo estática. Descer verticalmente. Barra nas costas.", "erros": "Joelho da frente colapsar. Tronco inclinar demais.", "obs": "Versão de força do avanço: maior estabilidade que a passada em movimento."}, {"cod": "EX141", "nome": "Rosca Preacher Machine", "grupo": "Bíceps", "secundarios": "Braquial", "equipamento": "Máquina", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Rosca concentrada", "instrucao": "Máquina guiada. Cotovelo apoiado. Flexionar e controlar retorno.", "erros": "Usar carga excessiva. Arremessar o peso.", "obs": "Mais seguro que a rosca Scott com barra. Ideal para iniciantes."}, {"cod": "EX142", "nome": "Remada Reclining (bodyweight)", "grupo": "Romboides/Latíssimo", "secundarios": "Bíceps, core", "equipamento": "Barra fixa baixa/TRX", "nivel": "Iniciante", "objetivo": "Funcional/Hipertrofia", "contraindicacoes": "—", "substituto": "Remada máquina", "instrucao": "Deitado sob a barra. Puxar o peito até a barra. Corpo rígido.", "erros": "Quadril caindo. Não completar a retração escapular.", "obs": "Excelente para iniciantes e treino em casa."}, {"cod": "EX143", "nome": "Kickback de Glúteo (quatro apoios)", "grupo": "Glúteo máximo", "secundarios": "Isquiotibiais", "equipamento": "Peso corporal/elástico", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Hip thrust", "instrucao": "De quatro apoios. Estender um quadril para trás até a extensão completa.", "erros": "Hiperestender a lombar. Não completar a extensão.", "obs": "Ótimo exercício de isolamento para glúteo máximo. Muito acessível."}, {"cod": "EX144", "nome": "Side Lying Hip Abduction", "grupo": "Glúteo médio", "secundarios": "TFL", "equipamento": "Peso corporal/elástico", "nivel": "Iniciante", "objetivo": "Reabilitação/Funcional", "contraindicacoes": "—", "substituto": "Abdução de quadril máquina", "instrucao": "Deitado de lado. Abduzir o quadril contra a gravidade ou elástico.", "erros": "Rotar o quadril. Usar impulso.", "obs": "Protocolo básico de ativação do glúteo médio. Muito seguro."}, {"cod": "EX145", "nome": "Donkey Kick", "grupo": "Glúteo máximo", "secundarios": "Isquiotibiais", "equipamento": "Peso corporal/elástico", "nivel": "Iniciante", "objetivo": "Hipertrofia", "contraindicacoes": "—", "substituto": "Hip thrust", "instrucao": "De quatro apoios. Chutar para trás com o joelho dobrado. Extensão completa.", "erros": "Hiperestender a lombar. Rotar o quadril.", "obs": "Versão acessível de isolamento de glúteo. Excelente para iniciantes."}, {"cod": "EX146", "nome": "Flexão de Quadril em Pé (polia)", "grupo": "Flexores do quadril/Iliopsoas", "secundarios": "Quadríceps", "equipamento": "Polia baixa", "nivel": "Iniciante", "objetivo": "Funcional/Reabilitação", "contraindicacoes": "—", "substituto": "Elevação de joelho em pé", "instrucao": "Polia presa no tornozelo. Flexionar o quadril à frente. Controlar retorno.", "erros": "Usar impulso do tronco. Velocidade excessiva.", "obs": "Fortalece flexores de quadril. Útil em corredores e atletas."}, {"cod": "EX147", "nome": "Agachamento Pistol Assistido", "grupo": "Quadríceps/Glúteos", "secundarios": "Core, equilíbrio", "equipamento": "Barra fixa/TRX", "nivel": "Intermediário", "objetivo": "Funcional/Força", "contraindicacoes": "Lesão joelho, tornozelo", "substituto": "Agachamento búlgaro", "instrucao": "Segurando a barra ou TRX para assistência. Descer em uma perna até o paralelo.", "erros": "Usar muita assistência. Joelho cedendo para dentro.", "obs": "Progressão para o pistol completo sem assistência."}, {"cod": "EX148", "nome": "Isometria de Glúteo (glute squeeze)", "grupo": "Glúteo máximo", "secundarios": "—", "equipamento": "Peso corporal", "nivel": "Iniciante", "objetivo": "Ativação/Reabilitação", "contraindicacoes": "—", "substituto": "Ponte pélvica", "instrucao": "Em pé ou deitado. Contrair o glúteo isometricamente por 10-30s.", "erros": "Prender a respiração. Substituir por compensação lombar.", "obs": "Excelente ativação pré-treino. Seguro para todos."}, {"cod": "EX149", "nome": "Box Squat", "grupo": "Quadríceps/Glúteos", "secundarios": "Isquiotibiais, lombar", "equipamento": "Barra+caixote", "nivel": "Intermediário", "objetivo": "Força/Técnica", "contraindicacoes": "Lesão joelho severa", "substituto": "Agachamento normal", "instrucao": "Agachar até sentar no caixote. Pausa. Empurrar de volta.", "erros": "Soltar completamente a postura ao tocar o caixote.", "obs": "Ensina a profundidade. Usado por powerlifters para treino de força máxima."}, {"cod": "EX150", "nome": "Z-press (desenvolvimento sentado no chão)", "grupo": "Deltóide", "secundarios": "Core, adutores, isquiotibiais", "equipamento": "Barra/halteres", "nivel": "Avançado", "objetivo": "Funcional/Força", "contraindicacoes": "Lesão quadril, lombar", "substituto": "Desenvolvimento sentado", "instrucao": "Sentado no chão com pernas estendidas (L). Pressionar acima da cabeça.", "erros": "Não manter as costas retas. Usar carga de desenvolvimento convencional.", "obs": "Altíssima demanda de core e mobilidade."}];
 
 function prescreverTreino(){
+
+  // WILLGOMESFIT PRESCRIPTION ENGINE v3.2 — Atualizado com literatura 2026
+  // Base científica (revisão profunda — junho 2026):
+  // • ACSM 2026 Position Stand — Currier, Phillips et al., Med Sci Sports Exerc
+  //   (137 revisões sistemáticas, >30.000 participantes, primeira atualização em 17 anos)
+  //   - Volume mínimo 10 séries/grupo/semana para hipertrofia
+  //   - Cargas de 30-100% 1RM equivalentes quando o esforço é equiparado
+  //   - RIR 2-3 tão eficaz quanto falha absoluta, com menos fadiga
+  //   - Frequência: 2x/semana todos os grupos musculares principais
+  // • Schoenfeld, Grgic & Krieger 2019 (J Sports Sci) — frequência de treino
+  // • Israetel/RP Strength — Volume Landmarks (MEV/MAV/MRV)
+  // • Helms et al. — escala RIR-RPE para autorregulação de intensidade
+  // • Singer et al. 2024 (Front Sports Act Living) — intervalos entre séries
+  // • Wolf et al. 2025 (PeerJ) — amplitude de movimento e ênfase na porção alongada
+  // • Diferenciação por gênero: Calatayud et al. 2020 | Contreras et al. 2015
+  //   Mulheres: maior proporção de fibras tipo I, maior tolerância ao volume,
+  //   preferência e maior potencial de hipertrofia em glúteos/pernas
+  //   Homens: maior potencial absoluto em membros superiores e tronco
+  // ══════════════════════════════════════════════════════════════════════════
+
+  const an  = MOTOR_D.anamnese || {};
+  const nu  = MOTOR_D.nutricao || {};
+  const cl  = MOTOR_D.cliente  || {};
+
+  const nivel  = an.nivel  || 'Iniciante';
+  const obj    = (an.objetivo || []).join(',').toLowerCase();
+  const equip  = (an['an-equip'] || 'Academia completa').toLowerCase();
+  const lesoes = (an['an-lesoes'] || '').toLowerCase();
+  const dores  = (an['an-dores']  || '').toLowerCase();
+  const dias   = parseInt(an['an-dias']) || 4;
+
+  // ── SEXO — determina foco e distribuição de volume ───────────────────────
+  // Evidência: mulheres têm ~67% mais fibras tipo I nos membros inferiores
+  // Glúteo máximo feminino responde melhor a volume maior (Contreras et al. 2015)
+  // Homens: maior potencial de hipertrofia em peitoral, ombros e braços
+  const sexoRaw = (cl['c-sexo'] || '').toLowerCase();
+  const isFem   = sexoRaw.includes('fem') || sexoRaw.includes('mulher') || sexoRaw === 'f';
+  const sexo    = isFem ? 'F' : 'M';
+
+  // ── PARÂMETROS POR NÍVEL ──────────────────────────────────────────────────
+  const nivelMap = {
+    'Sedentario':    { series:'2–3', reps:'12–15', desc:'60s',  rir:'3–4', mev:6,  mav:12, mrv:16 },
+    'Iniciante':     { series:'3',   reps:'10–15', desc:'75s',  rir:'2–3', mev:8,  mav:14, mrv:18 },
+    'Intermediario': { series:'3–4', reps:'8–12',  desc:'90s',  rir:'1–3', mev:12, mav:18, mrv:22 },
+    'Avancado':      { series:'4–5', reps:'6–12',  desc:'90s',  rir:'0–2', mev:14, mav:20, mrv:26 },
+    'MuitoAvancado': { series:'4–5', reps:'4–12',  desc:'120s', rir:'0–2', mev:16, mav:22, mrv:30 },
+  };
+  const p = nivelMap[nivel] || nivelMap['Iniciante'];
+
+  // ── AJUSTE POR OBJETIVO ───────────────────────────────────────────────────
+  let repsObj = p.reps, seriesObj = p.series, descObj = p.desc;
+  const isEmagr  = obj.includes('emagrecimento') || obj.includes('condicionamento');
+  const isForca  = obj.includes('forca');
+  const isHipert = obj.includes('hipertrofia') || obj.includes('massa') || obj.includes('recomposicao');
+  const isPerf   = obj.includes('performance') || obj.includes('esportiva');
+
+  if(isEmagr)  { repsObj='12–20'; seriesObj='3';   descObj='45s';  }
+  if(isForca)  { repsObj='4–6';   seriesObj='4–5'; descObj='120s'; }
+  if(isHipert) { repsObj='6–12';  seriesObj='3–4'; descObj='90s';  }
+  if(isPerf)   { repsObj='5–10';  seriesObj='3–4'; descObj='90s';  }
+
+  // Mulheres: faixa de reps ligeiramente mais alta para membros inferiores
+  // (maior proporção fibras tipo I — resistentes à fadiga)
+  const repsInfFem = isEmagr ? '15–25' : isForca ? '6–10' : '10–15';
+  const rir = p.rir;
+
+  // ── FILTRO EQUIPAMENTO ────────────────────────────────────────────────────
+  const equipMap = {
+    'peso corporal':        ['Peso corporal'],
+    'casa com halteres':    ['Halter','Peso corporal','Elástico'],
+    'academia de condominio':['Máquina','Halter','Peso corporal'],
+    'academia completa':    null,
+  };
+  let equipFiltro = null;
+  for(const [k,v] of Object.entries(equipMap)){
+    if(equip.includes(k.split(' ')[0]) && k!=='academia completa'){ equipFiltro=v; break; }
+  }
+
+  // ── CONTRAINDICAÇÕES ──────────────────────────────────────────────────────
+  const bloqueados = [];
+  if(lesoes.includes('joelho')||dores.includes('joelho'))
+    bloqueados.push('Agachamento Livre Barra','Leg Press 45°','Afundo com Barra','Hack Squat');
+  if(lesoes.includes('ombro')||dores.includes('ombro'))
+    bloqueados.push('Desenvolvimento com Barra','Elevação Frontal','Arnold Press','Supino Inclinado Barra');
+  if(lesoes.includes('coluna')||lesoes.includes('lombar')||dores.includes('lombar'))
+    bloqueados.push('Levantamento Terra','Bom Dia','Hiperextensão Lombar','Agachamento Livre Barra');
+  if(lesoes.includes('punho')||lesoes.includes('cotovelo'))
+    bloqueados.push('Rosca Direta Barra','Tríceps Testa','Supino com Barra');
+
+  // ── BUSCA DE EXERCÍCIOS ───────────────────────────────────────────────────
+  function buscarEx(grupo, n){
+    let pool = EX.filter(e=>{
+      if(!e.grupo.toLowerCase().includes(grupo.toLowerCase())) return false;
+      if(bloqueados.includes(e.nome)) return false;
+      if(equipFiltro && !equipFiltro.some(eq=>e.equipamento.toLowerCase().includes(eq.toLowerCase()))) return false;
+      return true;
+    });
+    const multi = pool.filter(e=>
+      e.equipamento&&(e.equipamento.includes('Barra')||e.equipamento.includes('Halter')||e.equipamento.includes('Máquina')||e.equipamento.includes('Cabo'))
+    );
+    const final = (multi.length >= n) ? multi : pool;
+    return final.slice(0, n+3).sort(()=>Math.random()-0.5).slice(0,n);
+  }
+
+  // ── MONTAGEM DE BLOCO ─────────────────────────────────────────────────────
+  // Suporte a reps customizados por grupo (ex: repsInfFem para pernas/glúteos feminino)
+  function montarBloco(id, nome, cor, grupos){
+    const exercicios = [];
+    grupos.forEach(({g, n, reps: repsCustom})=>{
+      const repsUsar = repsCustom || repsObj;
+      buscarEx(g, n).forEach(ex=>{
+        const info = EX.find(e=>e.nome===ex.nome) || ex;
+        const ins  = (info.instrucao||info.obs||'').split('.')[0].substring(0,90);
+        exercicios.push({
+          nome: ex.nome,
+          grupo: ex.grupo||g,
+          secundarios: info.secundarios||'',
+          series:   seriesObj,
+          reps:     repsUsar,
+          descanso: descObj,
+          rir:      rir,
+          obs:      ins || `Amplitude completa. RIR ${rir}.`,
+        });
+      });
+    });
+    return {id, nome, cor, exercicios, ex:exercicios};
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SPLITS POR SEXO + DIAS DE TREINO
+  // ── MULHER: ÊNFASE MEMBROS INFERIORES (glúteos, pernas, core)
+  //    Volumes: Glúteo 16–22 sets/sem | Posterior 12–16 | Quadríceps 12–16
+  //    Referência: Contreras et al. 2015; Neto et al. 2020
+  // ── HOMEM: ÊNFASE MEMBROS SUPERIORES (peito, costas, ombros, braços)
+  //    Volumes: Peitoral 14–20 sets/sem | Costas 14–20 | Ombro 12–16
+  // ══════════════════════════════════════════════════════════════════════════
+  let blocos;
+  const n = nivel==='Sedentario' ? 1 : nivel==='Iniciante' ? 2 : nivel==='Intermediario' ? 3 : 4;
+
+  if(isFem){
+    // ────────────────────────────────────────────────────────────────────────
+    // SPLITS FEMININOS — foco em glúteos, pernas, core + superior equilibrado
+    // ────────────────────────────────────────────────────────────────────────
+    if(dias <= 3){
+      // Full Body Feminino: mais ênfase inferior a cada treino
+      blocos = [
+        montarBloco('A','TREINO A — FULL BODY COM ÊNFASE INFERIOR','g',[
+          {g:'Glúteos',   n:n+1, reps:repsInfFem},
+          {g:'Quadríceps',n:n,   reps:repsInfFem},
+          {g:'Peitoral',  n:Math.max(1,n-1)},
+          {g:'Costas',    n:Math.max(1,n-1)},
+          {g:'Abdômen',   n:1},
+        ]),
+        montarBloco('B','TREINO B — FULL BODY COM ÊNFASE GLÚTEOS','o',[
+          {g:'Glúteos',         n:n+1, reps:repsInfFem},
+          {g:'Posterior de Coxa',n:n,  reps:repsInfFem},
+          {g:'Panturrilha',     n:1,   reps:'15–20'},
+          {g:'Ombro',           n:Math.max(1,n-1)},
+          {g:'Bíceps',          n:1},
+        ]),
+        montarBloco('C','TREINO C — FULL BODY COMPOSTO + CORE','g',[
+          {g:'Quadríceps',n:n,   reps:repsInfFem},
+          {g:'Glúteos',   n:n,   reps:repsInfFem},
+          {g:'Costas',    n:Math.max(1,n-1)},
+          {g:'Tríceps',   n:1},
+          {g:'Abdômen',   n:2},
+        ]),
+      ];
+    } else if(dias === 4){
+      // Upper/Lower Feminino: treino inferior com muito mais volume
+      blocos = [
+        montarBloco('A','TREINO A — INFERIOR ANTERIOR (Glúteos · Quadríceps)','g',[
+          {g:'Glúteos',   n:n+1, reps:repsInfFem},
+          {g:'Quadríceps',n:n,   reps:repsInfFem},
+          {g:'Panturrilha',n:1,  reps:'15–20'},
+          {g:'Abdômen',   n:1},
+        ]),
+        montarBloco('B','TREINO B — SUPERIOR (Costas · Ombro · Bíceps)','o',[
+          {g:'Costas', n:n},
+          {g:'Ombro',  n:Math.max(1,n-1)},
+          {g:'Bíceps', n:Math.max(1,n-1)},
+          {g:'Abdômen',n:1},
+        ]),
+        montarBloco('C','TREINO C — INFERIOR POSTERIOR (Glúteos · Posterior · Core)','g',[
+          {g:'Glúteos',          n:n+1, reps:repsInfFem},
+          {g:'Posterior de Coxa',n:n,   reps:repsInfFem},
+          {g:'Panturrilha',      n:1,   reps:'15–20'},
+          {g:'Abdômen',          n:2},
+        ]),
+        montarBloco('D','TREINO D — SUPERIOR (Peitoral · Tríceps · Ombro)','o',[
+          {g:'Peitoral',n:n},
+          {g:'Tríceps', n:Math.max(1,n-1)},
+          {g:'Ombro',   n:Math.max(1,n-1)},
+        ]),
+      ];
+    } else {
+      // PPL Feminino: 2 treinos de inferior para 1 de superior
+      blocos = [
+        montarBloco('A','TREINO A — GLÚTEOS & POSTERIOR (Pull Inferior)','g',[
+          {g:'Glúteos',          n:n+1, reps:repsInfFem},
+          {g:'Posterior de Coxa',n:n,   reps:repsInfFem},
+          {g:'Panturrilha',      n:1,   reps:'15–20'},
+          {g:'Abdômen',          n:1},
+        ]),
+        montarBloco('B','TREINO B — COSTAS & BÍCEPS (Pull Superior)','o',[
+          {g:'Costas', n:n},
+          {g:'Bíceps', n:Math.max(2,n-1)},
+          {g:'Abdômen',n:1},
+        ]),
+        montarBloco('C','TREINO C — QUADRÍCEPS & GLÚTEOS (Push Inferior)','g',[
+          {g:'Quadríceps',n:n,   reps:repsInfFem},
+          {g:'Glúteos',   n:n,   reps:repsInfFem},
+          {g:'Panturrilha',n:1,  reps:'15–20'},
+        ]),
+        montarBloco('D','TREINO D — PEITO · OMBRO · TRÍCEPS (Push Superior)','o',[
+          {g:'Peitoral',n:Math.max(2,n-1)},
+          {g:'Ombro',   n:Math.max(2,n-1)},
+          {g:'Tríceps', n:Math.max(2,n-1)},
+        ]),
+      ];
+    }
+  } else {
+    // ────────────────────────────────────────────────────────────────────────
+    // SPLITS MASCULINOS — foco em membros superiores + inferior equilibrado
+    // ────────────────────────────────────────────────────────────────────────
+    if(dias <= 3){
+      blocos = [
+        montarBloco('A','TREINO A — FULL BODY (Ênfase Peito & Costas)','g',[
+          {g:'Peitoral',  n:n},
+          {g:'Costas',    n:n},
+          {g:'Quadríceps',n:Math.max(1,n-1)},
+          {g:'Ombro',     n:1},
+        ]),
+        montarBloco('B','TREINO B — FULL BODY (Ênfase Membros Inferiores)','o',[
+          {g:'Quadríceps',       n:n},
+          {g:'Glúteos',          n:Math.max(1,n-1)},
+          {g:'Posterior de Coxa',n:Math.max(1,n-1)},
+          {g:'Abdômen',          n:1},
+        ]),
+        montarBloco('C','TREINO C — FULL BODY (Ênfase Ombros & Braços)','g',[
+          {g:'Ombro',    n:n},
+          {g:'Bíceps',   n:Math.max(1,n-1)},
+          {g:'Tríceps',  n:Math.max(1,n-1)},
+          {g:'Peitoral', n:Math.max(1,n-1)},
+          {g:'Abdômen',  n:1},
+        ]),
+      ];
+    } else if(dias === 4){
+      blocos = [
+        montarBloco('A','TREINO A — SUPERIOR EMPURRAR (Peito · Ombro · Tríceps)','g',[
+          {g:'Peitoral',n:n},
+          {g:'Ombro',   n:Math.max(1,n-1)},
+          {g:'Tríceps', n:Math.max(1,n-1)},
+        ]),
+        montarBloco('B','TREINO B — INFERIOR (Quadríceps · Glúteos · Panturrilha)','o',[
+          {g:'Quadríceps',n:n},
+          {g:'Glúteos',   n:Math.max(1,n-1)},
+          {g:'Panturrilha',n:1},
+        ]),
+        montarBloco('C','TREINO C — SUPERIOR PUXAR (Costas · Bíceps · Core)','g',[
+          {g:'Costas',  n:n},
+          {g:'Bíceps',  n:Math.max(1,n-1)},
+          {g:'Abdômen', n:1},
+        ]),
+        montarBloco('D','TREINO D — INFERIOR + POSTERIOR (Posterior · Glúteos · Abdômen)','o',[
+          {g:'Quadríceps',       n:Math.max(2,n-1)},
+          {g:'Posterior de Coxa',n:n},
+          {g:'Glúteos',          n:Math.max(1,n-1)},
+          {g:'Abdômen',          n:2},
+        ]),
+      ];
+    } else {
+      blocos = [
+        montarBloco('A','TREINO A — PUSH (Peito · Ombro Frontal · Tríceps)','g',[
+          {g:'Peitoral',n:n},
+          {g:'Ombro',   n:Math.max(2,n-1)},
+          {g:'Tríceps', n:Math.max(2,n-1)},
+        ]),
+        montarBloco('B','TREINO B — PULL (Costas · Bíceps · Core)','o',[
+          {g:'Costas',  n:n},
+          {g:'Bíceps',  n:Math.max(2,n-1)},
+          {g:'Abdômen', n:1},
+        ]),
+        montarBloco('C','TREINO C — LEGS (Quadríceps · Posterior · Glúteos · Panturrilha)','g',[
+          {g:'Quadríceps',       n:n},
+          {g:'Posterior de Coxa',n:Math.max(2,n-1)},
+          {g:'Glúteos',          n:Math.max(2,n-1)},
+          {g:'Panturrilha',      n:1},
+        ]),
+        montarBloco('D','TREINO D — PUSH 2 (Ombro · Peitoral · Tríceps — especializado)','o',[
+          {g:'Ombro',   n:n},
+          {g:'Peitoral',n:Math.max(2,n-1)},
+          {g:'Tríceps', n:Math.max(2,n-1)},
+        ]),
+      ];
+    }
+  }
+
+  // ── NOTAS CIENTÍFICAS PERSONALIZADAS POR SEXO ────────────────────────────
+  const notasBase = [
+    `📊 Volume semanal mínimo: ${p.mev} séries/grupo/semana para hipertrofia, alvo ${p.mav} (ACSM 2026 — Currier et al., 137 revisões sistemáticas, 30.000+ participantes)`,
+    `🎯 Proximidade à falha: pare a ${rir} reps da falha (RIR ${rir}) — ACSM 2026 confirma que falha absoluta é desnecessária; o esforço importa mais que chegar ao limite`,
+    `📈 Progressão dupla: aumente reps até o limite da faixa, depois aumente carga e recomece o ciclo`,
+    `⏱️ Descanso: ${descObj} entre séries (mínimo 60s para hipertrofia — Singer et al. 2024, Front Sports Act Living)`,
+    `🔄 Frequência: cada grupo muscular treinado 2× por semana é o ponto de maior evidência (Schoenfeld, Grgic & Krieger 2019, J Sports Sci) — volume semanal total importa mais que a frequência isolada`,
+    `📏 Amplitude completa: priorize a porção alongada do movimento (estiramento) — vantagem hipertrófica confirmada em revisões sistemáticas recentes (Wolf et al. 2025, PeerJ)`,
+    `🔋 Deload: a cada 4–6 semanas, reduza volume em 40–50% por 1 semana para gerenciar fadiga acumulada`,
+    `🏋️ Carga: cargas de 30% a 100% de 1RM produzem hipertrofia equivalente quando o esforço (proximidade à falha) é equiparado — o que importa é o esforço, não a faixa de reps específica (ACSM 2026)`,
+  ];
+
+  const notasSexo = isFem ? [
+    `👩 Foco feminino: glúteos e membros inferiores com volume superior (${Math.min(p.mav+4,26)} sets/sem para glúteo) — Contreras et al. 2015`,
+    `👩 Reps inferiores: ${repsInfFem} reps — mulheres têm maior proporção de fibras tipo I nas pernas (Calatayud et al. 2020)`,
+    `👩 Exercícios-chave: Hip Thrust, Agachamento, Stiff, Passada, Leg Curl, Abdutora`,
+    `🥩 Proteína: 1.8–2.0g/kg/dia — mulheres metabolizam proteína de forma eficiente para síntese muscular`,
+  ] : [
+    `👨 Foco masculino: membros superiores (peito, costas, ombros) com volume prioritário`,
+    `👨 Exercícios-chave: Supino, Barra Fixa, Desenvolvimento, Remada, Rosca, Tríceps`,
+    `👨 Volume superior: ${Math.min(p.mav+2,24)} sets/sem para peitoral e costas (maior potencial anabólico masculino)`,
+    `🥩 Proteína: 2.0–2.2g/kg/dia — testosterona + proteína otimizam síntese proteica muscular`,
+  ];
+
+  const notas = [...notasBase, ...notasSexo,
+    `Refs: ACSM 2026 Position Stand (Currier et al., Med Sci Sports Exerc) · Schoenfeld, Grgic & Krieger 2019 · Israetel/RP Strength · Calatayud et al. 2020 · Singer et al. 2024 · Wolf et al. 2025 · Helms et al. (RIR/RPE)`
+  ];
+
+  const resultado = blocos;
+  resultado._notas  = notas;
+  resultado._params = { nivel, repsObj, seriesObj, descObj, rir, dias, p, sexo };
+  return resultado;
+}
   // ══════════════════════════════════════════════════════════════════════════
 // ── CONSTANTES DE PLANOS COM ACESSO AO PORTAL ────────────────────────────────
 // ── ABA PORTAL — CARREGAR STATUS ─────────────────────────────────────────────
@@ -1928,337 +2266,6 @@ function renderizarFichaPainel(){
     }).join('');
     document.getElementById('rel-treino').innerHTML = html;
   }catch(e){ console.warn('renderizarFichaPainel:', e); }
-}
-
-  // WILLGOMESFIT PRESCRIPTION ENGINE v3.2 — Atualizado com literatura 2026
-  // Base científica (revisão profunda — junho 2026):
-  // • ACSM 2026 Position Stand — Currier, Phillips et al., Med Sci Sports Exerc
-  //   (137 revisões sistemáticas, >30.000 participantes, primeira atualização em 17 anos)
-  //   - Volume mínimo 10 séries/grupo/semana para hipertrofia
-  //   - Cargas de 30-100% 1RM equivalentes quando o esforço é equiparado
-  //   - RIR 2-3 tão eficaz quanto falha absoluta, com menos fadiga
-  //   - Frequência: 2x/semana todos os grupos musculares principais
-  // • Schoenfeld, Grgic & Krieger 2019 (J Sports Sci) — frequência de treino
-  // • Israetel/RP Strength — Volume Landmarks (MEV/MAV/MRV)
-  // • Helms et al. — escala RIR-RPE para autorregulação de intensidade
-  // • Singer et al. 2024 (Front Sports Act Living) — intervalos entre séries
-  // • Wolf et al. 2025 (PeerJ) — amplitude de movimento e ênfase na porção alongada
-  // • Diferenciação por gênero: Calatayud et al. 2020 | Contreras et al. 2015
-  //   Mulheres: maior proporção de fibras tipo I, maior tolerância ao volume,
-  //   preferência e maior potencial de hipertrofia em glúteos/pernas
-  //   Homens: maior potencial absoluto em membros superiores e tronco
-  // ══════════════════════════════════════════════════════════════════════════
-
-  const an  = MOTOR_D.anamnese || {};
-  const nu  = MOTOR_D.nutricao || {};
-  const cl  = MOTOR_D.cliente  || {};
-
-  const nivel  = an.nivel  || 'Iniciante';
-  const obj    = (an.objetivo || []).join(',').toLowerCase();
-  const equip  = (an['an-equip'] || 'Academia completa').toLowerCase();
-  const lesoes = (an['an-lesoes'] || '').toLowerCase();
-  const dores  = (an['an-dores']  || '').toLowerCase();
-  const dias   = parseInt(an['an-dias']) || 4;
-
-  // ── SEXO — determina foco e distribuição de volume ───────────────────────
-  // Evidência: mulheres têm ~67% mais fibras tipo I nos membros inferiores
-  // Glúteo máximo feminino responde melhor a volume maior (Contreras et al. 2015)
-  // Homens: maior potencial de hipertrofia em peitoral, ombros e braços
-  const sexoRaw = (cl['c-sexo'] || '').toLowerCase();
-  const isFem   = sexoRaw.includes('fem') || sexoRaw.includes('mulher') || sexoRaw === 'f';
-  const sexo    = isFem ? 'F' : 'M';
-
-  // ── PARÂMETROS POR NÍVEL ──────────────────────────────────────────────────
-  const nivelMap = {
-    'Sedentario':    { series:'2–3', reps:'12–15', desc:'60s',  rir:'3–4', mev:6,  mav:12, mrv:16 },
-    'Iniciante':     { series:'3',   reps:'10–15', desc:'75s',  rir:'2–3', mev:8,  mav:14, mrv:18 },
-    'Intermediario': { series:'3–4', reps:'8–12',  desc:'90s',  rir:'1–3', mev:12, mav:18, mrv:22 },
-    'Avancado':      { series:'4–5', reps:'6–12',  desc:'90s',  rir:'0–2', mev:14, mav:20, mrv:26 },
-    'MuitoAvancado': { series:'4–5', reps:'4–12',  desc:'120s', rir:'0–2', mev:16, mav:22, mrv:30 },
-  };
-  const p = nivelMap[nivel] || nivelMap['Iniciante'];
-
-  // ── AJUSTE POR OBJETIVO ───────────────────────────────────────────────────
-  let repsObj = p.reps, seriesObj = p.series, descObj = p.desc;
-  const isEmagr  = obj.includes('emagrecimento') || obj.includes('condicionamento');
-  const isForca  = obj.includes('forca');
-  const isHipert = obj.includes('hipertrofia') || obj.includes('massa') || obj.includes('recomposicao');
-  const isPerf   = obj.includes('performance') || obj.includes('esportiva');
-
-  if(isEmagr)  { repsObj='12–20'; seriesObj='3';   descObj='45s';  }
-  if(isForca)  { repsObj='4–6';   seriesObj='4–5'; descObj='120s'; }
-  if(isHipert) { repsObj='6–12';  seriesObj='3–4'; descObj='90s';  }
-  if(isPerf)   { repsObj='5–10';  seriesObj='3–4'; descObj='90s';  }
-
-  // Mulheres: faixa de reps ligeiramente mais alta para membros inferiores
-  // (maior proporção fibras tipo I — resistentes à fadiga)
-  const repsInfFem = isEmagr ? '15–25' : isForca ? '6–10' : '10–15';
-  const rir = p.rir;
-
-  // ── FILTRO EQUIPAMENTO ────────────────────────────────────────────────────
-  const equipMap = {
-    'peso corporal':        ['Peso corporal'],
-    'casa com halteres':    ['Halter','Peso corporal','Elástico'],
-    'academia de condominio':['Máquina','Halter','Peso corporal'],
-    'academia completa':    null,
-  };
-  let equipFiltro = null;
-  for(const [k,v] of Object.entries(equipMap)){
-    if(equip.includes(k.split(' ')[0]) && k!=='academia completa'){ equipFiltro=v; break; }
-  }
-
-  // ── CONTRAINDICAÇÕES ──────────────────────────────────────────────────────
-  const bloqueados = [];
-  if(lesoes.includes('joelho')||dores.includes('joelho'))
-    bloqueados.push('Agachamento Livre Barra','Leg Press 45°','Afundo com Barra','Hack Squat');
-  if(lesoes.includes('ombro')||dores.includes('ombro'))
-    bloqueados.push('Desenvolvimento com Barra','Elevação Frontal','Arnold Press','Supino Inclinado Barra');
-  if(lesoes.includes('coluna')||lesoes.includes('lombar')||dores.includes('lombar'))
-    bloqueados.push('Levantamento Terra','Bom Dia','Hiperextensão Lombar','Agachamento Livre Barra');
-  if(lesoes.includes('punho')||lesoes.includes('cotovelo'))
-    bloqueados.push('Rosca Direta Barra','Tríceps Testa','Supino com Barra');
-
-  // ── BUSCA DE EXERCÍCIOS ───────────────────────────────────────────────────
-  function buscarEx(grupo, n){
-    let pool = EX.filter(e=>{
-      if(!e.grupo.toLowerCase().includes(grupo.toLowerCase())) return false;
-      if(bloqueados.includes(e.nome)) return false;
-      if(equipFiltro && !equipFiltro.some(eq=>e.equipamento.toLowerCase().includes(eq.toLowerCase()))) return false;
-      return true;
-    });
-    const multi = pool.filter(e=>
-      e.equipamento&&(e.equipamento.includes('Barra')||e.equipamento.includes('Halter')||e.equipamento.includes('Máquina')||e.equipamento.includes('Cabo'))
-    );
-    const final = (multi.length >= n) ? multi : pool;
-    return final.slice(0, n+3).sort(()=>Math.random()-0.5).slice(0,n);
-  }
-
-  // ── MONTAGEM DE BLOCO ─────────────────────────────────────────────────────
-  // Suporte a reps customizados por grupo (ex: repsInfFem para pernas/glúteos feminino)
-  function montarBloco(id, nome, cor, grupos){
-    const exercicios = [];
-    grupos.forEach(({g, n, reps: repsCustom})=>{
-      const repsUsar = repsCustom || repsObj;
-      buscarEx(g, n).forEach(ex=>{
-        const info = EX.find(e=>e.nome===ex.nome) || ex;
-        const ins  = (info.instrucao||info.obs||'').split('.')[0].substring(0,90);
-        exercicios.push({
-          nome: ex.nome,
-          grupo: ex.grupo||g,
-          secundarios: info.secundarios||'',
-          series:   seriesObj,
-          reps:     repsUsar,
-          descanso: descObj,
-          rir:      rir,
-          obs:      ins || `Amplitude completa. RIR ${rir}.`,
-        });
-      });
-    });
-    return {id, nome, cor, exercicios, ex:exercicios};
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // SPLITS POR SEXO + DIAS DE TREINO
-  // ── MULHER: ÊNFASE MEMBROS INFERIORES (glúteos, pernas, core)
-  //    Volumes: Glúteo 16–22 sets/sem | Posterior 12–16 | Quadríceps 12–16
-  //    Referência: Contreras et al. 2015; Neto et al. 2020
-  // ── HOMEM: ÊNFASE MEMBROS SUPERIORES (peito, costas, ombros, braços)
-  //    Volumes: Peitoral 14–20 sets/sem | Costas 14–20 | Ombro 12–16
-  // ══════════════════════════════════════════════════════════════════════════
-  let blocos;
-  const n = nivel==='Sedentario' ? 1 : nivel==='Iniciante' ? 2 : nivel==='Intermediario' ? 3 : 4;
-
-  if(isFem){
-    // ────────────────────────────────────────────────────────────────────────
-    // SPLITS FEMININOS — foco em glúteos, pernas, core + superior equilibrado
-    // ────────────────────────────────────────────────────────────────────────
-    if(dias <= 3){
-      // Full Body Feminino: mais ênfase inferior a cada treino
-      blocos = [
-        montarBloco('A','TREINO A — FULL BODY COM ÊNFASE INFERIOR','g',[
-          {g:'Glúteos',   n:n+1, reps:repsInfFem},
-          {g:'Quadríceps',n:n,   reps:repsInfFem},
-          {g:'Peitoral',  n:Math.max(1,n-1)},
-          {g:'Costas',    n:Math.max(1,n-1)},
-          {g:'Abdômen',   n:1},
-        ]),
-        montarBloco('B','TREINO B — FULL BODY COM ÊNFASE GLÚTEOS','o',[
-          {g:'Glúteos',         n:n+1, reps:repsInfFem},
-          {g:'Posterior de Coxa',n:n,  reps:repsInfFem},
-          {g:'Panturrilha',     n:1,   reps:'15–20'},
-          {g:'Ombro',           n:Math.max(1,n-1)},
-          {g:'Bíceps',          n:1},
-        ]),
-        montarBloco('C','TREINO C — FULL BODY COMPOSTO + CORE','g',[
-          {g:'Quadríceps',n:n,   reps:repsInfFem},
-          {g:'Glúteos',   n:n,   reps:repsInfFem},
-          {g:'Costas',    n:Math.max(1,n-1)},
-          {g:'Tríceps',   n:1},
-          {g:'Abdômen',   n:2},
-        ]),
-      ];
-    } else if(dias === 4){
-      // Upper/Lower Feminino: treino inferior com muito mais volume
-      blocos = [
-        montarBloco('A','TREINO A — INFERIOR ANTERIOR (Glúteos · Quadríceps)','g',[
-          {g:'Glúteos',   n:n+1, reps:repsInfFem},
-          {g:'Quadríceps',n:n,   reps:repsInfFem},
-          {g:'Panturrilha',n:1,  reps:'15–20'},
-          {g:'Abdômen',   n:1},
-        ]),
-        montarBloco('B','TREINO B — SUPERIOR (Costas · Ombro · Bíceps)','o',[
-          {g:'Costas', n:n},
-          {g:'Ombro',  n:Math.max(1,n-1)},
-          {g:'Bíceps', n:Math.max(1,n-1)},
-          {g:'Abdômen',n:1},
-        ]),
-        montarBloco('C','TREINO C — INFERIOR POSTERIOR (Glúteos · Posterior · Core)','g',[
-          {g:'Glúteos',          n:n+1, reps:repsInfFem},
-          {g:'Posterior de Coxa',n:n,   reps:repsInfFem},
-          {g:'Panturrilha',      n:1,   reps:'15–20'},
-          {g:'Abdômen',          n:2},
-        ]),
-        montarBloco('D','TREINO D — SUPERIOR (Peitoral · Tríceps · Ombro)','o',[
-          {g:'Peitoral',n:n},
-          {g:'Tríceps', n:Math.max(1,n-1)},
-          {g:'Ombro',   n:Math.max(1,n-1)},
-        ]),
-      ];
-    } else {
-      // PPL Feminino: 2 treinos de inferior para 1 de superior
-      blocos = [
-        montarBloco('A','TREINO A — GLÚTEOS & POSTERIOR (Pull Inferior)','g',[
-          {g:'Glúteos',          n:n+1, reps:repsInfFem},
-          {g:'Posterior de Coxa',n:n,   reps:repsInfFem},
-          {g:'Panturrilha',      n:1,   reps:'15–20'},
-          {g:'Abdômen',          n:1},
-        ]),
-        montarBloco('B','TREINO B — COSTAS & BÍCEPS (Pull Superior)','o',[
-          {g:'Costas', n:n},
-          {g:'Bíceps', n:Math.max(2,n-1)},
-          {g:'Abdômen',n:1},
-        ]),
-        montarBloco('C','TREINO C — QUADRÍCEPS & GLÚTEOS (Push Inferior)','g',[
-          {g:'Quadríceps',n:n,   reps:repsInfFem},
-          {g:'Glúteos',   n:n,   reps:repsInfFem},
-          {g:'Panturrilha',n:1,  reps:'15–20'},
-        ]),
-        montarBloco('D','TREINO D — PEITO · OMBRO · TRÍCEPS (Push Superior)','o',[
-          {g:'Peitoral',n:Math.max(2,n-1)},
-          {g:'Ombro',   n:Math.max(2,n-1)},
-          {g:'Tríceps', n:Math.max(2,n-1)},
-        ]),
-      ];
-    }
-  } else {
-    // ────────────────────────────────────────────────────────────────────────
-    // SPLITS MASCULINOS — foco em membros superiores + inferior equilibrado
-    // ────────────────────────────────────────────────────────────────────────
-    if(dias <= 3){
-      blocos = [
-        montarBloco('A','TREINO A — FULL BODY (Ênfase Peito & Costas)','g',[
-          {g:'Peitoral',  n:n},
-          {g:'Costas',    n:n},
-          {g:'Quadríceps',n:Math.max(1,n-1)},
-          {g:'Ombro',     n:1},
-        ]),
-        montarBloco('B','TREINO B — FULL BODY (Ênfase Membros Inferiores)','o',[
-          {g:'Quadríceps',       n:n},
-          {g:'Glúteos',          n:Math.max(1,n-1)},
-          {g:'Posterior de Coxa',n:Math.max(1,n-1)},
-          {g:'Abdômen',          n:1},
-        ]),
-        montarBloco('C','TREINO C — FULL BODY (Ênfase Ombros & Braços)','g',[
-          {g:'Ombro',    n:n},
-          {g:'Bíceps',   n:Math.max(1,n-1)},
-          {g:'Tríceps',  n:Math.max(1,n-1)},
-          {g:'Peitoral', n:Math.max(1,n-1)},
-          {g:'Abdômen',  n:1},
-        ]),
-      ];
-    } else if(dias === 4){
-      blocos = [
-        montarBloco('A','TREINO A — SUPERIOR EMPURRAR (Peito · Ombro · Tríceps)','g',[
-          {g:'Peitoral',n:n},
-          {g:'Ombro',   n:Math.max(1,n-1)},
-          {g:'Tríceps', n:Math.max(1,n-1)},
-        ]),
-        montarBloco('B','TREINO B — INFERIOR (Quadríceps · Glúteos · Panturrilha)','o',[
-          {g:'Quadríceps',n:n},
-          {g:'Glúteos',   n:Math.max(1,n-1)},
-          {g:'Panturrilha',n:1},
-        ]),
-        montarBloco('C','TREINO C — SUPERIOR PUXAR (Costas · Bíceps · Core)','g',[
-          {g:'Costas',  n:n},
-          {g:'Bíceps',  n:Math.max(1,n-1)},
-          {g:'Abdômen', n:1},
-        ]),
-        montarBloco('D','TREINO D — INFERIOR + POSTERIOR (Posterior · Glúteos · Abdômen)','o',[
-          {g:'Quadríceps',       n:Math.max(2,n-1)},
-          {g:'Posterior de Coxa',n:n},
-          {g:'Glúteos',          n:Math.max(1,n-1)},
-          {g:'Abdômen',          n:2},
-        ]),
-      ];
-    } else {
-      blocos = [
-        montarBloco('A','TREINO A — PUSH (Peito · Ombro Frontal · Tríceps)','g',[
-          {g:'Peitoral',n:n},
-          {g:'Ombro',   n:Math.max(2,n-1)},
-          {g:'Tríceps', n:Math.max(2,n-1)},
-        ]),
-        montarBloco('B','TREINO B — PULL (Costas · Bíceps · Core)','o',[
-          {g:'Costas',  n:n},
-          {g:'Bíceps',  n:Math.max(2,n-1)},
-          {g:'Abdômen', n:1},
-        ]),
-        montarBloco('C','TREINO C — LEGS (Quadríceps · Posterior · Glúteos · Panturrilha)','g',[
-          {g:'Quadríceps',       n:n},
-          {g:'Posterior de Coxa',n:Math.max(2,n-1)},
-          {g:'Glúteos',          n:Math.max(2,n-1)},
-          {g:'Panturrilha',      n:1},
-        ]),
-        montarBloco('D','TREINO D — PUSH 2 (Ombro · Peitoral · Tríceps — especializado)','o',[
-          {g:'Ombro',   n:n},
-          {g:'Peitoral',n:Math.max(2,n-1)},
-          {g:'Tríceps', n:Math.max(2,n-1)},
-        ]),
-      ];
-    }
-  }
-
-  // ── NOTAS CIENTÍFICAS PERSONALIZADAS POR SEXO ────────────────────────────
-  const notasBase = [
-    `📊 Volume semanal mínimo: ${p.mev} séries/grupo/semana para hipertrofia, alvo ${p.mav} (ACSM 2026 — Currier et al., 137 revisões sistemáticas, 30.000+ participantes)`,
-    `🎯 Proximidade à falha: pare a ${rir} reps da falha (RIR ${rir}) — ACSM 2026 confirma que falha absoluta é desnecessária; o esforço importa mais que chegar ao limite`,
-    `📈 Progressão dupla: aumente reps até o limite da faixa, depois aumente carga e recomece o ciclo`,
-    `⏱️ Descanso: ${descObj} entre séries (mínimo 60s para hipertrofia — Singer et al. 2024, Front Sports Act Living)`,
-    `🔄 Frequência: cada grupo muscular treinado 2× por semana é o ponto de maior evidência (Schoenfeld, Grgic & Krieger 2019, J Sports Sci) — volume semanal total importa mais que a frequência isolada`,
-    `📏 Amplitude completa: priorize a porção alongada do movimento (estiramento) — vantagem hipertrófica confirmada em revisões sistemáticas recentes (Wolf et al. 2025, PeerJ)`,
-    `🔋 Deload: a cada 4–6 semanas, reduza volume em 40–50% por 1 semana para gerenciar fadiga acumulada`,
-    `🏋️ Carga: cargas de 30% a 100% de 1RM produzem hipertrofia equivalente quando o esforço (proximidade à falha) é equiparado — o que importa é o esforço, não a faixa de reps específica (ACSM 2026)`,
-  ];
-
-  const notasSexo = isFem ? [
-    `👩 Foco feminino: glúteos e membros inferiores com volume superior (${Math.min(p.mav+4,26)} sets/sem para glúteo) — Contreras et al. 2015`,
-    `👩 Reps inferiores: ${repsInfFem} reps — mulheres têm maior proporção de fibras tipo I nas pernas (Calatayud et al. 2020)`,
-    `👩 Exercícios-chave: Hip Thrust, Agachamento, Stiff, Passada, Leg Curl, Abdutora`,
-    `🥩 Proteína: 1.8–2.0g/kg/dia — mulheres metabolizam proteína de forma eficiente para síntese muscular`,
-  ] : [
-    `👨 Foco masculino: membros superiores (peito, costas, ombros) com volume prioritário`,
-    `👨 Exercícios-chave: Supino, Barra Fixa, Desenvolvimento, Remada, Rosca, Tríceps`,
-    `👨 Volume superior: ${Math.min(p.mav+2,24)} sets/sem para peitoral e costas (maior potencial anabólico masculino)`,
-    `🥩 Proteína: 2.0–2.2g/kg/dia — testosterona + proteína otimizam síntese proteica muscular`,
-  ];
-
-  const notas = [...notasBase, ...notasSexo,
-    `Refs: ACSM 2026 Position Stand (Currier et al., Med Sci Sports Exerc) · Schoenfeld, Grgic & Krieger 2019 · Israetel/RP Strength · Calatayud et al. 2020 · Singer et al. 2024 · Wolf et al. 2025 · Helms et al. (RIR/RPE)`
-  ];
-
-  const resultado = blocos;
-  resultado._notas  = notas;
-  resultado._params = { nivel, repsObj, seriesObj, descObj, rir, dias, p, sexo };
-  return resultado;
 }
 function getTreinos(){
   if(MOTOR_D.anamnese && (MOTOR_D.anamnese.nivel || (MOTOR_D.anamnese.objetivo||[]).length > 0)){
@@ -3853,86 +3860,238 @@ async function revogarAcessoPortal(){
 // ── TREINO DE DEGUSTAÇÃO — EDITOR NO PAINEL ──────────────────────────────────
 let gifsDegustacao = {}; // GIFs específicos da degustação
 
-function renderizarEditorDegustacao(){
+const TREINO_DEMO_MASCULINO_PADRAO = {
+  'TREINO A — PEITO & TRÍCEPS': [
+    {nome:'Supino Reto com Barra', series:'4', reps:'8–12', descanso:'2min', rir:'2', obs:''},
+    {nome:'Supino Inclinado com Halteres', series:'3', reps:'10–12', descanso:'90s', rir:'2', obs:''},
+    {nome:'Crucifixo com Halteres', series:'3', reps:'12–15', descanso:'75s', rir:'2', obs:''},
+    {nome:'Tríceps Pulley Corda', series:'3', reps:'12–15', descanso:'75s', rir:'2', obs:''},
+    {nome:'Tríceps Francês com Halter', series:'3', reps:'10–12', descanso:'75s', rir:'2', obs:''},
+  ],
+  'TREINO B — COSTAS & BÍCEPS': [
+    {nome:'Puxada Frontal na Polia', series:'4', reps:'8–12', descanso:'2min', rir:'2', obs:''},
+    {nome:'Remada Curvada com Barra', series:'4', reps:'8–10', descanso:'2min', rir:'2', obs:''},
+    {nome:'Remada Unilateral com Halter', series:'3', reps:'10–12', descanso:'90s', rir:'2', obs:''},
+    {nome:'Rosca Direta com Barra', series:'3', reps:'10–12', descanso:'75s', rir:'2', obs:''},
+    {nome:'Rosca Concentrada com Halter', series:'3', reps:'12–15', descanso:'60s', rir:'2', obs:''},
+  ],
+  'TREINO C — PERNAS COMPLETO': [
+    {nome:'Agachamento Livre', series:'4', reps:'8–10', descanso:'2min', rir:'2', obs:''},
+    {nome:'Leg Press 45°', series:'4', reps:'10–12', descanso:'2min', rir:'2', obs:''},
+    {nome:'Stiff com Halteres', series:'3', reps:'10–12', descanso:'90s', rir:'2', obs:''},
+    {nome:'Afundo com Halteres', series:'3', reps:'12/lado', descanso:'75s', rir:'2', obs:''},
+    {nome:'Cadeira Extensora', series:'3', reps:'15–20', descanso:'60s', rir:'2', obs:''},
+  ],
+  'TREINO D — OMBROS & ABDÔMEN': [
+    {nome:'Desenvolvimento com Halteres', series:'4', reps:'10–12', descanso:'90s', rir:'2', obs:''},
+    {nome:'Elevação Lateral com Halteres', series:'4', reps:'15–20', descanso:'60s', rir:'2', obs:''},
+    {nome:'Encolhimento com Halteres', series:'3', reps:'12–15', descanso:'75s', rir:'2', obs:''},
+    {nome:'Abdominal Remador', series:'3', reps:'15–20', descanso:'60s', rir:'1', obs:''},
+    {nome:'Prancha Abdominal', series:'3', reps:'30–45s', descanso:'45s', rir:'—', obs:''},
+  ]
+};
+
+const TREINO_DEMO_FEMININO_PADRAO = {
+  'TREINO A — GLÚTEOS & POSTERIOR DE COXA': [
+    {nome:'Elevação Pélvica com Barra', series:'4', reps:'10–15', descanso:'90s', rir:'2', obs:''},
+    {nome:'Stiff com Halteres', series:'4', reps:'10–15', descanso:'90s', rir:'2', obs:''},
+    {nome:'Cadeira Flexora', series:'3', reps:'12–15', descanso:'75s', rir:'2', obs:''},
+    {nome:'Abdução de Quadril na Polia', series:'3', reps:'15–20', descanso:'60s', rir:'2', obs:''},
+    {nome:'Coice na Polia (Glúteo)', series:'3', reps:'15/lado', descanso:'60s', rir:'2', obs:''},
+  ],
+  'TREINO B — QUADRÍCEPS & PANTURRILHAS': [
+    {nome:'Agachamento Livre', series:'4', reps:'10–12', descanso:'2min', rir:'2', obs:''},
+    {nome:'Leg Press 45° (pés baixos)', series:'4', reps:'12–15', descanso:'90s', rir:'2', obs:''},
+    {nome:'Afundo Búlgaro', series:'3', reps:'12/lado', descanso:'90s', rir:'2', obs:''},
+    {nome:'Cadeira Extensora', series:'3', reps:'15–20', descanso:'60s', rir:'2', obs:''},
+    {nome:'Panturrilha em Pé', series:'4', reps:'15–20', descanso:'45s', rir:'1', obs:''},
+  ],
+  'TREINO C — GLÚTEOS & POSTERIOR DE COXA (2)': [
+    {nome:'Hip Thrust Unilateral', series:'4', reps:'10–15', descanso:'90s', rir:'2', obs:''},
+    {nome:'Levantamento Terra Romeno', series:'4', reps:'10–12', descanso:'90s', rir:'2', obs:''},
+    {nome:'Cadeira Abdutora', series:'3', reps:'15–20', descanso:'60s', rir:'2', obs:''},
+    {nome:'Passada com Halteres', series:'3', reps:'12/lado', descanso:'75s', rir:'2', obs:''},
+    {nome:'Elevação Pélvica Unilateral', series:'3', reps:'12/lado', descanso:'60s', rir:'2', obs:''},
+  ],
+  'TREINO D — SUPERIOR COMPLETO': [
+    {nome:'Puxada Frontal na Polia', series:'3', reps:'10–15', descanso:'90s', rir:'2', obs:''},
+    {nome:'Remada Baixa na Polia', series:'3', reps:'10–15', descanso:'90s', rir:'2', obs:''},
+    {nome:'Desenvolvimento com Halteres', series:'3', reps:'12–15', descanso:'75s', rir:'2', obs:''},
+    {nome:'Elevação Lateral com Halteres', series:'3', reps:'15–20', descanso:'60s', rir:'2', obs:''},
+    {nome:'Abdominal Infra na Prancha', series:'3', reps:'15–20', descanso:'45s', rir:'1', obs:''},
+  ]
+};
+
+window._generoAtivoDegustacao = window._generoAtivoDegustacao || 'feminino';
+
+function treinoAtivoDemo(){
+  return window._generoAtivoDegustacao === 'feminino' ? window._treinoDegustacaoFeminino : window._treinoDegustacaoMasculino;
+}
+
+function trocarGeneroDegustacao(genero){
+  window._generoAtivoDegustacao = genero;
+  const f = document.getElementById('deg-genero-feminino');
+  const m = document.getElementById('deg-genero-masculino');
+  if(genero==='feminino'){
+    f.style.background='rgba(236,72,153,.15)'; f.style.borderColor='rgba(236,72,153,.35)'; f.style.color='#f472b6';
+    m.style.background='rgba(255,255,255,.03)'; m.style.borderColor='var(--border)'; m.style.color='#888';
+  } else {
+    m.style.background='rgba(59,130,246,.15)'; m.style.borderColor='rgba(59,130,246,.35)'; m.style.color='#60a5fa';
+    f.style.background='rgba(255,255,255,.03)'; f.style.borderColor='var(--border)'; f.style.color='#888';
+  }
+  renderizarEditorDegustacao();
+}
+
+async function renderizarEditorDegustacao(){
   const el = document.getElementById('demo-treino-editor');
   if(!el) return;
 
-  // Usar o treino demo definido no portal — replicar aqui para edição
-  const treinos = {
-    'TREINO A — PEITO & TRÍCEPS': [
-      {nome:'Supino Reto com Barra', series:'4', reps:'8–12', descanso:'2min', rir:'2'},
-      {nome:'Supino Inclinado com Halteres', series:'3', reps:'10–12', descanso:'90s', rir:'2'},
-      {nome:'Crucifixo com Halteres', series:'3', reps:'12–15', descanso:'75s', rir:'2'},
-      {nome:'Tríceps Pulley Corda', series:'3', reps:'12–15', descanso:'75s', rir:'2'},
-      {nome:'Tríceps Francês com Halter', series:'3', reps:'10–12', descanso:'75s', rir:'2'},
-    ],
-    'TREINO B — COSTAS & BÍCEPS': [
-      {nome:'Puxada Frontal na Polia', series:'4', reps:'8–12', descanso:'2min', rir:'2'},
-      {nome:'Remada Curvada com Barra', series:'4', reps:'8–10', descanso:'2min', rir:'2'},
-      {nome:'Remada Unilateral com Halter', series:'3', reps:'10–12', descanso:'90s', rir:'2'},
-      {nome:'Rosca Direta com Barra', series:'3', reps:'10–12', descanso:'75s', rir:'2'},
-      {nome:'Rosca Concentrada com Halter', series:'3', reps:'12–15', descanso:'60s', rir:'2'},
-    ],
-    'TREINO C — PERNAS & GLÚTEOS': [
-      {nome:'Agachamento Livre', series:'4', reps:'8–10', descanso:'2min', rir:'2'},
-      {nome:'Leg Press 45°', series:'4', reps:'10–12', descanso:'2min', rir:'2'},
-      {nome:'Stiff com Halteres', series:'3', reps:'10–12', descanso:'90s', rir:'2'},
-      {nome:'Afundo com Halteres', series:'3', reps:'12/lado', descanso:'75s', rir:'2'},
-      {nome:'Cadeira Extensora', series:'3', reps:'15–20', descanso:'60s', rir:'2'},
-    ],
-    'TREINO D — OMBROS & ABDÔMEN': [
-      {nome:'Desenvolvimento com Halteres', series:'4', reps:'10–12', descanso:'90s', rir:'2'},
-      {nome:'Elevação Lateral com Halteres', series:'4', reps:'15–20', descanso:'60s', rir:'2'},
-      {nome:'Encolhimento com Halteres', series:'3', reps:'12–15', descanso:'75s', rir:'2'},
-      {nome:'Abdominal Remador', series:'3', reps:'15–20', descanso:'60s', rir:'1'},
-      {nome:'Prancha Abdominal', series:'3', reps:'30–45s', descanso:'45s', rir:'—'},
-    ]
-  };
-
-  let html = '';
-  Object.entries(treinos).forEach(([dia, exercicios])=>{
-    html += `<div style="margin-bottom:20px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
-      <div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:10px 14px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#a78bfa">${dia}</div>
-      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
-        <thead><tr style="background:var(--card2)">
-          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">#</th>
-          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Exercício</th>
-          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Séries</th>
-          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Reps</th>
-          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Descanso</th>
-          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">RIR</th>
-          <th style="padding:8px 10px;font-size:.62rem;color:var(--muted);text-align:center;border-bottom:1px solid var(--border)">GIF</th>
-        </tr></thead>
-        <tbody>`;
-
-    exercicios.forEach((ex, i)=>{
-      const gifKey = 'demo_gif__'+encodeURIComponent(ex.nome.toLowerCase().trim());
-      const gifData = gifsDegustacao[gifKey] || null;
-      html += `<tr style="${i%2===0?'':'background:var(--card2)'}">
-        <td style="padding:8px 10px;font-size:.75rem;color:var(--muted)">${i+1}</td>
-        <td style="padding:8px 10px;font-size:.82rem;font-weight:600;color:var(--white)">${ex.nome}</td>
-        <td style="padding:8px 10px;font-size:.78rem">${ex.series}</td>
-        <td style="padding:8px 10px;font-size:.78rem">${ex.reps}</td>
-        <td style="padding:8px 10px;font-size:.78rem">${ex.descanso}</td>
-        <td style="padding:8px 10px;font-size:.75rem;color:var(--yellow);font-weight:600">${ex.rir}</td>
-        <td style="padding:6px 8px;text-align:center;vertical-align:middle">
-          ${gifData
-            ? `<div style="position:relative;display:inline-block">
-                 <img src="${gifData}" style="width:52px;height:52px;border-radius:6px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande('${gifKey}')" title="Ver em tela cheia"/>
-                 <button onclick="removerGifDemo('${gifKey}')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;padding:0">✕</button>
-               </div>`
-            : `<label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px;display:inline-block;font-size:.65rem;color:#777;white-space:nowrap">
-                 📎 GIF
-                 <input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGifDemo(this,'${gifKey}')"/>
-               </label>`
+  // Carregar o que já foi salvo no Supabase (se ainda não carregado nesta sessão)
+  if(!window._treinoDegustacaoFeminino || !window._treinoDegustacaoMasculino){
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:#555;font-size:.82rem">⏳ Carregando treino de degustação...</div>';
+    let salvoF = null, salvoM = null;
+    if(SB){
+      try{
+        const { data } = await SB.from('portal_fichas').select('email,treino_json,gifs,nutri_json').in('email',['__degustacao_feminino__','__degustacao_masculino__']);
+        (data||[]).forEach(row=>{
+          if(row.email==='__degustacao_feminino__' && row.treino_json && Object.keys(row.treino_json).length) salvoF = row.treino_json;
+          if(row.email==='__degustacao_masculino__' && row.treino_json && Object.keys(row.treino_json).length) salvoM = row.treino_json;
+          if(row.gifs) Object.assign(gifsDegustacao, row.gifs);
+          if(row.nutri_json && !window._nutriDegustacaoCarregada){
+            ['proteina','carbo','gordura','hidrat','obs'].forEach(k=>{
+              const campo = document.getElementById('demo-nutri-'+k);
+              if(campo && row.nutri_json[k]) campo.value = row.nutri_json[k];
+            });
+            window._nutriDegustacaoCarregada = true;
           }
-        </td>
-      </tr>`;
+        });
+      }catch(e){ console.warn(e); }
+    }
+    window._treinoDegustacaoFeminino  = salvoF || JSON.parse(JSON.stringify(TREINO_DEMO_FEMININO_PADRAO));
+    window._treinoDegustacaoMasculino = salvoM || JSON.parse(JSON.stringify(TREINO_DEMO_MASCULINO_PADRAO));
+  }
+
+  const treinos = treinoAtivoDemo();
+  const rotulo = window._generoAtivoDegustacao === 'feminino' ? '🚺 Feminino' : '🚹 Masculino';
+
+  let html = `<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:#34d399;margin-bottom:14px">
+    ✏️ Editando o treino <strong>${rotulo}</strong>. Clique em <strong>"💾 Salvar tudo no portal"</strong> para publicar os dois treinos e a alimentação de uma vez.
+  </div>`;
+
+  Object.entries(treinos).forEach(([dia, exercicios], dIdx)=>{
+    html += `<div style="margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="demo-dia-block-${dIdx}">
+      <div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:10px 14px;display:flex;align-items:center;gap:8px">
+        <input type="text" value="${dia}" data-dia="${dIdx}" onchange="atualizarNomeDiaDemo(this)"
+          style="flex:1;background:transparent;border:none;color:#a78bfa;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-b);outline:none"/>
+        <button onclick="adicionarExercicioDemo(${dIdx})" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">+ Exercício</button>
+      </div>
+      <div id="demo-ex-list-${dIdx}">`;
+
+    exercicios.forEach((ex, eIdx)=>{
+      const gifKey = 'demo_gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
+      const gifData = gifsDegustacao[gifKey]||null;
+      html += renderExercicioEditavelDemo(ex, dIdx, eIdx, gifKey, gifData);
     });
-    html += `</tbody></table></div></div>`;
+
+    html += `</div></div>`;
   });
 
   el.innerHTML = html;
+}
+
+function renderExercicioEditavelDemo(ex, dIdx, eIdx, gifKey, gifData){
+  return `<div id="demo-ex-row-${dIdx}-${eIdx}" style="border-bottom:1px solid var(--border);padding:12px 14px;background:${eIdx%2===0?'transparent':'rgba(255,255,255,.02)'}">
+    <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div style="flex-shrink:0">
+        ${gifData
+          ? `<div style="position:relative">
+               <img src="${gifData}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande('${gifKey}')"/>
+               <button onclick="removerGifDemo('${gifKey}')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;padding:0">✕</button>
+             </div>`
+          : `<label style="cursor:pointer;width:56px;height:56px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;font-size:.6rem;color:#555;text-align:center">
+               📎<span>GIF</span>
+               <input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGifDemo(this,'${gifKey}')"/>
+             </label>`
+        }
+      </div>
+      <div style="flex:1;min-width:200px;display:grid;gap:6px">
+        <input type="text" value="${ex.nome||''}" placeholder="Nome do exercício"
+          onchange="atualizarExercicioDemo(${dIdx},${eIdx},'nome',this.value)"
+          style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:#fff;font-size:.85rem;font-weight:600;font-family:var(--font-b)"/>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+          <div>
+            <div style="font-size:.58rem;color:#666;margin-bottom:3px">SÉRIES</div>
+            <input type="text" value="${ex.series||''}" placeholder="3"
+              onchange="atualizarExercicioDemo(${dIdx},${eIdx},'series',this.value)"
+              style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
+          </div>
+          <div>
+            <div style="font-size:.58rem;color:#666;margin-bottom:3px">REPS</div>
+            <input type="text" value="${ex.reps||''}" placeholder="10-12"
+              onchange="atualizarExercicioDemo(${dIdx},${eIdx},'reps',this.value)"
+              style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
+          </div>
+          <div>
+            <div style="font-size:.58rem;color:#666;margin-bottom:3px">DESCANSO</div>
+            <input type="text" value="${ex.descanso||''}" placeholder="90s"
+              onchange="atualizarExercicioDemo(${dIdx},${eIdx},'descanso',this.value)"
+              style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
+          </div>
+          <div>
+            <div style="font-size:.58rem;color:#666;margin-bottom:3px">RIR</div>
+            <input type="text" value="${ex.rir||''}" placeholder="2"
+              onchange="atualizarExercicioDemo(${dIdx},${eIdx},'rir',this.value)"
+              style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
+          </div>
+        </div>
+        <input type="text" value="${ex.obs||''}" placeholder="Observações (opcional)"
+          onchange="atualizarExercicioDemo(${dIdx},${eIdx},'obs',this.value)"
+          style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:5px;padding:6px 10px;color:#aaa;font-size:.78rem;font-family:var(--font-b)"/>
+      </div>
+      <button onclick="removerExercicioDemo(${dIdx},${eIdx})" title="Remover exercício"
+        style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:5px 9px;border-radius:6px;font-size:.75rem;cursor:pointer;flex-shrink:0">✕</button>
+    </div>
+  </div>`;
+}
+
+function atualizarExercicioDemo(dIdx, eIdx, campo, valor){
+  const t = treinoAtivoDemo();
+  if(!t) return;
+  const dias = Object.keys(t);
+  if(dias[dIdx] && t[dias[dIdx]][eIdx]){
+    t[dias[dIdx]][eIdx][campo] = valor;
+  }
+}
+
+function atualizarNomeDiaDemo(input){
+  const t = treinoAtivoDemo();
+  if(!t) return;
+  const dIdx = parseInt(input.dataset.dia);
+  const dias = Object.keys(t);
+  if(dias[dIdx]){
+    const novoTreino = {};
+    dias.forEach((k,i)=>{ novoTreino[i===dIdx ? input.value : k] = t[k]; });
+    if(window._generoAtivoDegustacao==='feminino') window._treinoDegustacaoFeminino = novoTreino;
+    else window._treinoDegustacaoMasculino = novoTreino;
+  }
+}
+
+function adicionarExercicioDemo(dIdx){
+  const t = treinoAtivoDemo();
+  if(!t) return;
+  const dias = Object.keys(t);
+  if(!dias[dIdx]) return;
+  t[dias[dIdx]].push({nome:'Novo Exercício',series:'3',reps:'10–12',descanso:'90s',rir:'2',obs:''});
+  renderizarEditorDegustacao();
+}
+
+function removerExercicioDemo(dIdx, eIdx){
+  const t = treinoAtivoDemo();
+  if(!t) return;
+  const dias = Object.keys(t);
+  if(!dias[dIdx]) return;
+  t[dias[dIdx]].splice(eIdx, 1);
+  renderizarEditorDegustacao();
 }
 
 function anexarGifDemo(input, gifKey){
@@ -3953,6 +4112,7 @@ function removerGifDemo(gifKey){
   notif('GIF removido','#f59e0b');
   renderizarEditorDegustacao();
 }
+
 
 function copiarCredenciais(){
   const email = document.getElementById('portal-aba-email')?.textContent || '';
@@ -4075,6 +4235,7 @@ function renderTabelaProgresso(){
   let html = `<table style="width:100%;border-collapse:collapse;font-size:.8rem">
     <thead><tr style="border-bottom:2px solid var(--border)">
       <th style="text-align:left;padding:8px 10px;color:#666;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px">Data</th>
+      <th style="text-align:center;padding:8px 6px;color:#666;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px">Foto</th>
       ${PROGRESSO_CAMPOS.map(f=>`<th style="text-align:center;padding:8px 6px;color:#666;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px">${f.label}</th>`).join('')}
       <th style="padding:8px 6px"></th>
     </tr></thead><tbody>`;
@@ -4083,6 +4244,11 @@ function renderTabelaProgresso(){
     const dataFmt = r.criado_em ? new Date(r.criado_em).toLocaleDateString('pt-BR') : '—';
     html += `<tr style="border-bottom:1px solid var(--border);${idx%2===0?'':'background:rgba(255,255,255,.02)'}">
       <td style="padding:7px 10px;color:#aaa;white-space:nowrap">${dataFmt}</td>
+      <td style="padding:5px 6px;text-align:center">
+        ${r.foto
+          ? `<img src="${r.foto}" onclick="verFotoProgressoGrande('${idx}')" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer;border:1px solid var(--border)"/>`
+          : `<span style="color:#444;font-size:.7rem">—</span>`}
+      </td>
       ${PROGRESSO_CAMPOS.map(f=>`<td style="padding:5px 6px;text-align:center">
         <input type="number" step="0.1" value="${r[f.k] ?? ''}" data-row="${idx}" data-campo="${f.k}"
           onchange="atualizarCampoProgresso(${idx},'${f.k}',this.value)"
@@ -4097,6 +4263,16 @@ function renderTabelaProgresso(){
 
   html += `</tbody></table>`;
   el.innerHTML = html;
+}
+
+function verFotoProgressoGrande(idx){
+  const r = window._progressoAluno?.[idx];
+  if(!r?.foto) return;
+  const win = document.createElement('div');
+  win.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  win.innerHTML = `<img src="${r.foto}" style="max-width:92%;max-height:92%;border-radius:10px"/>`;
+  win.onclick = () => win.remove();
+  document.body.appendChild(win);
 }
 
 function atualizarCampoProgresso(idx, campo, valor){
@@ -4174,7 +4350,7 @@ async function salvarTreinoDegustacao(){
   const totalGifs = Object.keys(gifsDegustacao).length;
   notif('⏳ Salvando degustação...','#8b5cf6');
 
-  // Coletar alimentação
+  // Coletar alimentação (única, compartilhada entre os dois treinos)
   const nutri = {
     proteina: document.getElementById('demo-nutri-proteina')?.value || '',
     carbo:    document.getElementById('demo-nutri-carbo')?.value    || '',
@@ -4183,20 +4359,39 @@ async function salvarTreinoDegustacao(){
     obs:      document.getElementById('demo-nutri-obs')?.value      || '',
   };
 
-  const { error } = await SB.from('portal_fichas').upsert({
-    email: '__degustacao__',
+  const treinoF = window._treinoDegustacaoFeminino  || TREINO_DEMO_FEMININO_PADRAO;
+  const treinoM = window._treinoDegustacaoMasculino || TREINO_DEMO_MASCULINO_PADRAO;
+  const agora = new Date().toISOString();
+
+  const { error: errF } = await SB.from('portal_fichas').upsert({
+    email: '__degustacao_feminino__',
     user_id: null,
-    titulo: 'Treino Demonstrativo — WillgomesFit',
-    resumo: 'Treino de degustação exibido para visitantes do portal',
+    titulo: 'Treino Demonstrativo (Feminino) — WillgomesFit',
+    resumo: 'Treino de degustação exibido para visitantes do portal — foco glúteos/pernas',
+    treino_json: treinoF,
     gifs: gifsDegustacao,
     total_gifs: totalGifs,
     nutri_json: nutri,
-    criado_em: new Date().toISOString(),
+    criado_em: agora,
     publicado_por: 'Prof. Will Gomes'
   }, { onConflict: 'email' });
 
-  if(error){ notif('Erro ao salvar: '+error.message,'#ef4444'); return; }
-  notif(`✅ Degustação salva! ${totalGifs} GIF(s) · Alimentação incluída`,'#8b5cf6');
+  const { error: errM } = await SB.from('portal_fichas').upsert({
+    email: '__degustacao_masculino__',
+    user_id: null,
+    titulo: 'Treino Demonstrativo (Masculino) — WillgomesFit',
+    resumo: 'Treino de degustação exibido para visitantes do portal — foco peito/costas/braços',
+    treino_json: treinoM,
+    gifs: gifsDegustacao,
+    total_gifs: totalGifs,
+    nutri_json: nutri,
+    criado_em: agora,
+    publicado_por: 'Prof. Will Gomes'
+  }, { onConflict: 'email' });
+
+  if(errF || errM){ notif('Erro ao salvar: '+(errF?.message||errM?.message),'#ef4444'); return; }
+  notif(`✅ Degustação salva! ${totalGifs} GIF(s) · Feminino e Masculino atualizados`,'#8b5cf6');
+
 }
 
 // ── DEGUSTAÇÕES ───────────────────────────────────────────────────────────────

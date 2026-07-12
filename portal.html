@@ -288,13 +288,26 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
       </div>
       <div style="background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(139,92,246,.05));border:1px solid rgba(139,92,246,.2);border-radius:14px;padding:20px">
         <div style="text-align:center;margin-bottom:14px">
-          <div style="font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:4px">🎯 Experimente grátis por 20 min</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:4px">🎯 Experimente grátis por 2 horas</div>
           <div style="font-size:.75rem;color:#888">Veja como seria seu treino personalizado — sem precisar criar conta</div>
         </div>
         <input class="inp" type="text" id="demo-nome" placeholder="Seu nome completo" style="margin-bottom:10px"/>
-        <div style="position:relative;margin-bottom:14px">
+        <div style="position:relative;margin-bottom:10px">
           <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#888;font-size:.88rem;pointer-events:none">🇧🇷 +55</span>
           <input class="inp" type="tel" id="demo-whatsapp" placeholder="WhatsApp (ex: 85 99999-9999)" style="padding-left:68px;margin-bottom:0"/>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:.72rem;color:#888;margin-bottom:6px;text-align:center">Treino de exemplo focado em:</div>
+          <div style="display:flex;gap:8px">
+            <label class="demo-genero-opt" id="demo-genero-f-label" style="flex:1;text-align:center;padding:10px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.04);cursor:pointer;font-size:.8rem;font-weight:700;color:#ccc">
+              <input type="radio" name="demo-genero" value="feminino" style="display:none" onchange="selecionarGeneroDemo('feminino')"/>
+              🚺 Mulher
+            </label>
+            <label class="demo-genero-opt" id="demo-genero-m-label" style="flex:1;text-align:center;padding:10px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.04);cursor:pointer;font-size:.8rem;font-weight:700;color:#ccc">
+              <input type="radio" name="demo-genero" value="masculino" style="display:none" onchange="selecionarGeneroDemo('masculino')"/>
+              🚹 Homem
+            </label>
+          </div>
         </div>
         <button class="btn-demo" onclick="coletarLeadEIniciar()">
           🚀 Quero ver meu treino de exemplo
@@ -309,6 +322,15 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
 
 <!-- ── APP ── -->
 <div id="app">
+  <!-- BOTÃO FLUTUANTE WHATSAPP (visível em todas as páginas do portal) -->
+  <a id="whatsapp-float" href="https://wa.me/5585989383246?text=Ol%C3%A1%2C%20Prof.%20Will!%20Estou%20usando%20o%20portal%20e%20quero%20saber%20mais%20sobre%20os%20planos." target="_blank" rel="noopener"
+    style="position:fixed;bottom:88px;right:18px;z-index:999;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#25D366,#128C7E);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,.45);text-decoration:none;font-size:1.6rem;animation:wa-pulse 2.4s infinite">
+    💬
+  </a>
+  <style>
+    @keyframes wa-pulse{ 0%{box-shadow:0 6px 20px rgba(37,211,102,.45)} 50%{box-shadow:0 6px 28px rgba(37,211,102,.75)} 100%{box-shadow:0 6px 20px rgba(37,211,102,.45)} }
+    @media (min-width:769px){ #whatsapp-float{ bottom:24px } }
+  </style>
   <!-- BANNER DEGUSTAÇÃO -->
   <div id="demo-banner">
     <div class="demo-inner">
@@ -356,7 +378,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
         </div>
       </div>
       <a href="https://wildenigomes-ops.github.io/WillgomesFit/willgomesfit.html#planos" class="btn-assinar">💪 QUERO MEU PLANO AGORA</a>
-      <button class="btn-demo-novamente" onclick="reiniciarDegustacao()">↩ Ver demonstração novamente (mais 20 min)</button>
+      <button class="btn-demo-novamente" onclick="reiniciarDegustacao()">↩ Ver demonstração novamente (mais 2 horas)</button>
     </div>
   </div>
 
@@ -413,6 +435,18 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
             <div class="metric-icon">🎯</div>
             <div class="metric-val" id="m-imc">—</div>
             <div class="metric-label">IMC atual</div>
+          </div>
+        </div>
+
+        <!-- CONQUISTAS & RESUMO DA SEMANA -->
+        <div id="conquistas-box" style="display:none;margin-bottom:20px">
+          <div style="background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.2);border-radius:14px;padding:16px 18px;margin-bottom:12px">
+            <div style="font-size:.68rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#fbbf24;margin-bottom:10px">🏆 Suas conquistas</div>
+            <div id="conquistas-badges" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+          </div>
+          <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:14px;padding:16px 18px">
+            <div style="font-size:.68rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#34d399;margin-bottom:6px">📅 Resumo da semana</div>
+            <div id="resumo-semana" style="font-size:.85rem;color:#ccc;line-height:1.6">Carregando...</div>
           </div>
         </div>
 
@@ -513,12 +547,32 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
             <div class="field"><label>Braço (cm)</label><input type="number" id="p-braco" placeholder="ex: 34"/></div>
             <div class="field"><label>Coxa (cm)</label><input type="number" id="p-coxa" placeholder="ex: 55"/></div>
           </div>
+          <label for="p-foto" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.2);border-radius:10px;padding:12px;cursor:pointer;margin-top:12px">
+            <span id="p-foto-preview" style="font-size:1.4rem">📷</span>
+            <span style="font-size:.8rem;color:#aaa" id="p-foto-label">Adicionar foto de hoje (opcional, ajuda a ver sua evolução)</span>
+            <input type="file" id="p-foto" accept="image/*" style="display:none" onchange="preverFotoProgresso(this)"/>
+          </label>
           <button class="btn-save" onclick="salvarProgresso()">💾 Salvar registro de hoje</button>
         </div>
 
         <div class="chart-wrap">
           <div class="chart-title">📊 Evolução do peso (últimos registros)</div>
           <div class="chart-bars" id="chart-peso"></div>
+        </div>
+
+        <!-- COMPARADOR ANTES/DEPOIS -->
+        <div id="comparador-fotos-wrap" style="display:none;margin:20px 0">
+          <div class="chart-title" style="margin-bottom:10px">📸 Antes & Depois</div>
+          <div style="position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--border);aspect-ratio:3/4;max-width:360px;margin:0 auto;background:#111">
+            <img id="foto-depois" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/>
+            <img id="foto-antes" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;clip-path:inset(0 50% 0 0)"/>
+            <div id="comparador-linha" style="position:absolute;top:0;bottom:0;left:50%;width:3px;background:#fff;box-shadow:0 0 8px rgba(0,0,0,.5);pointer-events:none"></div>
+            <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:6px">ANTES</div>
+            <div style="position:absolute;top:8px;right:8px;background:rgba(16,185,129,.85);color:#fff;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:6px">DEPOIS</div>
+            <input type="range" id="comparador-slider" min="0" max="100" value="50" oninput="moverComparadorFoto(this.value)"
+              style="position:absolute;bottom:10px;left:8%;width:84%;accent-color:var(--orange)"/>
+          </div>
+          <div id="comparador-datas" style="text-align:center;font-size:.72rem;color:#888;margin-top:8px"></div>
         </div>
 
         <div id="prog-historico"></div>
@@ -602,6 +656,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
     <div class="mt-fim-icon">🏆</div>
     <div class="mt-fim-titulo">TREINO CONCLUÍDO!</div>
     <div class="mt-fim-sub">Excelente trabalho! Você completou todos os exercícios de hoje. Descanse bem e volte mais forte!</div>
+    <div id="mt-fim-extra"></div>
     <button onclick="fecharModoTreino()" style="background:linear-gradient(135deg,var(--orange),#ff6b00);border:none;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;padding:16px 40px;border-radius:14px;cursor:pointer;box-shadow:0 6px 20px rgba(232,93,4,.4)">FINALIZAR</button>
   </div>
 </div>
@@ -614,7 +669,7 @@ let modoDemo = false;
 let demoTimer = null;
 
 // ── TREINO DEMONSTRATIVO (exemplo de excelência) ──────────────────────────────
-const TREINO_DEMO = {
+const TREINO_DEMO_MASCULINO = {
   titulo: 'Ficha Demonstrativa — WillgomesFit',
   resumo: 'Exemplo de treino personalizado pelo método WillgomesFit',
   criado_em: new Date().toISOString(),
@@ -645,7 +700,7 @@ const TREINO_DEMO = {
       {nome:'Rosca Direta com Barra', series:'3', reps:'10–12', descanso:'75s', rir:'2', obs:'Sem balanço — supinação total no final'},
       {nome:'Rosca Concentrada com Halter', series:'3', reps:'12–15', descanso:'60s', rir:'2', obs:'Isole o bíceps — não balance o tronco'},
     ],
-    'TREINO C — PERNAS & GLÚTEOS': [
+    'TREINO C — PERNAS COMPLETO': [
       {nome:'Agachamento Livre', series:'4', reps:'8–10', descanso:'2min', rir:'2', obs:'Profundidade máxima — glúteo abaixo do joelho'},
       {nome:'Leg Press 45°', series:'4', reps:'10–12', descanso:'2min', rir:'2', obs:'Pés altos e afastados para maior ativação de glúteo'},
       {nome:'Stiff com Halteres', series:'3', reps:'10–12', descanso:'90s', rir:'2', obs:'Ênfase no alongamento dos isquiotibiais'},
@@ -662,6 +717,54 @@ const TREINO_DEMO = {
   }
 };
 
+const TREINO_DEMO_FEMININO = {
+  titulo: 'Ficha Demonstrativa — WillgomesFit',
+  resumo: 'Exemplo de treino personalizado pelo método WillgomesFit, com ênfase em glúteos e pernas',
+  criado_em: new Date().toISOString(),
+  publicado_por: 'Prof. Will Gomes',
+  gifs: {},
+  notas: [
+    '📊 Volume semanal: 14–18 séries para glúteos/semana (prioridade do seu objetivo)',
+    '🎯 Intensidade: pare 2 reps antes da falha (RIR 2) — tão eficaz com menos fadiga',
+    '📈 Progressão dupla: aumente reps até o limite, depois aumente a carga',
+    '⏱️ Descanso: 75–90s entre séries para hipertrofia (Singer et al. 2024)',
+    '🔄 Frequência: glúteos e posterior de coxa trabalhados 2× por semana (Schoenfeld et al. 2019)',
+    '📏 Amplitude completa: ênfase na porção alongada do movimento (Wolf et al. 2025)',
+    '🔋 Deload a cada 4–6 semanas: reduza volume em 40–50% por 1 semana',
+    'Refs: ACSM 2026 · Schoenfeld 2019 · Singer 2024 · Wolf 2025 · Helms (RIR)'
+  ],
+  treino_json: {
+    'TREINO A — GLÚTEOS & POSTERIOR DE COXA': [
+      {nome:'Elevação Pélvica com Barra', series:'4', reps:'10–15', descanso:'90s', rir:'2', obs:'Contração máxima no topo por 1–2 segundos'},
+      {nome:'Stiff com Halteres', series:'4', reps:'10–15', descanso:'90s', rir:'2', obs:'Ênfase no alongamento dos isquiotibiais'},
+      {nome:'Cadeira Flexora', series:'3', reps:'12–15', descanso:'75s', rir:'2', obs:'Controle a descida — não solte o peso'},
+      {nome:'Abdução de Quadril na Polia', series:'3', reps:'15–20', descanso:'60s', rir:'2', obs:'Foco no glúteo médio — movimento lento'},
+      {nome:'Coice na Polia (Glúteo)', series:'3', reps:'15/lado', descanso:'60s', rir:'2', obs:'Não use o tronco para impulsionar'},
+    ],
+    'TREINO B — QUADRÍCEPS & PANTURRILHAS': [
+      {nome:'Agachamento Livre', series:'4', reps:'10–12', descanso:'2min', rir:'2', obs:'Profundidade máxima — glúteo abaixo do joelho'},
+      {nome:'Leg Press 45° (pés baixos)', series:'4', reps:'12–15', descanso:'90s', rir:'2', obs:'Pés baixos e afastados para foco em quadríceps'},
+      {nome:'Afundo Búlgaro', series:'3', reps:'12/lado', descanso:'90s', rir:'2', obs:'Tronco levemente inclinado à frente'},
+      {nome:'Cadeira Extensora', series:'3', reps:'15–20', descanso:'60s', rir:'2', obs:'Contração isométrica no topo por 1 segundo'},
+      {nome:'Panturrilha em Pé', series:'4', reps:'15–20', descanso:'45s', rir:'1', obs:'Amplitude total — desça até alongar bem'},
+    ],
+    'TREINO C — GLÚTEOS & POSTERIOR DE COXA (2)': [
+      {nome:'Hip Thrust Unilateral', series:'4', reps:'10–15', descanso:'90s', rir:'2', obs:'Contração máxima — uma perna por vez'},
+      {nome:'Levantamento Terra Romeno', series:'4', reps:'10–12', descanso:'90s', rir:'2', obs:'Quadril para trás — sinta o posterior alongar'},
+      {nome:'Cadeira Abdutora', series:'3', reps:'15–20', descanso:'60s', rir:'2', obs:'Pausa de 1s na abertura máxima'},
+      {nome:'Passada com Halteres', series:'3', reps:'12/lado', descanso:'75s', rir:'2', obs:'Passo largo — ênfase no glúteo da perna da frente'},
+      {nome:'Elevação Pélvica Unilateral', series:'3', reps:'12/lado', descanso:'60s', rir:'2', obs:'Movimento controlado, sem balançar o quadril'},
+    ],
+    'TREINO D — SUPERIOR COMPLETO': [
+      {nome:'Puxada Frontal na Polia', series:'3', reps:'10–15', descanso:'90s', rir:'2', obs:'Pegada supinada ou neutra — amplitude total'},
+      {nome:'Remada Baixa na Polia', series:'3', reps:'10–15', descanso:'90s', rir:'2', obs:'Cotovelo próximo ao corpo — foco no dorsal'},
+      {nome:'Desenvolvimento com Halteres', series:'3', reps:'12–15', descanso:'75s', rir:'2', obs:'Não bloqueie os cotovelos no topo'},
+      {nome:'Elevação Lateral com Halteres', series:'3', reps:'15–20', descanso:'60s', rir:'2', obs:'Movimento lento — 3s na descida (excêntrico)'},
+      {nome:'Abdominal Infra na Prancha', series:'3', reps:'15–20', descanso:'45s', rir:'1', obs:'Controle total — não use impulso'},
+    ]
+  }
+};
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async ()=>{
   SB = window.supabase?.createClient(SB_URL, SB_KEY);
@@ -671,17 +774,31 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 });
 
 // ── CAPTAÇÃO DE LEAD ANTES DA DEGUSTAÇÃO ─────────────────────────────────────
+function selecionarGeneroDemo(g){
+  window._generoDemo = g;
+  const f = document.getElementById('demo-genero-f-label');
+  const m = document.getElementById('demo-genero-m-label');
+  [f,m].forEach(el=>{ el.style.borderColor='rgba(255,255,255,.15)'; el.style.background='rgba(255,255,255,.04)'; el.style.color='#ccc'; });
+  const ativo = g==='feminino' ? f : m;
+  ativo.style.borderColor = '#8b5cf6';
+  ativo.style.background = 'rgba(139,92,246,.15)';
+  ativo.style.color = '#fff';
+}
+
 async function coletarLeadEIniciar(){
   const nome = document.getElementById('demo-nome').value.trim();
   const whatsapp = document.getElementById('demo-whatsapp').value.trim().replace(/\D/g,'');
+  const genero = window._generoDemo || '';
 
   if(!nome){ authErr('Informe seu nome para continuar.'); return; }
   if(whatsapp.length < 10){ authErr('Informe um WhatsApp válido com DDD.'); return; }
+  if(!genero){ authErr('Selecione o foco do treino de exemplo (Mulher ou Homem).'); return; }
 
   const payload = {
     nome,
     whatsapp,
     numero_formatado: '55' + whatsapp,
+    genero,
     status: 'novo',
     criado_em: new Date().toISOString(),
     origem: 'degustacao_portal'
@@ -693,12 +810,12 @@ async function coletarLeadEIniciar(){
   }catch(e){ console.warn('Erro ao salvar lead:', e); }
 
   // Armazenar localmente para uso na degustação
-  window._leadDemo = { nome, whatsapp: '55'+whatsapp };
+  window._leadDemo = { nome, whatsapp: '55'+whatsapp, genero };
   iniciarDegustacao();
 }
 
 // ── DEGUSTAÇÃO ────────────────────────────────────────────────────────────────
-function iniciarDegustacao(){
+async function iniciarDegustacao(){
   modoDemo = true;
   document.getElementById('auth-wrap').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
@@ -706,20 +823,41 @@ function iniciarDegustacao(){
   document.getElementById('demo-banner').style.display = 'block';
   document.querySelector('.btn-logout').textContent = 'Sair';
 
+  // Buscar treino/alimentação/GIFs de degustação publicados pelo Prof. Will no painel.
+  // Se ele ainda não publicou nada customizado, usa o treino padrão embutido (por gênero).
+  const genero = window._leadDemo?.genero || window._generoDemo || 'masculino';
+  let fichaDemo = genero === 'feminino' ? TREINO_DEMO_FEMININO : TREINO_DEMO_MASCULINO;
+  if(SB){
+    try{
+      const chaveEmail = genero === 'feminino' ? '__degustacao_feminino__' : '__degustacao_masculino__';
+      const { data } = await SB.from('portal_fichas').select('*').eq('email',chaveEmail).limit(1);
+      const publicado = data?.[0];
+      if(publicado?.treino_json && Object.keys(publicado.treino_json).length){
+        fichaDemo = {
+          ...fichaDemo,
+          treino_json: publicado.treino_json,
+          gifs: publicado.gifs || {},
+          nutri_json: publicado.nutri_json || null
+        };
+      } else if(publicado?.nutri_json){
+        fichaDemo = { ...fichaDemo, nutri_json: publicado.nutri_json };
+      }
+    }catch(e){ console.warn('Erro ao buscar degustação publicada:', e); }
+  }
+
   // Montar app com treino demo
   montarDashboardDemo();
-  montarFicha([TREINO_DEMO]);
-  montarHistorico([TREINO_DEMO]);
+  montarFicha([fichaDemo]);
+  montarHistorico([fichaDemo]);
+  montarNutricao([fichaDemo]);
 
-  // Desabilitar abas de feedback/progresso no demo
-  document.getElementById('sb-progresso').style.opacity = '.4';
-  document.getElementById('sb-progresso').style.pointerEvents = 'none';
-  document.getElementById('sb-progresso').title = '🔒 Disponível nos planos de acompanhamento';
-  document.getElementById('bn-progresso').style.opacity = '.4';
-  document.getElementById('bn-progresso').style.pointerEvents = 'none';
+  // Progresso liberado no demo: registros ficam salvos localmente na sessão
+  // (não vão para o Supabase, pois o visitante ainda não tem conta/plano)
+  window._progressoDemoLocal = window._progressoDemoLocal || [];
+  montarGrafico(window._progressoDemoLocal);
 
-  // Iniciar countdown de 60 minutos
-  const fim = Date.now() + 20 * 60 * 1000;
+  // Iniciar countdown de 2 horas
+  const fim = Date.now() + 2 * 60 * 60 * 1000;
   demoTimer = setInterval(()=>{
     const resto = fim - Date.now();
     if(resto <= 0){
@@ -727,9 +865,12 @@ function iniciarDegustacao(){
       document.getElementById('demo-expired').style.display = 'flex';
       return;
     }
-    const m = Math.floor(resto/60000);
+    const h = Math.floor(resto/3600000);
+    const m = Math.floor((resto%3600000)/60000);
     const s = Math.floor((resto%60000)/1000);
-    document.getElementById('demo-timer').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    document.getElementById('demo-timer').textContent = h > 0
+      ? h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')
+      : String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
     // Aviso nos últimos 5 minutos
     if(resto < 5*60*1000){
       document.getElementById('demo-timer').style.color = '#fbbf24';
@@ -1056,6 +1197,80 @@ function concluirTreino(){
   document.getElementById('mt-fim').classList.add('visivel');
   document.getElementById('mt-prog-fill').style.width = '100%';
   if(navigator.vibrate) navigator.vibrate([300,100,300,100,500]);
+
+  const extra = document.getElementById('mt-fim-extra');
+  const diaNome = treinoAtivo?.dias?.[treinoAtivo.diaIdx]?.nome || '';
+
+  if(modoDemo){
+    window._demoTreinosConcluidos = (window._demoTreinosConcluidos||0) + 1;
+    const n = window._demoTreinosConcluidos;
+    const primeiroNome = (window._leadDemo?.nome||'').split(' ')[0] || '';
+    extra.innerHTML = `
+      <div style="background:linear-gradient(135deg,rgba(234,179,8,.15),rgba(234,179,8,.05));border:1px solid rgba(234,179,8,.3);border-radius:14px;padding:16px;margin:14px 0;text-align:center">
+        <div style="font-size:.95rem;font-weight:800;color:#fbbf24;margin-bottom:4px">🏅 Conquista desbloqueada: "${n===1?'Primeiro Treino':'Treino nº '+n}"</div>
+        <div style="font-size:.78rem;color:#ccc;line-height:1.5">${primeiroNome?primeiroNome+', você':'Você'} acabou de sentir como é treinar com orientação certa em cada série. Isso é só uma amostra do que o plano completo entrega — treino sob medida, evolução acompanhada de perto e suporte direto comigo.</div>
+      </div>
+      <a href="https://wildenigomes-ops.github.io/WillgomesFit/willgomesfit.html#planos" style="display:block;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800;font-size:.9rem;padding:14px;border-radius:12px;text-decoration:none;text-align:center;margin-bottom:10px">💪 Quero meu plano completo agora</a>
+    `;
+  } else {
+    extra.innerHTML = '';
+    registrarTreinoConcluido(diaNome);
+  }
+}
+
+async function registrarTreinoConcluido(diaNome){
+  if(!SB || !usuario) return;
+  try{
+    await SB.from('portal_treino_logs').insert({
+      user_id: usuario.id,
+      email: usuario.email,
+      dia: diaNome,
+      concluido_em: new Date().toISOString()
+    });
+    await carregarConquistas();
+  }catch(e){ console.warn('Erro ao registrar treino concluído:', e); }
+}
+
+async function carregarConquistas(){
+  if(!SB || !usuario || modoDemo) return;
+  const box = document.getElementById('conquistas-box');
+  if(!box) return;
+
+  let logs = [];
+  try{
+    const { data, error } = await SB.from('portal_treino_logs').select('concluido_em').eq('user_id', usuario.id).order('concluido_em',{ascending:false});
+    if(error) throw error;
+    logs = data || [];
+  }catch(e){ console.warn('Conquistas indisponíveis (tabela pode não existir ainda):', e); return; }
+
+  const total = logs.length;
+  if(total === 0){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+
+  const marcos = [
+    {n:1,  icone:'🥉', nome:'Primeiro Treino'},
+    {n:5,  icone:'🥈', nome:'5 Treinos'},
+    {n:10, icone:'🥇', nome:'10 Treinos'},
+    {n:25, icone:'🏅', nome:'25 Treinos'},
+    {n:50, icone:'👑', nome:'50 Treinos'},
+  ];
+
+  const badgesEl = document.getElementById('conquistas-badges');
+  badgesEl.innerHTML = marcos.map(m=>{
+    const desbloqueado = total >= m.n;
+    return `<div style="text-align:center;opacity:${desbloqueado?'1':'.35'}">
+      <div style="font-size:1.8rem;margin-bottom:2px">${m.icone}</div>
+      <div style="font-size:.62rem;color:${desbloqueado?'#fbbf24':'#666'};font-weight:700;white-space:nowrap">${m.nome}</div>
+    </div>`;
+  }).join('');
+
+  // Resumo da semana (últimos 7 dias)
+  const seteAtras = Date.now() - 7*24*60*60*1000;
+  const estaSemana = logs.filter(l=> new Date(l.concluido_em).getTime() >= seteAtras).length;
+  const resumo = document.getElementById('resumo-semana');
+  resumo.innerHTML = estaSemana > 0
+    ? `Você treinou <strong style="color:#fff">${estaSemana}x</strong> nos últimos 7 dias. Total geral: <strong style="color:#fff">${total}</strong> treinos concluídos. Continue assim! 💪`
+    : `Nenhum treino concluído nos últimos 7 dias. Que tal treinar hoje? Total geral: <strong style="color:#fff">${total}</strong> treinos.`;
 }
 
 function fecharModoTreino(){
@@ -1107,6 +1322,11 @@ async function trocarSenha(){
   if(!atual||!nova||!confirma){ notif('Preencha todos os campos','#ef4444'); return; }
   if(nova.length < 6){ notif('A nova senha precisa ter ao menos 6 caracteres','#ef4444'); return; }
   if(nova !== confirma){ notif('As senhas não coincidem','#ef4444'); return; }
+
+  if(modoDemo){
+    notif('🎯 Troca de senha disponível quando você assinar um plano de acompanhamento','#f59e0b');
+    return;
+  }
 
   // Verificar senha atual
   const senhaAtual = dadosCliente?.senha_custom || dadosCliente?.senha_temp;
@@ -1170,6 +1390,7 @@ async function carregarDados(){
   montarFicha(fichas||[]);
   montarHistorico(fichas||[]);
   montarGrafico(progressos||[]);
+  carregarConquistas();
   montarNutricao(fichas||[]);
 }
 
@@ -1310,6 +1531,29 @@ function montarHistorico(fichas){
 }
 
 // ── PROGRESSO ─────────────────────────────────────────────────────────────────
+function preverFotoProgresso(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024){ notif('Foto muito grande (máx. 5MB)','#ef4444'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._fotoProgressoBase64 = e.target.result;
+    document.getElementById('p-foto-preview').textContent = '✅';
+    document.getElementById('p-foto-label').textContent = 'Foto selecionada — será salva com este registro';
+  };
+  reader.readAsDataURL(file);
+}
+
+function limparFotoProgressoUI(){
+  window._fotoProgressoBase64 = null;
+  const input = document.getElementById('p-foto');
+  if(input) input.value = '';
+  const preview = document.getElementById('p-foto-preview');
+  const label = document.getElementById('p-foto-label');
+  if(preview) preview.textContent = '📷';
+  if(label) label.textContent = 'Adicionar foto de hoje (opcional, ajuda a ver sua evolução)';
+}
+
 async function salvarProgresso(){
   const peso    = document.getElementById('p-peso').value;
   const gordura = document.getElementById('p-gordura').value;
@@ -1320,16 +1564,33 @@ async function salvarProgresso(){
 
   if(!peso){ notif('Informe pelo menos o peso','#ef4444'); return; }
 
-  const { error } = await SB.from('portal_progresso').insert({
-    user_id: usuario.id,
-    email: usuario.email,
+  const registro = {
     peso: parseFloat(peso)||null,
     gordura: parseFloat(gordura)||null,
     cintura: parseFloat(cintura)||null,
     quadril: parseFloat(quadril)||null,
     braco: parseFloat(braco)||null,
     coxa: parseFloat(coxa)||null,
+    foto: window._fotoProgressoBase64 || null,
     criado_em: new Date().toISOString()
+  };
+
+  // No modo degustação ainda não existe conta/plano — guardamos o registro
+  // só na sessão do navegador, apenas para o visitante experimentar a função.
+  if(modoDemo){
+    window._progressoDemoLocal = window._progressoDemoLocal || [];
+    window._progressoDemoLocal.unshift(registro);
+    notif('✅ Registro salvo na demonstração!','#10b981');
+    ['p-peso','p-gordura','p-cintura','p-quadril','p-braco','p-coxa'].forEach(id=> document.getElementById(id).value='');
+    limparFotoProgressoUI();
+    montarGrafico(window._progressoDemoLocal);
+    return;
+  }
+
+  const { error } = await SB.from('portal_progresso').insert({
+    user_id: usuario.id,
+    email: usuario.email,
+    ...registro
   });
 
   if(error){ notif('Erro ao salvar: '+error.message,'#ef4444'); return; }
@@ -1337,6 +1598,7 @@ async function salvarProgresso(){
 
   // Limpar campos
   ['p-peso','p-gordura','p-cintura','p-quadril','p-braco','p-coxa'].forEach(id=> document.getElementById(id).value='');
+  limparFotoProgressoUI();
 
   // Recarregar dados
   await carregarDados();
@@ -1371,8 +1633,36 @@ function montarGrafico(progressos){
           ${p.peso?`<span>⚖️ <strong>${p.peso}kg</strong></span>`:''}
           ${p.gordura?`<span>🔥 ${p.gordura}% gordura</span>`:''}
           ${p.cintura?`<span>📏 Cintura: ${p.cintura}cm</span>`:''}
+          ${p.foto?`<span style="color:#10b981">📷 com foto</span>`:''}
         </div>`).join('')}
     </div>`;
+
+  montarComparadorFotos(progressos);
+}
+
+// ── COMPARADOR DE FOTOS (ANTES & DEPOIS) ────────────────────────────────────────
+function montarComparadorFotos(progressos){
+  const wrap = document.getElementById('comparador-fotos-wrap');
+  if(!wrap) return;
+
+  const comFoto = progressos.filter(p=>p.foto);
+  if(comFoto.length < 2){ wrap.style.display = 'none'; return; }
+
+  // progressos vem do mais recente para o mais antigo
+  const depois = comFoto[0];
+  const antes  = comFoto[comFoto.length-1];
+
+  wrap.style.display = 'block';
+  document.getElementById('foto-depois').src = depois.foto;
+  document.getElementById('foto-antes').src = antes.foto;
+  document.getElementById('comparador-datas').textContent =
+    `${new Date(antes.criado_em).toLocaleDateString('pt-BR')}  →  ${new Date(depois.criado_em).toLocaleDateString('pt-BR')}`;
+  moverComparadorFoto(50);
+}
+
+function moverComparadorFoto(pct){
+  document.getElementById('comparador-linha').style.left = pct+'%';
+  document.getElementById('foto-antes').style.clipPath = `inset(0 ${100-pct}% 0 0)`;
 }
 
 // ── NAVEGAÇÃO ─────────────────────────────────────────────────────────────────
