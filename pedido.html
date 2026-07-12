@@ -91,7 +91,7 @@ h1{font-family:var(--font-d);font-size:2.2rem;line-height:1;margin-bottom:8px}
     <!-- Upsell box (aparece só para Ficha Start) -->
     <div id="upsell-box" style="display:none;background:linear-gradient(135deg,rgba(232,93,4,.08),rgba(232,93,4,.03));border:1px solid rgba(232,93,4,.3);border-radius:14px;padding:20px;margin-bottom:20px;text-align:left">
       <div style="font-size:.72rem;font-weight:700;color:#e85d04;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">⚡ Oferta especial — só agora</div>
-      <p style="font-size:.88rem;color:#ccc;margin-bottom:12px">Adicione a <strong style="color:#fff">Ficha Premium</strong> por apenas <strong style="color:#e85d04">+R$40,00</strong> e leve:</p>
+      <p style="font-size:.88rem;color:#ccc;margin-bottom:12px">Adicione a <strong style="color:#fff">Ficha Elite</strong> por apenas <strong style="color:#e85d04">+R$40,00</strong> e leve:</p>
       <ul style="font-size:.82rem;color:#999;margin-bottom:14px;padding-left:16px;line-height:1.9">
         <li>2 fichas de treino completas</li>
         <li>Guia alimentar básico personalizado</li>
@@ -116,6 +116,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3l-F9cQqgcrpZCppDo
 const payLinks = {
   'Ficha Start': 'https://mpago.la/2dneDyK',
   'Ficha Premium': 'https://mpago.la/2cibGzr',
+  'Ficha Elite': 'https://mpago.la/2cibGzr',
   'Ficha Evolução': 'https://mpago.la/2CgKtmY',
   'Acompanhamento Start': 'https://mpago.la/2whVyDp',
   'Acompanhamento Performance': 'https://mpago.la/24PYJiF',
@@ -126,7 +127,7 @@ const payLinks = {
 };
 
 const prices = {
-  'Ficha Start': 'R$ 29,90','Ficha Premium': 'R$ 69,90','Ficha Evolução': 'R$ 99,90',
+  'Ficha Start': 'R$ 29,90','Ficha Premium': 'R$ 69,90','Ficha Elite': 'R$ 69,90','Ficha Evolução': 'R$ 99,90',
   'Acompanhamento Start': 'R$ 79,90','Acompanhamento Performance': 'R$ 119,90',
   'Acompanhamento Elite': 'R$ 169,90','Performance Trimestral': 'R$ 249,90',
   'Performance Semestral': 'R$ 499,90','Guia Nutricional': 'R$ 29,90',
