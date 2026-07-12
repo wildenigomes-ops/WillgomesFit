@@ -40,20 +40,16 @@ section{padding:88px 24px}
 .s-title{font-family:var(--font-d);font-size:clamp(2rem,5vw,3.6rem);line-height:1.02;margin-bottom:10px}
 .s-body{color:#888;max-width:580px;line-height:1.8;margin-bottom:48px}
 .tabs-wrapper{position:relative}
-.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:8px}
-.cat-card{position:relative;background-size:cover;background-position:center top;border:2px solid rgba(255,255,255,.12);border-radius:18px;padding:22px 14px;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;cursor:pointer;transition:transform .25s,border-color .25s,box-shadow .25s;overflow:hidden}
-.cat-card:hover{transform:translateY(-4px)}
-.cat-icon{font-size:1.9rem;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
-.cat-title{font-family:var(--font-d);font-size:1.25rem;line-height:1.05;color:#fff;letter-spacing:.5px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
-.cat-sub{font-size:.66rem;color:rgba(255,255,255,.8);font-weight:600;letter-spacing:.3px}
-.cat-cta{font-size:.64rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);padding:5px 12px;border-radius:20px;margin-top:8px;display:inline-flex;align-items:center;gap:4px;backdrop-filter:blur(4px)}
-.cat-card .tab-arrow{display:inline-block;transition:transform .3s;font-style:normal}
-.cat-card.active .tab-arrow{transform:translateY(3px)}
-.cat-card.active{box-shadow:0 14px 36px rgba(0,0,0,.55)}
-.cat-fichas.active{border-color:#f59e0b}
-.cat-acomp.active{border-color:#10b981}
-.cat-long.active{border-color:#8b5cf6}
-.cat-nutri.active{border-color:#ef4444}
+.cat-stack{display:flex;flex-direction:column;gap:14px;margin-bottom:8px}
+.cat-banner{position:relative;border:2px solid rgba(255,255,255,.12);border-radius:16px;padding:0;cursor:pointer;transition:transform .25s,border-color .25s,box-shadow .25s;overflow:hidden;background:#0a0a0a;line-height:0}
+.cat-banner img{width:100%;height:auto;display:block;transition:transform .4s}
+.cat-banner:hover{transform:translateY(-3px)}
+.cat-banner:hover img{transform:scale(1.02)}
+.cat-banner.active{box-shadow:0 14px 36px rgba(0,0,0,.55)}
+.cat-fichas.active{border-color:#f0590a}
+.cat-acomp.active{border-color:#2563eb}
+.cat-long.active{border-color:#dc2626}
+.cat-nutri.active{border-color:#16a34a}
 .tab-panel{display:none;margin-top:24px}
 .tab-panel.active{display:block;animation:fadeInTab .35s cubic-bezier(.34,1.56,.64,1)}
 @keyframes fadeInTab{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -232,14 +228,8 @@ footer a{color:var(--muted)}
   .s-title{font-size:clamp(1.8rem,8vw,2.6rem)}
   .s-body{font-size:.9rem;margin-bottom:32px}
 
-  /* CATEGORIAS — grid 2x2 no celular */
+  /* CATEGORIAS — banners já empilham em coluna única por padrão */
   .tabs-wrapper{margin:0}
-  .cat-grid{grid-template-columns:1fr 1fr!important;gap:10px}
-  .cat-card{min-height:150px!important;padding:16px 10px!important}
-  .cat-icon{font-size:1.5rem!important}
-  .cat-title{font-size:1.02rem!important}
-  .cat-sub{font-size:.6rem!important}
-  .cat-cta{font-size:.58rem!important;padding:4px 9px!important}
 
   /* GRID DE CARDS — coluna única no celular */
   .ficha-grid{grid-template-columns:1fr!important;gap:16px}
@@ -283,9 +273,6 @@ footer a{color:var(--muted)}
   .hero{padding:80px 20px 50px}
   .hero h1{font-size:clamp(3rem,9vw,5rem)}
   section{padding:64px 20px}
-
-  /* Categorias em 2 colunas */
-  .cat-grid{grid-template-columns:1fr 1fr!important;gap:12px}
 
   /* Grids em coluna única */
   .ficha-grid{grid-template-columns:1fr!important;max-width:420px;margin:0 auto}
@@ -477,36 +464,28 @@ footer a{color:var(--muted)}
     <p class="s-body">Fichas avulsas para quem quer começar logo. Acompanhamentos para quem quer evoluir de verdade.</p>
 
     <div class="tabs-wrapper">
-      <div class="cat-grid">
-        <button class="cat-card cat-fichas active" onclick="switchTab('fichas',this)" style="background-image:linear-gradient(160deg,rgba(245,158,11,.55),rgba(10,10,10,.88)),url('will-foto-1.jpg')">
-          <span class="cat-icon">📋</span>
-          <span class="cat-title">Fichas<br>Personalizadas</span>
-          <span class="cat-sub">Start · Elite · Evolução</span>
-          <span class="cat-cta">Ver opções <i class="tab-arrow">↓</i></span>
+      <div class="cat-stack">
+        <button class="cat-banner cat-fichas" onclick="switchTab('fichas',this)">
+          <img src="cat-fichas.jpg" alt="Fichas Personalizadas"/>
         </button>
-        <button class="cat-card cat-acomp" onclick="switchTab('acomp',this)" style="background-image:linear-gradient(160deg,rgba(16,185,129,.55),rgba(10,10,10,.88)),url('will-foto-2.jpg')">
-          <span class="cat-icon">📅</span>
-          <span class="cat-title">Consultoria<br>Light</span>
-          <span class="cat-sub">Start · Performance · Elite</span>
-          <span class="cat-cta">Ver opções <i class="tab-arrow">↓</i></span>
+        <button class="cat-banner cat-acomp" onclick="switchTab('acomp',this)">
+          <img src="cat-consultoria.jpg" alt="Consultoria Light" loading="lazy"/>
         </button>
-        <button class="cat-card cat-long" onclick="switchTab('long',this)" style="background-image:linear-gradient(160deg,rgba(139,92,246,.55),rgba(10,10,10,.88)),url('will-foto-1.jpg')">
-          <span class="cat-icon">🏆</span>
-          <span class="cat-title">Planos<br>Longos</span>
-          <span class="cat-sub">Trimestral · Semestral · Anual</span>
-          <span class="cat-cta">Ver opções <i class="tab-arrow">↓</i></span>
+        <button class="cat-banner cat-long" onclick="switchTab('long',this)">
+          <img src="cat-continuo.jpg" alt="Planos de Acompanhamento Contínuo" loading="lazy"/>
         </button>
-        <button class="cat-card cat-nutri" onclick="switchTab('nutri',this)" style="background-image:linear-gradient(160deg,rgba(239,68,68,.55),rgba(10,10,10,.88)),url('will-foto-2.jpg')">
-          <span class="cat-icon">🍎</span>
-          <span class="cat-title">Guia<br>Nutricional</span>
-          <span class="cat-sub">Alimentação + cardápio</span>
-          <span class="cat-cta">Ver opções <i class="tab-arrow">↓</i></span>
+        <button class="cat-banner cat-nutri" onclick="switchTab('nutri',this)">
+          <img src="cat-nutricional.jpg" alt="Planos do Guia Alimentar" loading="lazy"/>
         </button>
       </div>
     </div>
 
+    <div id="cat-empty-hint" style="text-align:center;color:#666;font-size:.85rem;padding:28px 12px">
+      👆 Toque em uma categoria acima para ver os planos e preços
+    </div>
+
     <!-- FICHAS -->
-    <div class="tab-panel active" id="tab-fichas">
+    <div class="tab-panel" id="tab-fichas">
       <div class="ficha-grid">
 
         <!-- START -->
@@ -552,7 +531,7 @@ footer a{color:var(--muted)}
         <div class="ficha-card card-purple" style="padding-top:52px">
           <span class="badge-purple">🏆 MELHOR CUSTO-BENEFÍCIO</span>
           <div class="ficha-name" style="color:#a78bfa">🏆 Transformação Real</div>
-          <div class="ficha-title">Plano Evolução</div>
+          <div class="ficha-title">Ficha Evolução</div>
           <div class="ficha-saving" style="background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.3);color:#a78bfa">3 fichas pelo preço de 1,5 — economia de R$110</div>
           <div class="ficha-price ficha-price-purple"><sup>R$</sup>99<sup>,90</sup></div>
           <div class="ficha-period">pagamento único · 3 meses de evolução garantida</div>
@@ -652,12 +631,12 @@ footer a{color:var(--muted)}
       </div>
     </div>
 
-    <!-- PLANOS LONGOS -->
+    <!-- PLANO CONTÍNUO -->
     <div class="tab-panel" id="tab-long">
       <p style="color:var(--muted);font-size:.9rem;margin-bottom:32px;line-height:1.7">Compromisso maior, economia real. Incluem tudo do Plano Performance, app MFIT, vídeo chamada de anamnese e saem mais barato por mês.</p>
       <div class="long-grid">
         <div class="long-card">
-          <div class="ficha-name">Performance Trimestral</div>
+          <div class="ficha-name">Dark Trimestral</div>
           <div class="long-name">🚀 90 Dias</div>
           <div class="long-desc">3 meses para mudar sua história.</div>
           <div class="long-price-big">R$ 249<span style="font-size:1.2rem;color:var(--muted)">,90</span></div>
@@ -677,10 +656,10 @@ footer a{color:var(--muted)}
             <li>Suporte prioritário no WhatsApp</li>
             <li>Análise de fotos</li>
           </ul>
-          <button class="btn-card" onclick="window.location.href='pedido.html?plano=Performance+Trimestral&tipo=Acompanhamento'">Quero o Trimestral →</button>
+          <button class="btn-card" onclick="window.location.href='pedido.html?plano=Dark+Trimestral&tipo=Acompanhamento'">Quero o Trimestral →</button>
         </div>
         <div class="long-card" style="border-color:var(--orange)">
-          <div class="ficha-name">Performance Semestral</div>
+          <div class="ficha-name">Dark Semestral</div>
           <div class="long-name">💎 180 Dias</div>
           <div class="long-desc">6 meses para transformar seu corpo e sua vida.</div>
           <div class="long-price-big">R$ 499<span style="font-size:1.2rem;color:var(--muted)">,90</span></div>
@@ -698,10 +677,10 @@ footer a{color:var(--muted)}
             <li>Análise de fotos mensais</li>
             <li>Desconto exclusivo de longo prazo</li>
           </ul>
-          <button class="btn-card" style="background:var(--orange);color:#fff" onclick="window.location.href='pedido.html?plano=Performance+Semestral&tipo=Acompanhamento'">Quero o Semestral →</button>
+          <button class="btn-card" style="background:var(--orange);color:#fff" onclick="window.location.href='pedido.html?plano=Dark+Semestral&tipo=Acompanhamento'">Quero o Semestral →</button>
         </div>
         <div class="long-card" style="border-color:#8b5cf6">
-          <div class="ficha-name" style="color:#a78bfa">Acompanhamento Anual</div>
+          <div class="ficha-name" style="color:#a78bfa">Dark Anual</div>
           <div class="long-name">👑 365 Dias</div>
           <div class="long-desc">O compromisso mais completo: 1 ano inteiro de evolução acompanhada de perto.</div>
           <div class="long-price-big" style="color:#a78bfa">R$ 799<span style="font-size:1.2rem;color:var(--muted)">,90</span></div>
@@ -717,7 +696,7 @@ footer a{color:var(--muted)}
             <li>Análise de fotos e medidas mensal</li>
             <li>Maior desconto por tempo de compromisso</li>
           </ul>
-          <button class="btn-card" style="background:#8b5cf6;color:#fff" onclick="window.location.href='https://wa.me/5585989383246?text=Ol%C3%A1%2C%20Will!%20Tenho%20interesse%20no%20Acompanhamento%20Anual.'">💬 Falar com o Will sobre o Anual</button>
+          <button class="btn-card" style="background:#8b5cf6;color:#fff" onclick="window.location.href='https://wa.me/5585989383246?text=Ol%C3%A1%2C%20Will!%20Tenho%20interesse%20no%20Dark%20Anual.'">💬 Falar com o Will sobre o Anual</button>
         </div>
       </div>
     </div>
@@ -802,105 +781,6 @@ footer a{color:var(--muted)}
     </div>
   </div>
 </section>
-
-<!-- ═══════════════════════════════════════════════════════════════
-     ANTES & DEPOIS
-     ⚠️ INSTRUÇÃO PRO WILL: troque os 3 blocos placeholder abaixo por
-     fotos reais de alunos que autorizaram o uso. Cada bloco tem um
-     comentário "SUBSTITUIR AQUI" indicando onde entram as duas <img>.
-     Nunca publique fotos que não sejam de alunos reais e autorizados.
-     ═══════════════════════════════════════════════════════════════ -->
-<section id="antes-depois" style="background:#0a0a0a;padding:56px 24px;border-top:1px solid var(--border)">
-  <div class="inner" style="max-width:1100px;margin:0 auto">
-    <p class="s-tag" style="text-align:center;color:var(--orange)">📸 Transformações</p>
-    <h2 class="s-title" style="text-align:center;margin-bottom:10px;font-size:clamp(1.8rem,4vw,2.6rem)">ANTES & DEPOIS.</h2>
-    <p class="s-body" style="text-align:center;margin-bottom:36px;max-width:520px;margin-left:auto;margin-right:auto;font-size:.9rem">
-      Resultados reais de alunos que confiaram no método. Fotos autorizadas pelos próprios alunos.
-    </p>
-
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px">
-
-      <!-- TRANSFORMAÇÃO 1 — SUBSTITUIR AQUI pela foto real do aluno -->
-      <div style="background:#111;border:1px solid #222;border-radius:16px;overflow:hidden">
-        <div style="display:grid;grid-template-columns:1fr 1fr;aspect-ratio:1/1">
-          <div style="position:relative;background:#181818;display:flex;align-items:center;justify-content:center;border-right:1px solid #222">
-            <div style="text-align:center;color:#444">
-              <div style="font-size:1.8rem;margin-bottom:6px">📷</div>
-              <div style="font-size:.65rem;font-weight:700;letter-spacing:1px">FOTO DE ANTES</div>
-            </div>
-            <span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);color:#ccc;font-size:.62rem;font-weight:800;letter-spacing:1px;padding:3px 10px;border-radius:20px">ANTES</span>
-          </div>
-          <div style="position:relative;background:#181818;display:flex;align-items:center;justify-content:center">
-            <div style="text-align:center;color:#444">
-              <div style="font-size:1.8rem;margin-bottom:6px">📷</div>
-              <div style="font-size:.65rem;font-weight:700;letter-spacing:1px">FOTO DE DEPOIS</div>
-            </div>
-            <span style="position:absolute;top:10px;right:10px;background:rgba(240,89,10,.85);color:#fff;font-size:.62rem;font-weight:800;letter-spacing:1px;padding:3px 10px;border-radius:20px">DEPOIS</span>
-          </div>
-        </div>
-        <div style="padding:16px 18px">
-          <div style="color:#fff;font-weight:700;font-size:.9rem;margin-bottom:2px">Nome do aluno</div>
-          <div style="color:#666;font-size:.78rem">Resultado em X semanas · Plano</div>
-        </div>
-      </div>
-
-      <!-- TRANSFORMAÇÃO 2 — SUBSTITUIR AQUI pela foto real do aluno -->
-      <div style="background:#111;border:1px solid #222;border-radius:16px;overflow:hidden">
-        <div style="display:grid;grid-template-columns:1fr 1fr;aspect-ratio:1/1">
-          <div style="position:relative;background:#181818;display:flex;align-items:center;justify-content:center;border-right:1px solid #222">
-            <div style="text-align:center;color:#444">
-              <div style="font-size:1.8rem;margin-bottom:6px">📷</div>
-              <div style="font-size:.65rem;font-weight:700;letter-spacing:1px">FOTO DE ANTES</div>
-            </div>
-            <span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);color:#ccc;font-size:.62rem;font-weight:800;letter-spacing:1px;padding:3px 10px;border-radius:20px">ANTES</span>
-          </div>
-          <div style="position:relative;background:#181818;display:flex;align-items:center;justify-content:center">
-            <div style="text-align:center;color:#444">
-              <div style="font-size:1.8rem;margin-bottom:6px">📷</div>
-              <div style="font-size:.65rem;font-weight:700;letter-spacing:1px">FOTO DE DEPOIS</div>
-            </div>
-            <span style="position:absolute;top:10px;right:10px;background:rgba(240,89,10,.85);color:#fff;font-size:.62rem;font-weight:800;letter-spacing:1px;padding:3px 10px;border-radius:20px">DEPOIS</span>
-          </div>
-        </div>
-        <div style="padding:16px 18px">
-          <div style="color:#fff;font-weight:700;font-size:.9rem;margin-bottom:2px">Nome do aluno</div>
-          <div style="color:#666;font-size:.78rem">Resultado em X semanas · Plano</div>
-        </div>
-      </div>
-
-      <!-- TRANSFORMAÇÃO 3 — SUBSTITUIR AQUI pela foto real do aluno -->
-      <div style="background:#111;border:1px solid #222;border-radius:16px;overflow:hidden">
-        <div style="display:grid;grid-template-columns:1fr 1fr;aspect-ratio:1/1">
-          <div style="position:relative;background:#181818;display:flex;align-items:center;justify-content:center;border-right:1px solid #222">
-            <div style="text-align:center;color:#444">
-              <div style="font-size:1.8rem;margin-bottom:6px">📷</div>
-              <div style="font-size:.65rem;font-weight:700;letter-spacing:1px">FOTO DE ANTES</div>
-            </div>
-            <span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);color:#ccc;font-size:.62rem;font-weight:800;letter-spacing:1px;padding:3px 10px;border-radius:20px">ANTES</span>
-          </div>
-          <div style="position:relative;background:#181818;display:flex;align-items:center;justify-content:center">
-            <div style="text-align:center;color:#444">
-              <div style="font-size:1.8rem;margin-bottom:6px">📷</div>
-              <div style="font-size:.65rem;font-weight:700;letter-spacing:1px">FOTO DE DEPOIS</div>
-            </div>
-            <span style="position:absolute;top:10px;right:10px;background:rgba(240,89,10,.85);color:#fff;font-size:.62rem;font-weight:800;letter-spacing:1px;padding:3px 10px;border-radius:20px">DEPOIS</span>
-          </div>
-        </div>
-        <div style="padding:16px 18px">
-          <div style="color:#fff;font-weight:700;font-size:.9rem;margin-bottom:2px">Nome do aluno</div>
-          <div style="color:#666;font-size:.78rem">Resultado em X semanas · Plano</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<style>
-@media(max-width:768px){
-  #antes-depois > .inner > div[style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr!important}
-}
-</style>
 
 <section id="depoimentos" style="background:#0a0a0a;padding:56px 24px;border-top:1px solid var(--border)">
   <div class="inner" style="max-width:1100px;margin:0 auto">
@@ -1593,9 +1473,11 @@ function showSuccess() {
 
 function switchTab(id, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.cat-card').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.cat-banner').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
+  const hint = document.getElementById('cat-empty-hint');
+  if(hint) hint.style.display = 'none';
 }
 
 function toggleFaq(btn) {

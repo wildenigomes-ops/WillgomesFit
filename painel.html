@@ -288,10 +288,10 @@ tr:hover td{background:var(--card2)}
         <input class="search-input" id="search-q" placeholder="Buscar nome, e-mail ou WhatsApp..." oninput="renderClientes()"/>
         <select class="filter-sel" id="filter-plano" onchange="renderClientes()">
           <option value="">Todos os planos</option>
-          <option>Ficha Start</option><option>Ficha Premium</option><option>Ficha Evolução</option>
+          <option>Ficha Start</option><option>Ficha Elite</option><option>Ficha Evolução</option>
           <option>Acompanhamento Start</option><option>Acompanhamento Performance</option>
-          <option>Acompanhamento Elite</option><option>Performance Trimestral</option>
-          <option>Performance Semestral</option><option>Guia Nutricional</option>
+          <option>Acompanhamento Elite</option><option>Dark Trimestral</option>
+          <option>Dark Semestral</option><option>Dark Anual</option><option>Guia Nutricional</option>
         </select>
       </div>
       <div class="tabs">
@@ -707,10 +707,10 @@ tr:hover td{background:var(--card2)}
         <div class="form-group"><label>Plano *</label>
           <select id="n-plano">
             <option value="">Selecione...</option>
-            <option>Ficha Start</option><option>Ficha Premium</option><option>Ficha Evolução</option>
+            <option>Ficha Start</option><option>Ficha Elite</option><option>Ficha Evolução</option>
             <option>Acompanhamento Start</option><option>Acompanhamento Performance</option>
-            <option>Acompanhamento Elite</option><option>Performance Trimestral</option>
-            <option>Performance Semestral</option><option>Guia Nutricional</option>
+            <option>Acompanhamento Elite</option><option>Dark Trimestral</option>
+            <option>Dark Semestral</option><option>Dark Anual</option><option>Guia Nutricional</option>
           </select>
         </div>
         <div class="form-group"><label>Status</label>
@@ -738,9 +738,9 @@ const PASS     = 'willgomes2025';
 
 // Prazos em dias por plano (0 = entrega única, sem contador)
 const PRAZOS = {
-  'Ficha Start':0,'Ficha Premium':0,'Ficha Evolução':90,
-  'Acompanhamento Start':30,'Acompanhamento Performance':30,'Acompanhamento Elite':30,
-  'Performance Trimestral':90,'Performance Semestral':180,'Guia Nutricional':0,
+  'Ficha Start':0,'Ficha Premium':0,'Ficha Elite':0,'Ficha Evolução':90,
+  'Acompanhamento Start':30,'Acompanhamento Performance':30,'Acompanhamento Elite':30,'Acompanhamento Anual':365,'Dark Anual':365,
+  'Performance Trimestral':90,'Dark Trimestral':90,'Performance Semestral':180,'Dark Semestral':180,'Guia Nutricional':0,
 };
 
 let SB = null;
@@ -779,10 +779,11 @@ function doLogout(){
 
 // ── LOAD ─────────────────────────────────────────────────────────────────────
 // ── PLANOS COM ACESSO AO PORTAL ───────────────────────────────────────────────
-const PLANOS_PORTAL = ['start','performance','elite','trimestral','semestral','acompanhamento'];
+const PLANOS_PORTAL = ['start','performance','elite','trimestral','semestral','acompanhamento','dark','anual'];
 
 function planoTemPortal(plano){
   const p = (plano||'').toLowerCase();
+  if(p.startsWith('ficha')) return false; // fichas avulsas nunca têm acesso ao portal, mesmo contendo "start"/"elite" no nome
   return PLANOS_PORTAL.some(x => p.includes(x));
 }
 
