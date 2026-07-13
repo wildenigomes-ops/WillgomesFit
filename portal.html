@@ -471,6 +471,24 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
           <span style="color:#a78bfa;font-size:.75rem;flex-shrink:0">Atualizar</span>
         </button>
 
+        <!-- FEEDBACK DO ALUNO -->
+        <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:14px 16px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <span style="font-size:1.2rem">💬</span>
+            <div>
+              <div style="color:#fff;font-size:.82rem;font-weight:700">Fale com o Prof. Will</div>
+              <div style="color:#888;font-size:.72rem">Elogio, problema no treino ou pedido de alteração — ele vê tudo no painel.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap" id="feedback-tipo-opts">
+            <button onclick="selecionarTipoFeedback('elogio',this)" data-tipo="elogio" style="flex:1;min-width:90px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:#ccc;padding:8px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer">👏 Elogio</button>
+            <button onclick="selecionarTipoFeedback('problema',this)" data-tipo="problema" style="flex:1;min-width:90px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:#ccc;padding:8px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer">⚠️ Problema</button>
+            <button onclick="selecionarTipoFeedback('alteracao',this)" data-tipo="alteracao" style="flex:1;min-width:90px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:#ccc;padding:8px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer">✏️ Alteração</button>
+          </div>
+          <textarea id="feedback-mensagem" rows="3" placeholder="Escreva aqui..." style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:.82rem;font-family:inherit;resize:vertical;margin-bottom:10px"></textarea>
+          <button onclick="enviarFeedback()" style="width:100%;background:#10b981;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:800;font-size:.82rem;cursor:pointer">Enviar pro Will</button>
+        </div>
+
         <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-icon">🏋️</div>
@@ -2074,6 +2092,54 @@ function showPage(id){
 // ── NOTIF ─────────────────────────────────────────────────────────────────────
 function ehVideo(dataUrl){
   return typeof dataUrl === 'string' && dataUrl.startsWith('data:video/');
+}
+
+// ── FEEDBACK DO ALUNO ────────────────────────────────────────────────────────
+window._tipoFeedbackAtivo = null;
+
+function selecionarTipoFeedback(tipo, btn){
+  window._tipoFeedbackAtivo = tipo;
+  document.querySelectorAll('#feedback-tipo-opts button').forEach(b=>{
+    b.style.background = 'rgba(255,255,255,.04)';
+    b.style.borderColor = 'var(--border)';
+    b.style.color = '#ccc';
+  });
+  const cores = { elogio:'#10b981', problema:'#ef4444', alteracao:'#3b82f6' };
+  btn.style.background = cores[tipo]+'22';
+  btn.style.borderColor = cores[tipo];
+  btn.style.color = '#fff';
+}
+
+async function enviarFeedback(){
+  const tipo = window._tipoFeedbackAtivo;
+  const mensagem = document.getElementById('feedback-mensagem').value.trim();
+
+  if(!tipo){ notif('Escolha o tipo: elogio, problema ou alteração','#ef4444',true); return; }
+  if(!mensagem){ notif('Escreva sua mensagem antes de enviar','#ef4444',true); return; }
+  if(modoDemo){ notif('Essa função é exclusiva para alunos com plano ativo','#f59e0b',true); return; }
+  if(!SB || !usuario){ notif('Você precisa estar logado para enviar','#ef4444',true); return; }
+
+  try{
+    const { error } = await SB.from('portal_feedbacks').insert({
+      email: usuario.email,
+      user_id: usuario.id || null,
+      nome: dadosCliente?.nome || usuario.email,
+      tipo, mensagem,
+      lida: false,
+      criado_em: new Date().toISOString()
+    });
+    if(error){ notif('Erro ao enviar: '+error.message,'#ef4444',true); console.error('enviarFeedback:', error); return; }
+
+    notif('✅ Enviado! O Prof. Will vai ver na próxima vez que abrir seu perfil.','#10b981');
+    document.getElementById('feedback-mensagem').value = '';
+    window._tipoFeedbackAtivo = null;
+    document.querySelectorAll('#feedback-tipo-opts button').forEach(b=>{
+      b.style.background = 'rgba(255,255,255,.04)'; b.style.borderColor = 'var(--border)'; b.style.color = '#ccc';
+    });
+  }catch(e){
+    console.error('enviarFeedback — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+  }
 }
 
 function notif(msg, cor='#10b981', persistente=false){
