@@ -1492,7 +1492,8 @@ async function carregarDados(){
   // Buscar dados do cliente (vinculado pelo e-mail)
   const { data:clientes } = await SB.from('clientes').select('*').eq('email', usuario.email).limit(1);
   if(clientes && clientes.length > 0){
-    dadosCliente = { ...clientes[0], ...(clientes[0].dados||{}) };
+    // Mescla em vez de substituir — preserva senha_custom/senha_temp/etc. que vieram do login (portal_alunos)
+    dadosCliente = { ...dadosCliente, ...clientes[0], ...(clientes[0].dados||{}) };
   }
 
   // Buscar fichas publicadas
