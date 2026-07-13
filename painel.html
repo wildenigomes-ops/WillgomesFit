@@ -544,6 +544,45 @@ tr:hover td{background:var(--card2)}
       <!-- MFIT -->
       <div class="tab-panel" id="mt-portal">
 
+        <!-- MIGRAÇÃO DE PLANO -->
+        <div class="detail-section">
+          <div class="detail-section-title">🔄 Plano Contratado</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:14px 16px">
+            <div>
+              <div style="font-size:.68rem;color:#666;text-transform:uppercase;letter-spacing:1px">Plano atual</div>
+              <div id="plano-atual-display" style="font-size:1rem;font-weight:700;color:#fff">—</div>
+            </div>
+            <button onclick="abrirMigracaoPlano()" style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:#60a5fa;padding:9px 16px;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer">🔄 Migrar de Plano</button>
+          </div>
+          <div id="migracao-plano-form" style="display:none;margin-top:12px;background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:14px 16px">
+            <div style="font-size:.78rem;color:#888;margin-bottom:10px">Escolha o novo plano — seja upgrade ou downgrade, o aluno pode mudar quando quiser:</div>
+            <select id="select-novo-plano" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.85rem;font-family:var(--font-b);margin-bottom:12px">
+              <optgroup label="📋 Fichas Personalizadas">
+                <option value="Ficha Start">Ficha Start — R$29,90</option>
+                <option value="Ficha Elite">Ficha Elite — R$69,90</option>
+                <option value="Ficha Evolução">Ficha Evolução — R$99,90</option>
+              </optgroup>
+              <optgroup label="📅 Consultoria Light">
+                <option value="Acompanhamento Start">Acompanhamento Start — R$79,90</option>
+                <option value="Acompanhamento Performance">Acompanhamento Performance — R$119,90</option>
+                <option value="Acompanhamento Elite">Acompanhamento Elite — R$169,90</option>
+              </optgroup>
+              <optgroup label="🏆 Plano Contínuo">
+                <option value="Dark Trimestral">Dark Trimestral — R$249,90</option>
+                <option value="Dark Semestral">Dark Semestral — R$499,90</option>
+                <option value="Dark Anual">Dark Anual — R$799,90</option>
+              </optgroup>
+              <optgroup label="🍎 Outros">
+                <option value="Guia Nutricional">Guia Nutricional — R$29,90</option>
+              </optgroup>
+            </select>
+            <div style="display:flex;gap:8px">
+              <button onclick="confirmarMigracaoPlano()" style="flex:1;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34d399;padding:9px;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer">✅ Confirmar migração</button>
+              <button onclick="document.getElementById('migracao-plano-form').style.display='none'" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);color:#999;padding:9px;border-radius:8px;font-size:.82rem;cursor:pointer">Cancelar</button>
+            </div>
+          </div>
+        </div>
+
         <!-- STATUS DE ACESSO -->
         <div class="detail-section">
           <div class="detail-section-title">🔐 Acesso ao Portal do Aluno</div>
@@ -1881,7 +1920,73 @@ function prescreverTreino(){
   // ══════════════════════════════════════════════════════════════════════════
 // ── CONSTANTES DE PLANOS COM ACESSO AO PORTAL ────────────────────────────────
 // ── ABA PORTAL — CARREGAR STATUS ─────────────────────────────────────────────
+function abrirMigracaoPlano(){
+  const c = clienteAtual;
+  if(!c) return;
+  const sel = document.getElementById('select-novo-plano');
+  if(sel) sel.value = c.plano || '';
+  document.getElementById('migracao-plano-form').style.display = 'block';
+}
+
+async function confirmarMigracaoPlano(){
+  const c = clienteAtual;
+  if(!c) return;
+  const novoPlano = document.getElementById('select-novo-plano').value;
+  const planoAntigo = c.plano || '(sem plano)';
+
+  if(novoPlano === planoAntigo){ notif('Selecione um plano diferente do atual','#f59e0b',true); return; }
+  if(!confirm(`Migrar "${c.nome||c.email}" de "${planoAntigo}" para "${novoPlano}"?`)) return;
+
+  notif('⏳ Migrando plano...','#3b82f6');
+
+  try{
+    c.plano = novoPlano;
+    c.dados = { ...(c.dados||{}), plano: novoPlano };
+
+    if(SB){
+      const { error } = await SB.from('clientes').update({
+        plano: novoPlano, dados: c.dados, atualizado_em: new Date().toISOString()
+      }).eq('id', c.id);
+      if(error){ notif('Erro ao salvar migração: '+error.message,'#ef4444',true); console.error('confirmarMigracaoPlano:', error); return; }
+    }
+
+    // Registrar a migração como nota, pra ficar no histórico do aluno
+    const l = LS.get(c.id);
+    if(!l.notas) l.notas = [];
+    l.notas.unshift({ texto: `🔄 Migrou de plano: "${planoAntigo}" → "${novoPlano}"`, data: new Date().toLocaleString('pt-BR') });
+    LS.set(c.id, l);
+    renderNotas(l.notas);
+
+    // Se o novo plano dá portal e o aluno ainda não tem acesso, gera na hora
+    const tinhaPortalAntes = planoTemPortal(planoAntigo);
+    const temPortalAgora = planoTemPortal(novoPlano);
+
+    if(temPortalAgora && !tinhaPortalAntes){
+      await gerarAcessoAutomatico(c);
+      notif('✅ Plano migrado! Acesso ao portal gerado automaticamente.','#10b981');
+    } else if(!temPortalAgora && tinhaPortalAntes){
+      notif('✅ Plano migrado! O novo plano não inclui portal — revogue o acesso manualmente aqui embaixo se for o caso.','#f59e0b');
+    } else {
+      notif('✅ Plano migrado com sucesso!','#10b981');
+    }
+
+    document.getElementById('migracao-plano-form').style.display = 'none';
+    document.getElementById('plano-atual-display').textContent = novoPlano;
+    set('m-subtitulo', (c.plano||'')+(c.tipo?' · '+c.tipo:''));
+    renderClientes(); renderDashboard();
+    await carregarAbaPortal(c);
+  }catch(e){
+    console.error('confirmarMigracaoPlano — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+  }
+}
+
 async function carregarAbaPortal(c){
+  const planoDisplay = document.getElementById('plano-atual-display');
+  if(planoDisplay) planoDisplay.textContent = c?.plano || '—';
+  const migForm = document.getElementById('migracao-plano-form');
+  if(migForm) migForm.style.display = 'none';
+
   if(!SB) return;
   const badge   = document.getElementById('portal-aba-badge');
   const expira  = document.getElementById('portal-aba-expira');

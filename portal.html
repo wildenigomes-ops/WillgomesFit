@@ -913,29 +913,61 @@ async function acionarInstalacaoApp(){
   notif('Abra o menu do navegador (⋮ ou compartilhar) e escolha "Adicionar à tela inicial".','#a78bfa',true);
 }
 
+function detectarNavegadorIOS(){
+  const ua = navigator.userAgent;
+  if(/EdgiOS/.test(ua)) return 'edge';
+  if(/CriOS/.test(ua)) return 'chrome';
+  if(/FxiOS/.test(ua)) return 'firefox';
+  return 'safari'; // padrão — cobre Safari e a maioria dos navegadores baseados nele
+}
+
 function mostrarTutorialInstalarIOS(){
+  const nav = window._forcarNavTutorial || detectarNavegadorIOS();
+
+  const passosSafari = [
+    'Toque no ícone <strong>compartilhar</strong> ⬆️ (embaixo, no meio da barra do Safari)',
+    'Deslize e toque em <strong>"Adicionar à Tela de Início"</strong>',
+    'Toque em <strong>"Adicionar"</strong> no canto superior direito'
+  ];
+
+  const passosMenu = [
+    'Toque no menu do navegador (ícone <strong>☰</strong> ou <strong>⋯</strong>, geralmente no canto inferior direito)',
+    'Toque em <strong>"Compartilhar"</strong> na lista que abrir',
+    'No menu que aparecer por baixo, toque em <strong>"Adicionar à Tela de Início"</strong>',
+    'Deixe <strong>"Abrir como app web"</strong> ativado e toque em <strong>"Adicionar"</strong>'
+  ];
+
+  const nomeNav = { edge:'Edge', chrome:'Chrome', firefox:'Firefox', safari:'Safari' }[nav];
+  const passos = nav === 'safari' ? passosSafari : passosMenu;
+
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   overlay.innerHTML = `
-    <div style="background:#111;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:420px;width:100%;text-align:center">
+    <div style="background:#111;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:420px;width:100%;text-align:center;max-height:85vh;overflow-y:auto">
       <div style="font-size:2.2rem;margin-bottom:10px">📲</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#fff;letter-spacing:1px;margin-bottom:18px">COMO INSTALAR NO IPHONE</div>
-      <div style="display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:16px;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--orange);flex-shrink:0">1</div>
-        <div style="font-size:.85rem;color:#ddd">Toque no ícone <strong>compartilhar</strong> ⬆️ (embaixo, no meio da barra do Safari)</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:16px;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--orange);flex-shrink:0">2</div>
-        <div style="font-size:.85rem;color:#ddd">Deslize e toque em <strong>"Adicionar à Tela de Início"</strong></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:24px;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--orange);flex-shrink:0">3</div>
-        <div style="font-size:.85rem;color:#ddd">Toque em <strong>"Adicionar"</strong> no canto superior direito</div>
-      </div>
-      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:.9rem;cursor:pointer">Entendi!</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#fff;letter-spacing:1px;margin-bottom:4px">COMO INSTALAR NO IPHONE</div>
+      <div style="font-size:.72rem;color:#888;margin-bottom:18px">Detectamos que você está no <strong style="color:#a78bfa">${nomeNav}</strong></div>
+      ${passos.map((p,i)=>`
+        <div style="display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:16px;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--orange);flex-shrink:0">${i+1}</div>
+          <div style="font-size:.85rem;color:#ddd">${p}</div>
+        </div>`).join('')}
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:.9rem;cursor:pointer;margin-top:8px">Entendi!</button>
+      <button onclick="alternarNavTutorialIOS(this)" style="width:100%;background:none;border:none;color:#666;font-size:.72rem;cursor:pointer;text-decoration:underline;margin-top:12px">Estou usando outro navegador</button>
     </div>`;
   overlay.onclick = (ev)=>{ if(ev.target===overlay) overlay.remove(); };
   document.body.appendChild(overlay);
+}
+
+function alternarNavTutorialIOS(btn){
+  const box = btn.closest('div[style*=fixed]').querySelector('div');
+  box.querySelectorAll('button').forEach(b=>b.style.display='none');
+  const opcoes = document.createElement('div');
+  opcoes.style.cssText = 'display:grid;gap:8px;margin-top:8px';
+  opcoes.innerHTML = ['Safari','Chrome','Edge','Firefox'].map(n=>
+    `<button onclick="this.closest('div[style*=fixed]').remove(); window._forcarNavTutorial='${n.toLowerCase()}'; mostrarTutorialInstalarIOS();" style="background:rgba(255,255,255,.06);border:1px solid var(--border);color:#fff;padding:11px;border-radius:10px;font-size:.82rem;cursor:pointer">${n}</button>`
+  ).join('');
+  box.appendChild(opcoes);
 }
 
 (function(){
