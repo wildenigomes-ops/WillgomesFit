@@ -1974,12 +1974,30 @@ async function toggleManutencaoCliente(ativo){
   if(error){ notif('Erro: '+error.message,'#ef4444'); document.getElementById('cliente-manutencao-check').checked = !ativo; return; }
 
   if(!atualizado || atualizado.length === 0){
-    notif('Este aluno ainda não tem nenhuma ficha publicada — publique uma ficha primeiro.','#ef4444');
-    document.getElementById('cliente-manutencao-check').checked = false;
-    return;
+    // Ainda não existe nenhuma ficha publicada pra esse aluno — cria um registro vazio já com a flag,
+    // assim dá pra marcar "em atualização" mesmo antes da primeira publicação.
+    const { error: errCriar } = await SB.from('portal_fichas').insert({
+      email: c.email,
+      user_id: null,
+      titulo: 'Ficha de Treino',
+      resumo: '',
+      treino_json: {},
+      gifs: {},
+      total_gifs: 0,
+      nutri_json: null,
+      criado_em: new Date().toISOString(),
+      publicado_por: 'Prof. Will Gomes',
+      em_manutencao: ativo
+    });
+    if(errCriar){
+      notif('Erro ao criar registro: '+errCriar.message,'#ef4444');
+      document.getElementById('cliente-manutencao-check').checked = !ativo;
+      return;
+    }
   }
 
   notif(ativo ? '🚧 Ficha marcada como em atualização' : '✅ Ficha normalizada','#eab308');
+  await carregarAbaPortal(c);
 }
 
 function editarInfoPortal(){
