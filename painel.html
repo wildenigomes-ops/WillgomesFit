@@ -35,7 +35,7 @@
   --font-d:'Bebas Neue',sans-serif;--font-b:'Inter',sans-serif;
   --sidebar:240px;
 }
-html,body{height:100%;margin:0}
+html,body{height:100%;margin:0;color-scheme:dark}
 body{font-family:var(--font-b);background:var(--bg);color:var(--white);font-size:14px;line-height:1.5;overflow:hidden}
 
 /* LOGIN */
@@ -133,6 +133,7 @@ tr:hover td{background:var(--card2)}
 .search-input{flex:1;min-width:200px;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--white);font-family:var(--font-b);font-size:.85rem;padding:9px 14px;outline:none;transition:border-color .2s}
 .search-input:focus{border-color:var(--orange)}
 .filter-sel{background:var(--card);border:1px solid var(--border);color:var(--white);font-family:var(--font-b);font-size:.8rem;padding:9px 12px;border-radius:5px;outline:none}
+select option,select optgroup{background:#1a1a1a;color:#fff}
 
 /* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;overflow-y:auto;padding:20px}
@@ -556,24 +557,24 @@ tr:hover td{background:var(--card2)}
           </div>
           <div id="migracao-plano-form" style="display:none;margin-top:12px;background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:14px 16px">
             <div style="font-size:.78rem;color:#888;margin-bottom:10px">Escolha o novo plano — seja upgrade ou downgrade, o aluno pode mudar quando quiser:</div>
-            <select id="select-novo-plano" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.85rem;font-family:var(--font-b);margin-bottom:12px">
+            <select id="select-novo-plano" style="-webkit-appearance:none;appearance:none;color-scheme:dark;width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.85rem;font-family:var(--font-b);margin-bottom:12px">
               <optgroup label="📋 Fichas Personalizadas">
-                <option value="Ficha Start">Ficha Start — R$29,90</option>
-                <option value="Ficha Elite">Ficha Elite — R$69,90</option>
-                <option value="Ficha Evolução">Ficha Evolução — R$99,90</option>
+                <option style="background:#1a1a1a;color:#fff" value="Ficha Start">Ficha Start — R$29,90</option>
+                <option style="background:#1a1a1a;color:#fff" value="Ficha Elite">Ficha Elite — R$69,90</option>
+                <option style="background:#1a1a1a;color:#fff" value="Ficha Evolução">Ficha Evolução — R$99,90</option>
               </optgroup>
               <optgroup label="📅 Consultoria Light">
-                <option value="Acompanhamento Start">Acompanhamento Start — R$79,90</option>
-                <option value="Acompanhamento Performance">Acompanhamento Performance — R$119,90</option>
-                <option value="Acompanhamento Elite">Acompanhamento Elite — R$169,90</option>
+                <option style="background:#1a1a1a;color:#fff" value="Acompanhamento Start">Acompanhamento Start — R$79,90</option>
+                <option style="background:#1a1a1a;color:#fff" value="Acompanhamento Performance">Acompanhamento Performance — R$119,90</option>
+                <option style="background:#1a1a1a;color:#fff" value="Acompanhamento Elite">Acompanhamento Elite — R$169,90</option>
               </optgroup>
               <optgroup label="🏆 Plano Contínuo">
-                <option value="Dark Trimestral">Dark Trimestral — R$249,90</option>
-                <option value="Dark Semestral">Dark Semestral — R$499,90</option>
-                <option value="Dark Anual">Dark Anual — R$799,90</option>
+                <option style="background:#1a1a1a;color:#fff" value="Dark Trimestral">Dark Trimestral — R$249,90</option>
+                <option style="background:#1a1a1a;color:#fff" value="Dark Semestral">Dark Semestral — R$499,90</option>
+                <option style="background:#1a1a1a;color:#fff" value="Dark Anual">Dark Anual — R$799,90</option>
               </optgroup>
               <optgroup label="🍎 Outros">
-                <option value="Guia Nutricional">Guia Nutricional — R$29,90</option>
+                <option style="background:#1a1a1a;color:#fff" value="Guia Nutricional">Guia Nutricional — R$29,90</option>
               </optgroup>
             </select>
             <div style="display:flex;gap:8px">
@@ -662,7 +663,7 @@ tr:hover td{background:var(--card2)}
           <div id="port-panel-treino">
             <p style="font-size:.8rem;color:var(--muted);margin-bottom:12px">Edite os exercícios e suba os GIFs. Após editar, clique em "Publicar ficha atual" acima.</p>
             <div id="portal-aba-exercicios">
-              <div style="text-align:center;padding:20px;color:#555;font-size:.82rem">Gere o relatório do cliente na aba Relatório primeiro para editar a ficha.</div>
+              <div style="text-align:center;padding:20px;color:#555;font-size:.82rem">⏳ Carregando ficha...</div>
             </div>
           </div>
 
@@ -2226,86 +2227,97 @@ function verFichaPortal(){
 
 async function renderizarEditorPortalAba(){
   const el = document.getElementById('portal-aba-exercicios');
-  if(!el || !clienteAtual) return;
+  if(!el){ console.error('[renderizarEditorPortalAba] elemento #portal-aba-exercicios não encontrado no DOM'); return; }
+  if(!clienteAtual){ console.error('[renderizarEditorPortalAba] clienteAtual está vazio'); return; }
 
   el.innerHTML = '<div style="color:#888;font-size:.82rem;padding:12px;text-align:center">⏳ Carregando ficha...</div>';
 
-  let exerciciosPorDia = null;
+  try{
+    let exerciciosPorDia = null;
 
-  // 1. Tentar buscar ficha já publicada no Supabase
-  if(SB){
-    try{
-      const { data } = await SB.from('portal_fichas')
-        .select('treino_json,gifs')
-        .eq('email', clienteAtual.email)
-        .order('criado_em',{ascending:false})
-        .limit(1);
-      if(data?.[0]?.treino_json){
-        const tj = data[0].treino_json;
-        // Carregar GIFs já publicados no cache
-        if(data[0].gifs) Object.assign(gifCache, data[0].gifs);
-        // Converter para formato editável
-        exerciciosPorDia = {};
-        Object.entries(tj).forEach(([k,v])=>{
-          if(k!=='_notas' && Array.isArray(v)) exerciciosPorDia[k] = v;
-        });
-      }
-    }catch(e){ console.warn(e); }
-  }
-
-  // 2. Se não tem ficha publicada, tentar gerar do motor (requer questionário)
-  if(!exerciciosPorDia){
-    try{
-      const treinos = prescreverTreino();
-      const comEx = treinos.filter(t=>(t.exercicios||t.ex||[]).length>0);
-      if(comEx.length){
-        exerciciosPorDia = {};
-        comEx.forEach(t=>{ exerciciosPorDia[t.nome] = t.exercicios||t.ex||[]; });
-      }
-    }catch(e){}
-  }
-
-  if(!exerciciosPorDia || !Object.keys(exerciciosPorDia).length){
-    // Nenhuma ficha existente ainda — em vez de travar, oferece um ponto de partida em branco
-    // pra você poder montar a ficha do zero, mesmo sem questionário preenchido.
-    exerciciosPorDia = {
-      'TREINO A': []
-    };
-  }
-
-  // 3. Renderizar editor com campos editáveis
-  let html = `<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:#34d399;margin-bottom:14px">
-    ✏️ Edite diretamente os campos abaixo. Após editar, clique em <strong>"🚀 Publicar ficha atual"</strong> acima para salvar no portal do aluno.
-  </div>`;
-
-  Object.entries(exerciciosPorDia).forEach(([diaNome, exercicios], dIdx)=>{
-    html += `<div style="margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="dia-block-${dIdx}">
-      <div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:10px 14px;display:flex;align-items:center;gap:8px">
-        <input type="text" value="${diaNome}" data-dia="${dIdx}" onchange="atualizarNomeDia(this)"
-          style="flex:1;background:transparent;border:none;color:#a78bfa;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-b);outline:none"/>
-        <button onclick="adicionarExercicio(${dIdx})" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">+ Exercício</button>
-        <button onclick="removerDiaTreino(${dIdx})" title="Remover este dia inteiro" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;padding:4px 9px;border-radius:6px;font-size:.7rem;cursor:pointer">🗑</button>
-      </div>
-      <div id="ex-list-${dIdx}">`;
-
-    exercicios.forEach((ex, eIdx)=>{
-      const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
-      const gifData = gifCache[gifKey]||null;
-      html += renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData);
-    });
-
-    if(!exercicios.length){
-      html += `<div style="padding:16px;text-align:center;color:#666;font-size:.78rem">Nenhum exercício ainda — clique em "+ Exercício" acima pra adicionar o primeiro.</div>`;
+    // 1. Tentar buscar ficha já publicada no Supabase
+    if(SB){
+      try{
+        const { data, error } = await SB.from('portal_fichas')
+          .select('treino_json,gifs')
+          .eq('email', clienteAtual.email)
+          .order('criado_em',{ascending:false})
+          .limit(1);
+        if(error) console.warn('[renderizarEditorPortalAba] erro ao buscar ficha:', error);
+        if(data?.[0]?.treino_json){
+          const tj = data[0].treino_json;
+          if(data[0].gifs) Object.assign(gifCache, data[0].gifs);
+          exerciciosPorDia = {};
+          Object.entries(tj).forEach(([k,v])=>{
+            if(k!=='_notas' && Array.isArray(v)) exerciciosPorDia[k] = v;
+          });
+        }
+      }catch(e){ console.warn('[renderizarEditorPortalAba] exceção ao buscar ficha:', e); }
+    } else {
+      console.warn('[renderizarEditorPortalAba] SB (Supabase) não está conectado');
     }
+
+    // 2. Se não tem ficha publicada, tentar gerar do motor (requer questionário)
+    if(!exerciciosPorDia){
+      try{
+        const treinos = prescreverTreino();
+        const comEx = treinos.filter(t=>(t.exercicios||t.ex||[]).length>0);
+        if(comEx.length){
+          exerciciosPorDia = {};
+          comEx.forEach(t=>{ exerciciosPorDia[t.nome] = t.exercicios||t.ex||[]; });
+        }
+      }catch(e){ console.warn('[renderizarEditorPortalAba] prescreverTreino falhou (normal se não tem questionário):', e.message); }
+    }
+
+    if(!exerciciosPorDia || !Object.keys(exerciciosPorDia).length){
+      // Nenhuma ficha existente ainda — em vez de travar, oferece um ponto de partida em branco
+      // pra você poder montar a ficha do zero, mesmo sem questionário preenchido.
+      exerciciosPorDia = {
+        'TREINO A': []
+      };
+    }
+
+    // 3. Renderizar editor com campos editáveis
+    let html = `<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:#34d399;margin-bottom:14px">
+      ✏️ Edite diretamente os campos abaixo. Após editar, clique em <strong>"🚀 Publicar ficha atual"</strong> acima para salvar no portal do aluno.
+    </div>`;
+
+    Object.entries(exerciciosPorDia).forEach(([diaNome, exercicios], dIdx)=>{
+      html += `<div style="margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="dia-block-${dIdx}">
+        <div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:10px 14px;display:flex;align-items:center;gap:8px">
+          <input type="text" value="${diaNome}" data-dia="${dIdx}" onchange="atualizarNomeDia(this)"
+            style="flex:1;background:transparent;border:none;color:#a78bfa;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-b);outline:none"/>
+          <button onclick="adicionarExercicio(${dIdx})" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">+ Exercício</button>
+          <button onclick="removerDiaTreino(${dIdx})" title="Remover este dia inteiro" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;padding:4px 9px;border-radius:6px;font-size:.7rem;cursor:pointer">🗑</button>
+        </div>
+        <div id="ex-list-${dIdx}">`;
+
+      exercicios.forEach((ex, eIdx)=>{
+        const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
+        const gifData = gifCache[gifKey]||null;
+        html += renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData);
+      });
+
+      if(!exercicios.length){
+        html += `<div style="padding:16px;text-align:center;color:#666;font-size:.78rem">Nenhum exercício ainda — clique em "+ Exercício" acima pra adicionar o primeiro.</div>`;
+      }
 
     html += `</div></div>`;
   });
 
   html += `<button onclick="adicionarDiaTreino()" style="width:100%;background:rgba(139,92,246,.08);border:1px dashed rgba(139,92,246,.35);color:#a78bfa;padding:12px;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:14px">➕ Adicionar dia de treino (ex: Treino B)</button>`;
 
-  // Salvar estrutura para edição
-  window._fichaEditavel = exerciciosPorDia;
-  el.innerHTML = html;
+    // Salvar estrutura para edição
+    window._fichaEditavel = exerciciosPorDia;
+    el.innerHTML = html;
+  }catch(e){
+    console.error('[renderizarEditorPortalAba] ERRO INESPERADO:', e);
+    el.innerHTML = `<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:14px;font-size:.8rem;color:#f87171">
+      ❌ Erro ao carregar o editor de exercícios.<br><br>
+      <strong>Detalhe técnico:</strong> ${(e.message||e).toString().replace(/</g,'&lt;')}<br><br>
+      Tire um print desta mensagem e envie pro suporte técnico.
+    </div>`;
+  }
 }
 
 function adicionarDiaTreino(){
