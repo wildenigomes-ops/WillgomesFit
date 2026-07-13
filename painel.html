@@ -1481,10 +1481,14 @@ function abrirNovoCliente(){ document.getElementById('modal-novo').classList.add
 document.getElementById('modal-cliente').addEventListener('click',function(e){ if(e.target===this) fecharModal(); });
 document.getElementById('modal-novo').addEventListener('click',function(e){ if(e.target===this){ this.classList.remove('open');document.body.style.overflow=''; } });
 
-function notif(msg,color='#22c55e'){
+function notif(msg,color='#22c55e',persistente=false){
   const n=document.getElementById('notif');
-  n.textContent=msg;n.style.background=color;n.style.display='block';
-  setTimeout(()=>n.style.display='none',2800);
+  n.textContent=msg;n.style.background=color;n.style.display='block';n.style.cursor='pointer';
+  n.onclick=()=>{n.style.display='none'};
+  if(n._timeoutId) clearTimeout(n._timeoutId);
+  if(!persistente){
+    n._timeoutId = setTimeout(()=>n.style.display='none', 2800);
+  }
 }
 
 async function excluirCliente(){
@@ -1977,38 +1981,53 @@ async function carregarAbaPortal(c){
 
 async function toggleManutencaoCliente(ativo){
   const c = clienteAtual;
-  if(!c?.email || !SB){ notif('Cliente sem e-mail cadastrado','#ef4444'); return; }
+  if(!c?.email || !SB){ notif('Cliente sem e-mail cadastrado','#ef4444',true); return; }
   notif(ativo ? '⏳ Ativando aviso de manutenção...' : '⏳ Removendo aviso de manutenção...','#eab308');
 
-  const { data: atualizado, error } = await SB.from('portal_fichas').update({em_manutencao:ativo}).eq('email', c.email).select();
+  try{
+    const { data: atualizado, error } = await SB.from('portal_fichas').update({em_manutencao:ativo}).eq('email', c.email).select();
 
-  if(error){ notif('Erro: '+error.message,'#ef4444'); document.getElementById('cliente-manutencao-check').checked = !ativo; return; }
-
-  if(!atualizado || atualizado.length === 0){
-    // Ainda não existe nenhuma ficha publicada pra esse aluno — cria um registro vazio já com a flag,
-    // assim dá pra marcar "em atualização" mesmo antes da primeira publicação.
-    const { error: errCriar } = await SB.from('portal_fichas').insert({
-      email: c.email,
-      user_id: null,
-      titulo: 'Ficha de Treino',
-      resumo: '',
-      treino_json: {},
-      gifs: {},
-      total_gifs: 0,
-      nutri_json: null,
-      criado_em: new Date().toISOString(),
-      publicado_por: 'Prof. Will Gomes',
-      em_manutencao: ativo
-    });
-    if(errCriar){
-      notif('Erro ao criar registro: '+errCriar.message,'#ef4444');
+    if(error){
+      const msgAmigavel = /column .*em_manutencao.* does not exist/i.test(error.message)
+        ? 'O banco de dados ainda não tem o campo necessário. Rode o arquivo sql_manutencao.sql no Supabase → SQL Editor (Anthropic te enviou esse arquivo antes) e tente de novo.'
+        : 'Erro: '+error.message;
+      notif(msgAmigavel,'#ef4444',true);
+      console.error('toggleManutencaoCliente:', error);
       document.getElementById('cliente-manutencao-check').checked = !ativo;
       return;
     }
-  }
 
-  notif(ativo ? '🚧 Ficha marcada como em atualização' : '✅ Ficha normalizada','#eab308');
-  await carregarAbaPortal(c);
+    if(!atualizado || atualizado.length === 0){
+      // Ainda não existe nenhuma ficha publicada pra esse aluno — cria um registro vazio já com a flag,
+      // assim dá pra marcar "em atualização" mesmo antes da primeira publicação.
+      const { error: errCriar } = await SB.from('portal_fichas').insert({
+        email: c.email,
+        user_id: null,
+        titulo: 'Ficha de Treino',
+        resumo: '',
+        treino_json: {},
+        gifs: {},
+        total_gifs: 0,
+        nutri_json: null,
+        criado_em: new Date().toISOString(),
+        publicado_por: 'Prof. Will Gomes',
+        em_manutencao: ativo
+      });
+      if(errCriar){
+        notif('Erro ao criar registro: '+errCriar.message,'#ef4444',true);
+        console.error('toggleManutencaoCliente (criar):', errCriar);
+        document.getElementById('cliente-manutencao-check').checked = !ativo;
+        return;
+      }
+    }
+
+    notif(ativo ? '🚧 Ficha marcada como em atualização' : '✅ Ficha normalizada','#eab308');
+    await carregarAbaPortal(c);
+  }catch(e){
+    console.error('toggleManutencaoCliente — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+    document.getElementById('cliente-manutencao-check').checked = !ativo;
+  }
 }
 
 function editarInfoPortal(){
@@ -2278,55 +2297,65 @@ function removerGifEx(gifKey, dIdx, eIdx){
 
 // Sobrescrever publicarNoPortal para usar _fichaEditavel se disponível
 async function publicarNoPortal(){
-  if(!clienteAtual){ notif('Selecione um cliente primeiro','#ef4444'); return; }
+  if(!clienteAtual){ notif('Selecione um cliente primeiro','#ef4444',true); return; }
   const c = clienteAtual;
-  if(!c.email){ notif('Cliente sem e-mail cadastrado','#ef4444'); return; }
-  if(!SB){ notif('Supabase não conectado','#ef4444'); return; }
+  if(!c.email){ notif('Cliente sem e-mail cadastrado','#ef4444',true); return; }
+  if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
 
   notif('⏳ Publicando ficha no portal...','#8b5cf6');
 
-  // Usar ficha editável se disponível, senão gerar do motor
-  let treinoJson;
-  if(window._fichaEditavel && Object.keys(window._fichaEditavel).length){
-    treinoJson = {...window._fichaEditavel};
-  } else {
-    try{
-      const treinos = prescreverTreino();
-      treinoJson = {};
-      treinos.filter(t=>(t.exercicios||[]).length).forEach(t=>{ treinoJson[t.nome] = t.exercicios; });
-      treinoJson._notas = treinos._notas || [];
-    }catch(e){
-      notif('Erro ao gerar ficha. O aluno precisa preencher o questionário.','#ef4444'); return;
+  try{
+    // Usar ficha editável se disponível, senão gerar do motor
+    let treinoJson;
+    if(window._fichaEditavel && Object.keys(window._fichaEditavel).length){
+      treinoJson = {...window._fichaEditavel};
+    } else {
+      try{
+        const treinos = prescreverTreino();
+        treinoJson = {};
+        treinos.filter(t=>(t.exercicios||[]).length).forEach(t=>{ treinoJson[t.nome] = t.exercicios; });
+        treinoJson._notas = treinos._notas || [];
+      }catch(e){
+        notif('Erro ao gerar ficha automaticamente. Edite os exercícios manualmente na aba Portal antes de publicar, ou peça ao aluno para preencher o questionário.','#ef4444',true);
+        return;
+      }
     }
+
+    if(!treinoJson || Object.keys(treinoJson).filter(k=>k!=='_notas').length === 0){
+      notif('A ficha está vazia — adicione pelo menos um exercício antes de publicar.','#ef4444',true);
+      return;
+    }
+
+    const nomeCliente = c.nome || c.email;
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    const portalAluno = await SB.from('portal_alunos').select('user_id').eq('email', c.email).limit(1);
+    const userId = portalAluno.data?.[0]?.user_id || null;
+
+    const { error } = await SB.from('portal_fichas').upsert({
+      email: c.email,
+      user_id: userId,
+      titulo: `Ficha de Treino — ${nomeCliente}`,
+      resumo: `Treino personalizado para ${nomeCliente} · Gerado em ${hoje}`,
+      treino_json: treinoJson,
+      gifs: gifCache,
+      total_gifs: Object.keys(gifCache).length,
+      criado_em: new Date().toISOString(),
+      publicado_por: 'Prof. Will Gomes'
+    }, { onConflict: 'email' });
+
+    if(error){ notif('Erro ao publicar: '+error.message,'#ef4444',true); console.error('publicarNoPortal:', error); return; }
+
+    const nGifs = Object.keys(gifCache).length;
+    const statusEl = document.getElementById('portal-status-aba');
+    if(statusEl){
+      statusEl.style.display = 'block';
+    }
+    notif(`✅ Ficha publicada no portal do aluno! ${nGifs} GIF(s) incluídos.`,'#8b5cf6');
+    carregarAbaPortal(c);
+  }catch(e){
+    console.error('publicarNoPortal — erro inesperado:', e);
+    notif('Erro inesperado ao publicar: '+(e.message||e),'#ef4444',true);
   }
-
-  const nomeCliente = c.nome || c.email;
-  const hoje = new Date().toLocaleDateString('pt-BR');
-  const portalAluno = await SB.from('portal_alunos').select('user_id').eq('email', c.email).limit(1);
-  const userId = portalAluno.data?.[0]?.user_id || null;
-
-  const { error } = await SB.from('portal_fichas').upsert({
-    email: c.email,
-    user_id: userId,
-    titulo: `Ficha de Treino — ${nomeCliente}`,
-    resumo: `Treino personalizado para ${nomeCliente} · Gerado em ${hoje}`,
-    treino_json: treinoJson,
-    gifs: gifCache,
-    total_gifs: Object.keys(gifCache).length,
-    criado_em: new Date().toISOString(),
-    publicado_por: 'Prof. Will Gomes'
-  }, { onConflict: 'email' });
-
-  if(error){ notif('Erro ao publicar: '+error.message,'#ef4444'); return; }
-
-  const nGifs = Object.keys(gifCache).length;
-  const statusEl = document.getElementById('portal-status');
-  if(statusEl){
-    statusEl.style.display = 'block';
-    statusEl.innerHTML = `✅ Ficha publicada! ${nGifs} GIF(s) incluídos.`;
-  }
-  notif(`✅ Ficha publicada no portal do aluno!`,'#8b5cf6');
-  carregarAbaPortal(c);
 }
 
 // ── GERAÇÃO AUTOMÁTICA DE ACESSO AO PORTAL NO CADASTRO ───────────────────────
@@ -4499,30 +4528,47 @@ async function carregarStatusManutencaoDegustacao(){
 }
 
 async function toggleManutencaoDegustacao(ativo){
-  if(!SB){ notif('Supabase não conectado','#ef4444'); return; }
+  if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
   notif(ativo ? '⏳ Ativando aviso de manutenção...' : '⏳ Removendo aviso de manutenção...','#eab308');
 
   try{
     for(const email of ['__degustacao_feminino__','__degustacao_masculino__']){
       // Tenta update simples primeiro — preserva o treino já customizado, se existir
-      const { data: atualizado } = await SB.from('portal_fichas').update({em_manutencao:ativo}).eq('email', email).select();
+      const { data: atualizado, error: errUpdate } = await SB.from('portal_fichas').update({em_manutencao:ativo}).eq('email', email).select();
+
+      if(errUpdate){
+        const msgAmigavel = /column .*em_manutencao.* does not exist/i.test(errUpdate.message)
+          ? 'O banco de dados ainda não tem o campo necessário. Rode o arquivo sql_manutencao.sql no Supabase → SQL Editor e tente de novo.'
+          : 'Erro: '+errUpdate.message;
+        notif(msgAmigavel,'#ef4444',true);
+        console.error('toggleManutencaoDegustacao (update):', errUpdate);
+        document.getElementById('deg-manutencao-check').checked = !ativo;
+        return;
+      }
 
       if(!atualizado || atualizado.length === 0){
         // Ficha ainda não existe — cria com o padrão + a flag de manutenção
         const genero = email.includes('feminino') ? 'feminino' : 'masculino';
         const treino = genero==='feminino' ? TREINO_DEMO_FEMININO_PADRAO : TREINO_DEMO_MASCULINO_PADRAO;
-        await SB.from('portal_fichas').upsert({
+        const { error: errCriar } = await SB.from('portal_fichas').upsert({
           email, user_id: null,
           titulo: `Treino Demonstrativo (${genero==='feminino'?'Feminino':'Masculino'}) — WillgomesFit`,
           resumo: 'Treino de degustação exibido para visitantes do portal',
           treino_json: treino, gifs: {}, total_gifs: 0, nutri_json: null,
           criado_em: new Date().toISOString(), publicado_por: 'Prof. Will Gomes', em_manutencao: ativo
         }, { onConflict: 'email' });
+        if(errCriar){
+          notif('Erro ao criar registro: '+errCriar.message,'#ef4444',true);
+          console.error('toggleManutencaoDegustacao (criar):', errCriar);
+          document.getElementById('deg-manutencao-check').checked = !ativo;
+          return;
+        }
       }
     }
     notif(ativo ? '🚧 Degustação marcada como em atualização' : '✅ Degustação normalizada','#eab308');
   }catch(e){
-    notif('Erro ao atualizar: '+e.message,'#ef4444');
+    console.error('toggleManutencaoDegustacao — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
     document.getElementById('deg-manutencao-check').checked = !ativo;
   }
 }

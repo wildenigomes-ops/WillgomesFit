@@ -299,15 +299,15 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
     <div id="auth-err" class="auth-err"></div>
     <div id="auth-ok" class="auth-ok"></div>
 
-    <div id="form-login">
-      <input class="inp" type="email" id="login-email" placeholder="Seu e-mail"/>
-      <input class="inp" type="password" id="login-pass" placeholder="Senha enviada pelo Prof. Will"/>
-      <button class="btn-auth" onclick="fazerLogin()">Entrar no portal</button>
+    <form id="form-login" autocomplete="on" onsubmit="event.preventDefault(); fazerLogin();">
+      <input class="inp" type="email" id="login-email" name="email" autocomplete="username" placeholder="Seu e-mail"/>
+      <input class="inp" type="password" id="login-pass" name="password" autocomplete="current-password" placeholder="Senha enviada pelo Prof. Will"/>
+      <button class="btn-auth" type="submit">Entrar no portal</button>
       <div style="text-align:center;margin-top:12px">
         <span style="font-size:.75rem;color:#555">Não tem acesso? </span>
         <a href="https://wildenigomes-ops.github.io/WillgomesFit/willgomesfit.html#planos" style="font-size:.75rem;color:#a78bfa;text-decoration:none;font-weight:700">Conheça os planos →</a>
       </div>
-    </div>
+    </form>
 
     <!-- BLOCO DE DEGUSTAÇÃO — só aparece quando acessado pelo link específico (?demo=1),
          nunca junto com a tela normal de login. Link fica disponível na página de vendas
@@ -815,9 +815,28 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 });
 
 // Registra o service worker (permite "Adicionar à tela inicial" como app)
+// e garante que, ao abrir pelo atalho da tela inicial, o app busque a versão mais nova.
 if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW não registrado:', e));
+  window.addEventListener('load', async ()=>{
+    try{
+      const reg = await navigator.serviceWorker.register('sw.js');
+
+      // Força checar se existe uma versão nova do app agora
+      reg.update().catch(()=>{});
+
+      // Se uma nova versão assumir o controle, recarrega a página uma vez pra aplicar
+      let jaRecarregou = false;
+      navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+        if(jaRecarregou) return;
+        jaRecarregou = true;
+        window.location.reload();
+      });
+
+      // Sempre que o app volta a ficar visível (ex: reabrir pelo atalho), checa de novo
+      document.addEventListener('visibilitychange', ()=>{
+        if(document.visibilityState === 'visible') reg.update().catch(()=>{});
+      });
+    }catch(e){ console.warn('SW não registrado:', e); }
   });
 }
 
