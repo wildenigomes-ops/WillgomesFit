@@ -1354,7 +1354,7 @@ async function carregarConquistas(){
 
   let logs = [];
   try{
-    const { data, error } = await SB.from('portal_treino_logs').select('concluido_em').eq('user_id', usuario.id).order('concluido_em',{ascending:false});
+    const { data, error } = await SB.from('portal_treino_logs').select('concluido_em').eq('email', usuario.email).order('concluido_em',{ascending:false});
     if(error) throw error;
     logs = data || [];
   }catch(e){ console.warn('Conquistas indisponíveis (tabela pode não existir ainda):', e); return; }
@@ -1496,11 +1496,12 @@ async function carregarDados(){
     dadosCliente = { ...dadosCliente, ...clientes[0], ...(clientes[0].dados||{}) };
   }
 
-  // Buscar fichas publicadas
-  const { data:fichas } = await SB.from('portal_fichas').select('*').eq('user_id', usuario.id).order('criado_em',{ascending:false});
+  // Buscar fichas publicadas (por e-mail — é a chave confiável nesse sistema, já que o login
+  // não usa autenticação real do Supabase, então user_id quase nunca está preenchido)
+  const { data:fichas } = await SB.from('portal_fichas').select('*').eq('email', usuario.email).order('criado_em',{ascending:false});
 
   // Buscar progresso
-  const { data:progressos } = await SB.from('portal_progresso').select('*').eq('user_id', usuario.id).order('criado_em',{ascending:false});
+  const { data:progressos } = await SB.from('portal_progresso').select('*').eq('email', usuario.email).order('criado_em',{ascending:false});
 
   // Montar dashboard
   montarDashboard(fichas||[], progressos||[]);
