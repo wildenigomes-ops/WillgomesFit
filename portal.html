@@ -1024,37 +1024,38 @@ async function coletarLeadEIniciar(){
   if(!genero){ authErr('Selecione o foco do treino de exemplo (Mulher ou Homem).'); return; }
 
   const numeroFormatado = '55' + whatsapp;
-  let criadoEmOriginal = null;
+  const LIMITE_MS = 2*60*60*1000;
+  let leadExistente = null;
 
-  // Verifica se esse WhatsApp já usou a degustação antes
+  // Identifica a pessoa pelo WhatsApp — se ela já usou a degustação antes, retoma o tempo de onde parou
   if(SB){
     try{
       const { data: existentes } = await SB.from('leads_degustacao')
-        .select('criado_em')
+        .select('criado_em,tempo_usado_ms')
         .eq('whatsapp', whatsapp)
         .order('criado_em', {ascending:false})
         .limit(1);
       if(existentes?.[0]){
-        const primeiroAcesso = new Date(existentes[0].criado_em).getTime();
-        const decorrido = Date.now() - primeiroAcesso;
-        if(decorrido < 2*60*60*1000){
-          criadoEmOriginal = existentes[0].criado_em; // ainda dentro da janela — retoma de onde parou
-        } else {
+        const usado = existentes[0].tempo_usado_ms || 0;
+        if(usado >= LIMITE_MS){
           mostrarDegustacaoExpirada();
           return;
         }
+        leadExistente = existentes[0];
       }
     }catch(e){ console.warn('Erro ao checar lead existente:', e); }
   }
 
-  const payload = {
-    nome, whatsapp, numero_formatado: numeroFormatado, genero,
-    status: 'novo', criado_em: criadoEmOriginal || new Date().toISOString(),
-    origem: 'degustacao_portal'
-  };
+  const tempoUsadoAcumulado = leadExistente?.tempo_usado_ms || 0;
+  const criadoEm = leadExistente?.criado_em || new Date().toISOString();
 
-  // Só insere e alerta na primeira vez — se estiver retomando, não duplica
-  if(!criadoEmOriginal){
+  // Só insere e alerta na primeira vez — se estiver retomando, não duplica nem manda alerta de novo
+  if(!leadExistente){
+    const payload = {
+      nome, whatsapp, numero_formatado: numeroFormatado, genero,
+      status: 'novo', criado_em: criadoEm, tempo_usado_ms: 0,
+      origem: 'degustacao_portal'
+    };
     try{
       if(SB) await SB.from('leads_degustacao').insert(payload);
     }catch(e){ console.warn('Erro ao salvar lead:', e); }
@@ -1072,7 +1073,7 @@ async function coletarLeadEIniciar(){
     }catch(e){ console.warn('Erro ao enviar alerta de degustação:', e); }
   }
 
-  window._leadDemo = { nome, whatsapp: numeroFormatado, genero, criado_em: payload.criado_em };
+  window._leadDemo = { nome, whatsapp: numeroFormatado, genero, criado_em: criadoEm, tempoUsadoAcumulado };
   iniciarDegustacao();
 }
 
@@ -1143,34 +1144,94 @@ async function iniciarDegustacao(){
   window._progressoDemoLocal = window._progressoDemoLocal || [];
   montarGrafico(window._progressoDemoLocal);
 
-  // Iniciar countdown de 2 horas — respeita o horário original se a pessoa estiver retomando
-  const inicioReal = window._leadDemo?.criado_em ? new Date(window._leadDemo.criado_em).getTime() : Date.now();
-  const fim = inicioReal + 2 * 60 * 60 * 1000;
-  if(fim <= Date.now()){
+  // Cronômetro de USO ATIVO — pausa quando a pessoa sai (troca de app, fecha aba)
+  // e retoma de onde parou quando volta, em vez de contar o tempo corrido.
+  const LIMITE_MS = 2*60*60*1000;
+  window._demoTempoUsadoAcumulado = window._leadDemo?.tempoUsadoAcumulado || 0;
+  window._demoRestanteMs = LIMITE_MS - window._demoTempoUsadoAcumulado;
+
+  if(window._demoRestanteMs <= 0){
     document.getElementById('demo-expired').style.display = 'flex';
     return;
   }
+
+  iniciarContadorDemoAtivo();
+  configurarPausaAutomaticaDemo();
+}
+
+function iniciarContadorDemoAtivo(){
+  window._demoSessaoInicio = Date.now();
+  atualizarDisplayTimerDemo();
   demoTimer = setInterval(()=>{
-    const resto = fim - Date.now();
+    const resto = window._demoRestanteMs - (Date.now() - window._demoSessaoInicio);
     if(resto <= 0){
-      clearInterval(demoTimer);
+      pausarContadorDemoAtivo(true);
       document.getElementById('demo-expired').style.display = 'flex';
       return;
     }
-    const h = Math.floor(resto/3600000);
-    const m = Math.floor((resto%3600000)/60000);
-    const s = Math.floor((resto%60000)/1000);
-    document.getElementById('demo-timer').textContent = h > 0
-      ? h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')
-      : String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-    // Aviso nos últimos 5 minutos
-    if(resto < 5*60*1000){
-      document.getElementById('demo-timer').style.color = '#fbbf24';
-    }
-    if(resto < 60*1000){
-      document.getElementById('demo-timer').style.color = '#ef4444';
-    }
+    atualizarDisplayTimerDemo(resto);
   }, 1000);
+}
+
+function atualizarDisplayTimerDemo(restoOverride){
+  const resto = restoOverride ?? (window._demoRestanteMs - (Date.now() - (window._demoSessaoInicio||Date.now())));
+  const restoSeguro = Math.max(0, resto);
+  const h = Math.floor(restoSeguro/3600000);
+  const m = Math.floor((restoSeguro%3600000)/60000);
+  const s = Math.floor((restoSeguro%60000)/1000);
+  const el = document.getElementById('demo-timer');
+  if(!el) return;
+  el.textContent = h > 0
+    ? h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')
+    : String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  el.style.color = restoSeguro < 60*1000 ? '#ef4444' : (restoSeguro < 5*60*1000 ? '#fbbf24' : '');
+}
+
+// Congela o cronômetro (chamado quando a pessoa sai/troca de aba/fecha) e salva o tempo usado no Supabase
+function pausarContadorDemoAtivo(expirado){
+  if(!window._demoSessaoInicio) return;
+  clearInterval(demoTimer);
+  const usadoNestaSessao = Date.now() - window._demoSessaoInicio;
+  window._demoRestanteMs = Math.max(0, window._demoRestanteMs - usadoNestaSessao);
+  window._demoTempoUsadoAcumulado += usadoNestaSessao;
+  window._demoSessaoInicio = null;
+
+  if(window._leadDemo?.whatsapp && SB){
+    const whatsappSemDDI = window._leadDemo.whatsapp.replace(/^55/,'');
+    SB.from('leads_degustacao')
+      .update({ tempo_usado_ms: window._demoTempoUsadoAcumulado })
+      .eq('whatsapp', whatsappSemDDI)
+      .then(()=>{})
+      .catch(e=>console.warn('Erro ao salvar tempo de uso da degustação:', e));
+  }
+}
+
+function configurarPausaAutomaticaDemo(){
+  if(window._demoPausaConfigurada) return; // evita duplicar os listeners
+  window._demoPausaConfigurada = true;
+
+  document.addEventListener('visibilitychange', ()=>{
+    if(!modoDemo) return;
+    if(document.visibilityState === 'hidden'){
+      pausarContadorDemoAtivo(false);
+    } else if(document.visibilityState === 'visible' && window._demoRestanteMs > 0 && !window._demoSessaoInicio){
+      iniciarContadorDemoAtivo();
+    }
+  });
+
+  window.addEventListener('beforeunload', ()=>{
+    if(modoDemo) pausarContadorDemoAtivo(false);
+  });
+
+  // Salva o progresso periodicamente também, como rede de segurança
+  // (caso os eventos acima não disparem em algum navegador)
+  setInterval(()=>{
+    if(modoDemo && window._demoSessaoInicio && window._leadDemo?.whatsapp && SB){
+      const usadoAgora = window._demoTempoUsadoAcumulado + (Date.now() - window._demoSessaoInicio);
+      const whatsappSemDDI = window._leadDemo.whatsapp.replace(/^55/,'');
+      SB.from('leads_degustacao').update({ tempo_usado_ms: usadoAgora }).eq('whatsapp', whatsappSemDDI).catch(()=>{});
+    }
+  }, 30000);
 }
 
 function reiniciarDegustacao(){
