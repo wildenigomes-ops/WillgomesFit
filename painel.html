@@ -2285,7 +2285,7 @@ async function renderizarEditorPortalAba(){
     Object.entries(exerciciosPorDia).forEach(([diaNome, exercicios], dIdx)=>{
       html += `<div style="margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="dia-block-${dIdx}">
         <div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:10px 14px;display:flex;align-items:center;gap:8px">
-          <input type="text" value="${diaNome}" data-dia="${dIdx}" onchange="atualizarNomeDia(this)"
+          <input type="text" value="${escHtml(diaNome)}" data-dia="${dIdx}" onchange="atualizarNomeDia(this)"
             style="flex:1;background:transparent;border:none;color:#a78bfa;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-b);outline:none"/>
           <button onclick="adicionarExercicio(${dIdx})" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">+ Exercício</button>
           <button onclick="removerDiaTreino(${dIdx})" title="Remover este dia inteiro" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;padding:4px 9px;border-radius:6px;font-size:.7rem;cursor:pointer">🗑</button>
@@ -2356,36 +2356,36 @@ function renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData){
       </div>
       <!-- CAMPOS EDITÁVEIS -->
       <div style="flex:1;min-width:200px;display:grid;gap:6px">
-        <input type="text" value="${ex.nome||''}" placeholder="Nome do exercício"
+        <input type="text" value="${escHtml(ex.nome)}" placeholder="Nome do exercício"
           onchange="atualizarExercicio(${dIdx},${eIdx},'nome',this.value)"
           style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:#fff;font-size:.85rem;font-weight:600;font-family:var(--font-b)"/>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
           <div>
             <div style="font-size:.58rem;color:#666;margin-bottom:3px">SÉRIES</div>
-            <input type="text" value="${ex.series||''}" placeholder="3"
+            <input type="text" value="${escHtml(ex.series)}" placeholder="3"
               onchange="atualizarExercicio(${dIdx},${eIdx},'series',this.value)"
               style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
           </div>
           <div>
             <div style="font-size:.58rem;color:#666;margin-bottom:3px">REPS</div>
-            <input type="text" value="${ex.reps||''}" placeholder="10-12"
+            <input type="text" value="${escHtml(ex.reps)}" placeholder="10-12"
               onchange="atualizarExercicio(${dIdx},${eIdx},'reps',this.value)"
               style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
           </div>
           <div>
             <div style="font-size:.58rem;color:#666;margin-bottom:3px">DESCANSO</div>
-            <input type="text" value="${ex.descanso||''}" placeholder="90s"
+            <input type="text" value="${escHtml(ex.descanso)}" placeholder="90s"
               onchange="atualizarExercicio(${dIdx},${eIdx},'descanso',this.value)"
               style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
           </div>
           <div>
             <div style="font-size:.58rem;color:#666;margin-bottom:3px">RIR</div>
-            <input type="text" value="${ex.rir||''}" placeholder="2"
+            <input type="text" value="${escHtml(ex.rir)}" placeholder="2"
               onchange="atualizarExercicio(${dIdx},${eIdx},'rir',this.value)"
               style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
           </div>
         </div>
-        <input type="text" value="${ex.obs||''}" placeholder="Observações (opcional)"
+        <input type="text" value="${escHtml(ex.obs)}" placeholder="Observações (opcional)"
           onchange="atualizarExercicio(${dIdx},${eIdx},'obs',this.value)"
           style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:5px;padding:6px 10px;color:#aaa;font-size:.78rem;font-family:var(--font-b)"/>
       </div>
@@ -2548,6 +2548,10 @@ function ehVideo(dataUrl){
 }
 
 // Gera a tag certa (img pra GIF/imagem, video pra MP4) com o mesmo estilo/onclick nos dois casos
+function escHtml(v){
+  return String(v ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function midiaTag(dataUrl, style, onclickAttr){
   const onclickPart = onclickAttr ? ` onclick="${onclickAttr}"` : '';
   if(ehVideo(dataUrl)){
@@ -4324,7 +4328,7 @@ async function renderizarEditorDegustacao(){
   Object.entries(treinos).forEach(([dia, exercicios], dIdx)=>{
     html += `<div style="margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="demo-dia-block-${dIdx}">
       <div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:10px 14px;display:flex;align-items:center;gap:8px">
-        <input type="text" value="${dia}" data-dia="${dIdx}" onchange="atualizarNomeDiaDemo(this)"
+        <input type="text" value="${escHtml(dia)}" data-dia="${dIdx}" onchange="atualizarNomeDiaDemo(this)"
           style="flex:1;background:transparent;border:none;color:#a78bfa;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-b);outline:none"/>
         <button onclick="adicionarExercicioDemo(${dIdx})" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">+ Exercício</button>
       </div>
@@ -4358,36 +4362,36 @@ function renderExercicioEditavelDemo(ex, dIdx, eIdx, gifKey, gifData){
         }
       </div>
       <div style="flex:1;min-width:200px;display:grid;gap:6px">
-        <input type="text" value="${ex.nome||''}" placeholder="Nome do exercício"
+        <input type="text" value="${escHtml(ex.nome)}" placeholder="Nome do exercício"
           onchange="atualizarExercicioDemo(${dIdx},${eIdx},'nome',this.value)"
           style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:#fff;font-size:.85rem;font-weight:600;font-family:var(--font-b)"/>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
           <div>
             <div style="font-size:.58rem;color:#666;margin-bottom:3px">SÉRIES</div>
-            <input type="text" value="${ex.series||''}" placeholder="3"
+            <input type="text" value="${escHtml(ex.series)}" placeholder="3"
               onchange="atualizarExercicioDemo(${dIdx},${eIdx},'series',this.value)"
               style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
           </div>
           <div>
             <div style="font-size:.58rem;color:#666;margin-bottom:3px">REPS</div>
-            <input type="text" value="${ex.reps||''}" placeholder="10-12"
+            <input type="text" value="${escHtml(ex.reps)}" placeholder="10-12"
               onchange="atualizarExercicioDemo(${dIdx},${eIdx},'reps',this.value)"
               style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
           </div>
           <div>
             <div style="font-size:.58rem;color:#666;margin-bottom:3px">DESCANSO</div>
-            <input type="text" value="${ex.descanso||''}" placeholder="90s"
+            <input type="text" value="${escHtml(ex.descanso)}" placeholder="90s"
               onchange="atualizarExercicioDemo(${dIdx},${eIdx},'descanso',this.value)"
               style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
           </div>
           <div>
             <div style="font-size:.58rem;color:#666;margin-bottom:3px">RIR</div>
-            <input type="text" value="${ex.rir||''}" placeholder="2"
+            <input type="text" value="${escHtml(ex.rir)}" placeholder="2"
               onchange="atualizarExercicioDemo(${dIdx},${eIdx},'rir',this.value)"
               style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:#fff;font-size:.8rem;font-family:var(--font-b);text-align:center"/>
           </div>
         </div>
-        <input type="text" value="${ex.obs||''}" placeholder="Observações (opcional)"
+        <input type="text" value="${escHtml(ex.obs)}" placeholder="Observações (opcional)"
           onchange="atualizarExercicioDemo(${dIdx},${eIdx},'obs',this.value)"
           style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:5px;padding:6px 10px;color:#aaa;font-size:.78rem;font-family:var(--font-b)"/>
       </div>
