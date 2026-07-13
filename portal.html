@@ -282,6 +282,9 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
   <div class="auth-box">
     <div class="auth-logo">WILLGOMESFIT</div>
     <div class="auth-sub">Portal do Aluno · Acesse seu treino</div>
+    <div style="text-align:center;margin-top:-16px;margin-bottom:20px">
+      <button onclick="forcarAtualizacaoApp()" style="background:none;border:none;color:#555;font-size:.7rem;cursor:pointer;text-decoration:underline">🔄 Não está vendo as novidades? Toque aqui pra atualizar</button>
+    </div>
 
     <!-- BANNER: instalar como app na tela inicial -->
     <div id="pwa-install-banner" style="display:none;background:rgba(240,89,10,.08);border:1px solid rgba(240,89,10,.25);border-radius:12px;padding:12px 14px;margin-bottom:16px;text-align:left">
@@ -379,6 +382,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
     <div class="nav-logo">WILLGOMESFIT</div>
     <div class="nav-right">
       <div class="nav-user" id="nav-user-email"></div>
+      <button onclick="forcarAtualizacaoApp()" title="Buscar atualizações" style="background:none;border:1px solid var(--border);color:#999;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;margin-right:4px">🔄</button>
       <button class="btn-logout" onclick="fazerLogout()">Sair</button>
     </div>
   </nav>
@@ -838,6 +842,25 @@ if('serviceWorker' in navigator){
       });
     }catch(e){ console.warn('SW não registrado:', e); }
   });
+}
+
+// Botão "🔄 Atualizar": limpa TUDO (cache do app + service worker antigo) e recarrega do zero.
+// É o jeito mais garantido de resolver quando o atalho da tela inicial não está trazendo novidades.
+async function forcarAtualizacaoApp(){
+  try{
+    if('caches' in window){
+      const nomes = await caches.keys();
+      await Promise.all(nomes.map(n => caches.delete(n)));
+    }
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  }catch(e){ console.warn('Erro ao limpar cache:', e); }
+  // Cache-bust na própria URL pra garantir que nem o navegador sirva algo antigo
+  const url = new URL(window.location.href);
+  url.searchParams.set('_v', Date.now());
+  window.location.href = url.toString();
 }
 
 // ── BANNER DE INSTALAÇÃO (PWA) ──────────────────────────────────────────────
@@ -1435,30 +1458,51 @@ async function trocarSenha(){
   const atual    = document.getElementById('s-atual').value;
   const nova     = document.getElementById('s-nova').value;
   const confirma = document.getElementById('s-confirma').value;
-  if(!atual||!nova||!confirma){ notif('Preencha todos os campos','#ef4444'); return; }
-  if(nova.length < 6){ notif('A nova senha precisa ter ao menos 6 caracteres','#ef4444'); return; }
-  if(nova !== confirma){ notif('As senhas não coincidem','#ef4444'); return; }
+  if(!atual||!nova||!confirma){ notif('Preencha todos os campos','#ef4444',true); return; }
+  if(nova.length < 6){ notif('A nova senha precisa ter ao menos 6 caracteres','#ef4444',true); return; }
+  if(nova !== confirma){ notif('As senhas não coincidem','#ef4444',true); return; }
 
   if(modoDemo){
-    notif('🎯 Troca de senha disponível quando você assinar um plano de acompanhamento','#f59e0b');
+    notif('🎯 Troca de senha disponível quando você assinar um plano de acompanhamento','#f59e0b',true);
     return;
   }
 
-  // Verificar senha atual
-  const senhaAtual = dadosCliente?.senha_custom || dadosCliente?.senha_temp;
-  if(atual !== senhaAtual){ notif('Senha atual incorreta','#ef4444'); return; }
+  try{
+    // Verificar senha atual
+    const senhaAtual = dadosCliente?.senha_custom || dadosCliente?.senha_temp;
+    console.log('[trocarSenha] dadosCliente:', dadosCliente, '| senhaAtual esperada:', senhaAtual);
 
-  const { error } = await SB.from('portal_alunos').update({
-    senha_custom: nova,
-    senha_temp: null,
-    senha_redefinida: true
-  }).eq('email', usuario.email);
+    if(!senhaAtual){
+      notif('Não foi possível carregar seus dados de acesso. Saia e entre novamente, depois tente trocar a senha de novo.','#ef4444',true);
+      console.error('[trocarSenha] dadosCliente sem senha_custom/senha_temp:', dadosCliente);
+      return;
+    }
 
-  if(error){ notif('Erro ao salvar: '+error.message,'#ef4444'); return; }
-  dadosCliente.senha_custom = nova;
-  dadosCliente.senha_temp = null;
-  ['s-atual','s-nova','s-confirma'].forEach(id=>document.getElementById(id).value='');
-  notif('✅ Senha alterada com sucesso!','#10b981');
+    if(atual !== senhaAtual){ notif('Senha atual incorreta','#ef4444',true); return; }
+
+    const { data: atualizado, error } = await SB.from('portal_alunos').update({
+      senha_custom: nova,
+      senha_temp: null,
+      senha_redefinida: true
+    }).eq('email', usuario.email).select();
+
+    if(error){ notif('Erro ao salvar: '+error.message,'#ef4444',true); console.error('[trocarSenha] erro Supabase:', error); return; }
+
+    if(!atualizado || atualizado.length === 0){
+      notif('Não encontramos seu cadastro de acesso pra atualizar (e-mail: '+usuario.email+'). Fale com o Prof. Will.','#ef4444',true);
+      console.error('[trocarSenha] update não afetou nenhuma linha. usuario.email:', usuario.email);
+      return;
+    }
+
+    dadosCliente.senha_custom = nova;
+    dadosCliente.senha_temp = null;
+    dadosCliente.senha_redefinida = true;
+    ['s-atual','s-nova','s-confirma'].forEach(id=>document.getElementById(id).value='');
+    notif('✅ Senha alterada com sucesso!','#10b981');
+  }catch(e){
+    console.error('[trocarSenha] erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+  }
 }
 
 // ── ENTRAR NO APP ─────────────────────────────────────────────────────────────
@@ -1808,14 +1852,18 @@ function showPage(id){
 }
 
 // ── NOTIF ─────────────────────────────────────────────────────────────────────
-function notif(msg, cor='#10b981'){
+function notif(msg, cor='#10b981', persistente=false){
   const el = document.getElementById('notif');
   el.textContent = msg;
   el.style.borderColor = cor;
   el.style.color = cor;
   el.style.opacity = '1';
+  el.style.cursor = 'pointer';
+  el.onclick = ()=>{ el.style.opacity='0'; };
   clearTimeout(window._notifT);
-  window._notifT = setTimeout(()=>el.style.opacity='0', 3000);
+  if(!persistente){
+    window._notifT = setTimeout(()=>el.style.opacity='0', 3000);
+  }
 }
 </script>
 </body>
