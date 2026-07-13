@@ -50,7 +50,7 @@ section{padding:88px 24px}
 .cat-acomp.active{border-color:#2563eb}
 .cat-long.active{border-color:#dc2626}
 .cat-nutri.active{border-color:#16a34a}
-.tab-panel{display:none;margin-top:24px}
+.tab-panel{display:none;margin-top:24px;scroll-margin-top:84px}
 .tab-panel.active{display:block;animation:fadeInTab .35s cubic-bezier(.34,1.56,.64,1)}
 @keyframes fadeInTab{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .ficha-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:24px}
@@ -1478,10 +1478,16 @@ function showSuccess() {
 function switchTab(id, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.cat-banner').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
+  const painel = document.getElementById('tab-' + id);
+  painel.classList.add('active');
   btn.classList.add('active');
   const hint = document.getElementById('cat-empty-hint');
   if(hint) hint.style.display = 'none';
+
+  // Leva o cliente visivelmente pra área de serviços daquela categoria
+  setTimeout(()=>{
+    painel.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 60);
 }
 
 function toggleFaq(btn) {
