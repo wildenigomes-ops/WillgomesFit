@@ -414,7 +414,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
         </div>
       </div>
       <a href="https://wildenigomes-ops.github.io/WillgomesFit/willgomesfit.html#planos" class="btn-assinar">💪 QUERO MEU PLANO AGORA</a>
-      <button class="btn-demo-novamente" onclick="reiniciarDegustacao()">↩ Ver demonstração novamente (mais 2 horas)</button>
+      <a href="https://wa.me/5585989383246" style="display:block;text-align:center;margin-top:12px;color:#25D366;font-size:.82rem;font-weight:700;text-decoration:none">💬 Tenho dúvidas, falar com o Will</a>
     </div>
   </div>
 
@@ -1012,6 +1012,8 @@ function selecionarGeneroDemo(g){
   ativo.style.color = '#fff';
 }
 
+const SCRIPT_URL_LEAD = 'https://script.google.com/macros/s/AKfycby3l-F9cQqgcrpZCppDoxW8vAVe79Z4cNWr4_tw7mwX0phvkdsX8Y4rclzzmrAchwxW/exec';
+
 async function coletarLeadEIniciar(){
   const nome = document.getElementById('demo-nome').value.trim();
   const whatsapp = document.getElementById('demo-whatsapp').value.trim().replace(/\D/g,'');
@@ -1021,24 +1023,70 @@ async function coletarLeadEIniciar(){
   if(whatsapp.length < 10){ authErr('Informe um WhatsApp válido com DDD.'); return; }
   if(!genero){ authErr('Selecione o foco do treino de exemplo (Mulher ou Homem).'); return; }
 
+  const numeroFormatado = '55' + whatsapp;
+  let criadoEmOriginal = null;
+
+  // Verifica se esse WhatsApp já usou a degustação antes
+  if(SB){
+    try{
+      const { data: existentes } = await SB.from('leads_degustacao')
+        .select('criado_em')
+        .eq('whatsapp', whatsapp)
+        .order('criado_em', {ascending:false})
+        .limit(1);
+      if(existentes?.[0]){
+        const primeiroAcesso = new Date(existentes[0].criado_em).getTime();
+        const decorrido = Date.now() - primeiroAcesso;
+        if(decorrido < 2*60*60*1000){
+          criadoEmOriginal = existentes[0].criado_em; // ainda dentro da janela — retoma de onde parou
+        } else {
+          mostrarDegustacaoExpirada();
+          return;
+        }
+      }
+    }catch(e){ console.warn('Erro ao checar lead existente:', e); }
+  }
+
   const payload = {
-    nome,
-    whatsapp,
-    numero_formatado: '55' + whatsapp,
-    genero,
-    status: 'novo',
-    criado_em: new Date().toISOString(),
+    nome, whatsapp, numero_formatado: numeroFormatado, genero,
+    status: 'novo', criado_em: criadoEmOriginal || new Date().toISOString(),
     origem: 'degustacao_portal'
   };
 
-  // Salvar no Supabase (não bloqueante — se falhar, degustação continua)
-  try{
-    if(SB) await SB.from('leads_degustacao').insert(payload);
-  }catch(e){ console.warn('Erro ao salvar lead:', e); }
+  // Só insere e alerta na primeira vez — se estiver retomando, não duplica
+  if(!criadoEmOriginal){
+    try{
+      if(SB) await SB.from('leads_degustacao').insert(payload);
+    }catch(e){ console.warn('Erro ao salvar lead:', e); }
 
-  // Armazenar localmente para uso na degustação
-  window._leadDemo = { nome, whatsapp: '55'+whatsapp, genero };
+    // Alerta por e-mail pro Will — mesma via usada nas compras, pra ele acompanhar em tempo real
+    try{
+      await fetch(SCRIPT_URL_LEAD, {
+        method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          tipo: 'nova_degustacao',
+          nome, whatsapp: numeroFormatado, genero,
+          data_envio: new Date().toLocaleString('pt-BR')
+        })
+      });
+    }catch(e){ console.warn('Erro ao enviar alerta de degustação:', e); }
+  }
+
+  window._leadDemo = { nome, whatsapp: numeroFormatado, genero, criado_em: payload.criado_em };
   iniciarDegustacao();
+}
+
+function mostrarDegustacaoExpirada(){
+  const box = document.getElementById('demo-access-block');
+  if(!box) return;
+  box.innerHTML = `
+    <div style="text-align:center;padding:20px;background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(139,92,246,.05));border:1px solid rgba(139,92,246,.2);border-radius:14px">
+      <div style="font-size:2.4rem;margin-bottom:10px">⏰</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#fff;margin-bottom:10px">SEU TEMPO DE TESTE JÁ ACABOU</div>
+      <div style="font-size:.85rem;color:#999;margin-bottom:20px;line-height:1.6">Você já usou sua degustação gratuita de 2 horas. Que tal continuar com um plano completo?</div>
+      <a href="https://wildenigomes-ops.github.io/WillgomesFit/willgomesfit.html#planos" style="display:block;background:var(--orange);color:#fff;font-weight:800;padding:14px;border-radius:12px;text-decoration:none;margin-bottom:10px">Ver planos →</a>
+      <a href="https://wa.me/5585989383246" style="display:block;background:#25D366;color:#fff;font-weight:800;padding:14px;border-radius:12px;text-decoration:none">💬 Falar com o Will</a>
+    </div>`;
 }
 
 // ── DEGUSTAÇÃO ────────────────────────────────────────────────────────────────
@@ -1095,8 +1143,13 @@ async function iniciarDegustacao(){
   window._progressoDemoLocal = window._progressoDemoLocal || [];
   montarGrafico(window._progressoDemoLocal);
 
-  // Iniciar countdown de 2 horas
-  const fim = Date.now() + 2 * 60 * 60 * 1000;
+  // Iniciar countdown de 2 horas — respeita o horário original se a pessoa estiver retomando
+  const inicioReal = window._leadDemo?.criado_em ? new Date(window._leadDemo.criado_em).getTime() : Date.now();
+  const fim = inicioReal + 2 * 60 * 60 * 1000;
+  if(fim <= Date.now()){
+    document.getElementById('demo-expired').style.display = 'flex';
+    return;
+  }
   demoTimer = setInterval(()=>{
     const resto = fim - Date.now();
     if(resto <= 0){

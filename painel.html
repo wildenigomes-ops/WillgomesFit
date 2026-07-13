@@ -4331,7 +4331,7 @@ async function renderizarEditorDegustacao(){
       <div id="demo-ex-list-${dIdx}">`;
 
     exercicios.forEach((ex, eIdx)=>{
-      const gifKey = 'demo_gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
+      const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
       const gifData = gifsDegustacao[gifKey]||null;
       html += renderExercicioEditavelDemo(ex, dIdx, eIdx, gifKey, gifData);
     });
