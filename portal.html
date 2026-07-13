@@ -2,8 +2,24 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
 <title>WillgomesFit — Portal do Aluno</title>
+
+<!-- PWA — permite adicionar à tela inicial como app -->
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0a090b"/>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+
+<!-- iOS: faz o app abrir em tela cheia (sem barra do Safari) quando adicionado à tela inicial -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="WillgomesFit"/>
+
+<!-- Android/Chrome: mesma coisa -->
+<meta name="mobile-web-app-capable" content="yes"/>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -266,6 +282,19 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
   <div class="auth-box">
     <div class="auth-logo">WILLGOMESFIT</div>
     <div class="auth-sub">Portal do Aluno · Acesse seu treino</div>
+
+    <!-- BANNER: instalar como app na tela inicial -->
+    <div id="pwa-install-banner" style="display:none;background:rgba(240,89,10,.08);border:1px solid rgba(240,89,10,.25);border-radius:12px;padding:12px 14px;margin-bottom:16px;text-align:left">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:1.4rem">📲</span>
+        <div style="flex:1">
+          <div style="color:#fff;font-size:.8rem;font-weight:700;margin-bottom:2px">Instale o portal no seu celular</div>
+          <div id="pwa-install-text" style="color:#999;font-size:.72rem;line-height:1.5">Toque em compartilhar e depois em "Adicionar à Tela de Início".</div>
+        </div>
+        <button onclick="document.getElementById('pwa-install-banner').style.display='none'" style="background:none;border:none;color:#666;font-size:1rem;cursor:pointer;padding:4px">✕</button>
+      </div>
+      <button id="pwa-install-btn" style="display:none;width:100%;margin-top:10px;background:var(--orange);color:#fff;border:none;padding:9px;border-radius:8px;font-weight:700;font-size:.78rem;cursor:pointer">⬇ Instalar agora</button>
+    </div>
 
     <div id="auth-err" class="auth-err"></div>
     <div id="auth-ok" class="auth-ok"></div>
@@ -773,6 +802,50 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   if(session){ usuario = session.user; entrarNoApp(); }
 });
 
+// Registra o service worker (permite "Adicionar à tela inicial" como app)
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW não registrado:', e));
+  });
+}
+
+// ── BANNER DE INSTALAÇÃO (PWA) ──────────────────────────────────────────────
+(function(){
+  const jaInstalado = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if(jaInstalado) return; // já está instalado, não mostra nada
+
+  const banner = document.getElementById('pwa-install-banner');
+  const textEl = document.getElementById('pwa-install-text');
+  const btnEl  = document.getElementById('pwa-install-btn');
+  if(!banner) return;
+
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/.test(ua);
+  const isAndroid = /Android/.test(ua);
+
+  if(isIOS){
+    textEl.innerHTML = 'Toque no ícone <strong>compartilhar</strong> (□↑) na barra do Safari e depois em <strong>"Adicionar à Tela de Início"</strong>.';
+    banner.style.display = 'block';
+  } else if(isAndroid){
+    textEl.textContent = 'Instale para abrir direto da tela inicial, em tela cheia.';
+    banner.style.display = 'block';
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e)=>{
+      e.preventDefault();
+      deferredPrompt = e;
+      btnEl.style.display = 'block';
+    });
+    btnEl.addEventListener('click', async ()=>{
+      if(!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      banner.style.display = 'none';
+    });
+  }
+  // Desktop: não mostra o banner (instalação não é o foco nesse caso)
+})();
+
 // ── CAPTAÇÃO DE LEAD ANTES DA DEGUSTAÇÃO ─────────────────────────────────────
 function selecionarGeneroDemo(g){
   window._generoDemo = g;
@@ -832,6 +905,18 @@ async function iniciarDegustacao(){
       const chaveEmail = genero === 'feminino' ? '__degustacao_feminino__' : '__degustacao_masculino__';
       const { data } = await SB.from('portal_fichas').select('*').eq('email',chaveEmail).limit(1);
       const publicado = data?.[0];
+
+      if(publicado?.em_manutencao){
+        montarDashboardDemo();
+        document.getElementById('ficha-content').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🚧</div>
+            <div class="empty-title">Degustação em atualização</div>
+            <div class="empty-sub">O Prof. Will está atualizando essa área agora. Volta ao normal em breve — enquanto isso, chama no WhatsApp que ele te conta tudo sobre os planos!</div>
+          </div>`;
+        return;
+      }
+
       if(publicado?.treino_json && Object.keys(publicado.treino_json).length){
         fichaDemo = {
           ...fichaDemo,
@@ -1447,6 +1532,19 @@ function montarFicha(fichas){
   }
 
   const f = fichas[0];
+
+  if(f.em_manutencao){
+    document.getElementById('ficha-content').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🚧</div>
+        <div class="empty-title">Sua ficha está em atualização</div>
+        <div class="empty-sub">O Prof. Will está ajustando seu treino agora. Se algo parecer faltando ou fora do lugar, é só isso — volta ao normal em breve. Qualquer dúvida, chama no WhatsApp!</div>
+      </div>`;
+    const btnIniciarM = document.getElementById('btn-iniciar-treino');
+    if(btnIniciarM) btnIniciarM.style.display = 'none';
+    return;
+  }
+
   window._fichaAtual = f; // Guardar para o modo treino ativo
   const treinos = f.treino_json || {};
   let html = `<div class="ficha-box">

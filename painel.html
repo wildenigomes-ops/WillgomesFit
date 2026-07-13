@@ -329,6 +329,15 @@ tr:hover td{background:var(--card2)}
           <button class="btn" onclick="salvarTreinoDegustacao()" style="background:rgba(139,92,246,.15);color:#a78bfa;border-color:rgba(139,92,246,.3);font-size:.82rem">💾 Salvar tudo no portal</button>
         </div>
 
+        <!-- TOGGLE DE MANUTENÇÃO -->
+        <label id="deg-manutencao-box" style="display:flex;align-items:center;gap:12px;background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.25);border-radius:10px;padding:12px 16px;margin-bottom:16px;cursor:pointer">
+          <input type="checkbox" id="deg-manutencao-check" onchange="toggleManutencaoDegustacao(this.checked)" style="width:20px;height:20px;accent-color:#eab308;cursor:pointer;flex-shrink:0"/>
+          <div>
+            <div style="font-size:.85rem;font-weight:700;color:#eab308">🚧 Degustação em atualização</div>
+            <div style="font-size:.75rem;color:#999">Quando marcado, os visitantes veem um aviso de "área em atualização" no lugar do treino, em vez de conteúdo quebrado ou incompleto.</div>
+          </div>
+        </label>
+
         <!-- ABAS DEGUSTAÇÃO -->
         <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px">
           <button id="deg-tab-treino" onclick="switchDegTab('treino')" style="padding:9px 18px;background:rgba(139,92,246,.2);border:none;border-bottom:2px solid #8b5cf6;color:#a78bfa;font-family:var(--font-b);font-size:.8rem;font-weight:700;cursor:pointer;border-radius:6px 6px 0 0">🏋️ Treino</button>
@@ -532,20 +541,41 @@ tr:hover td{background:var(--card2)}
               <div id="portal-aba-expira" style="font-size:.78rem;color:#888"></div>
             </div>
             <div id="portal-aba-credenciais" style="display:none;background:rgba(0,0,0,.3);border-radius:8px;padding:12px;margin-bottom:12px">
-              <div style="font-size:.65rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa;margin-bottom:8px">Credenciais de Acesso</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;margin-bottom:10px">
-                <div><span style="color:#666;font-size:.7rem">LOGIN (E-MAIL)</span><br><strong id="portal-aba-email" style="color:#fff;font-size:.88rem"></strong></div>
-                <div>
-                  <span style="color:#666;font-size:.7rem">SENHA ATUAL</span><br>
-                  <strong id="portal-aba-senha" style="color:#a78bfa;font-size:1rem;letter-spacing:1px"></strong>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div style="font-size:.65rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa">Credenciais de Acesso</div>
+                <button onclick="editarInfoPortal()" style="background:none;border:none;color:#888;font-size:.72rem;cursor:pointer;text-decoration:underline">✏️ Editar</button>
+              </div>
+              <div id="portal-aba-view">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;margin-bottom:10px">
+                  <div><span style="color:#666;font-size:.7rem">LOGIN (E-MAIL)</span><br><strong id="portal-aba-email" style="color:#fff;font-size:.88rem"></strong></div>
+                  <div>
+                    <span style="color:#666;font-size:.7rem">SENHA ATUAL</span><br>
+                    <strong id="portal-aba-senha" style="color:#a78bfa;font-size:1rem;letter-spacing:1px"></strong>
+                  </div>
+                  <div><span style="color:#666;font-size:.7rem">ÚLTIMO ACESSO</span><br><strong id="portal-aba-ultimo" style="color:#fff;font-size:.82rem"></strong></div>
+                  <div><span style="color:#666;font-size:.7rem">SENHA TROCADA?</span><br><strong id="portal-aba-redefinida" style="color:#fff;font-size:.78rem"></strong></div>
                 </div>
-                <div><span style="color:#666;font-size:.7rem">ÚLTIMO ACESSO</span><br><strong id="portal-aba-ultimo" style="color:#fff;font-size:.82rem"></strong></div>
-                <div><span style="color:#666;font-size:.7rem">SENHA TROCADA?</span><br><strong id="portal-aba-redefinida" style="color:#fff;font-size:.78rem"></strong></div>
+                <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.15);border-radius:6px;padding:8px 12px;font-size:.75rem;color:#888;margin-bottom:10px">
+                  🔗 Portal: <a id="portal-aba-link" href="https://wildenigomes-ops.github.io/WillgomesFit/portal.html" target="_blank" style="color:#a78bfa;text-decoration:underline">wildenigomes-ops.github.io/WillgomesFit/portal.html</a>
+                </div>
+                <button onclick="copiarCredenciais()" style="background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);color:#a78bfa;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;width:100%">📋 Copiar credenciais completas</button>
               </div>
-              <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.15);border-radius:6px;padding:8px 12px;font-size:.75rem;color:#888;margin-bottom:10px">
-                🔗 Portal: <span style="color:#a78bfa">wildenigomes-ops.github.io/WillgomesFit/portal.html</span>
+              <div id="portal-aba-edit" style="display:none">
+                <div style="display:grid;gap:8px;margin-bottom:10px">
+                  <div>
+                    <span style="color:#666;font-size:.7rem">NOME</span>
+                    <input type="text" id="edit-portal-nome" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:#fff;font-size:.85rem;font-family:var(--font-b)"/>
+                  </div>
+                  <div>
+                    <span style="color:#666;font-size:.7rem">LOGIN (E-MAIL) — cuidado: isso é o que o aluno usa pra entrar</span>
+                    <input type="email" id="edit-portal-email" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:#fff;font-size:.85rem;font-family:var(--font-b)"/>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <button onclick="salvarEdicaoInfoPortal()" style="flex:1;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34d399;padding:7px;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer">💾 Salvar</button>
+                  <button onclick="cancelarEdicaoInfoPortal()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);color:#999;padding:7px;border-radius:8px;font-size:.78rem;cursor:pointer">Cancelar</button>
+                </div>
               </div>
-              <button onclick="copiarCredenciais()" style="background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);color:#a78bfa;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;width:100%">📋 Copiar credenciais completas</button>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap" id="portal-aba-btns"></div>
           </div>
@@ -559,6 +589,13 @@ tr:hover td{background:var(--card2)}
             <button class="btn btn-green" onclick="publicarNoPortal()" style="font-size:.8rem;padding:9px 16px">🚀 Publicar ficha atual</button>
             <button class="btn" onclick="verFichaPortal()" style="font-size:.8rem;padding:9px 16px;background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.3)">👁 Ver ficha publicada</button>
           </div>
+          <label id="cliente-manutencao-box" style="display:flex;align-items:center;gap:12px;background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.25);border-radius:10px;padding:12px 16px;cursor:pointer">
+            <input type="checkbox" id="cliente-manutencao-check" onchange="toggleManutencaoCliente(this.checked)" style="width:20px;height:20px;accent-color:#eab308;cursor:pointer;flex-shrink:0"/>
+            <div>
+              <div style="font-size:.85rem;font-weight:700;color:#eab308">🚧 Ficha deste aluno em atualização</div>
+              <div style="font-size:.75rem;color:#999">Marque enquanto estiver editando. O aluno verá um aviso de manutenção no lugar do treino até você desmarcar.</div>
+            </div>
+          </label>
         </div>
 
         <!-- EDITOR DE EXERCÍCIOS E GIFs -->
@@ -1402,7 +1439,7 @@ function showPage(id,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
-  if(id==='degustacoes'){ carregarDegustacoes(); renderizarEditorDegustacao(); }
+  if(id==='degustacoes'){ carregarDegustacoes(); renderizarEditorDegustacao(); carregarStatusManutencaoDegustacao(); }
 }
 function switchTab(id,el){
   document.querySelectorAll('#page-clientes .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -1818,6 +1855,12 @@ async function carregarAbaPortal(c){
   const fichaEl = document.getElementById('portal-aba-ficha-status');
   if(!badge) return;
 
+  // Sempre volta pro modo visualização ao (re)carregar a aba
+  const viewEl = document.getElementById('portal-aba-view');
+  const editEl = document.getElementById('portal-aba-edit');
+  if(viewEl) viewEl.style.display = 'block';
+  if(editEl) editEl.style.display = 'none';
+
   // Buscar acesso
   const { data } = await SB.from('portal_alunos').select('*').eq('email', c.email).limit(1);
   const aluno = data?.[0];
@@ -1903,18 +1946,82 @@ async function carregarAbaPortal(c){
   }
 
   // Status da ficha publicada
-  const { data: fichas } = await SB.from('portal_fichas').select('titulo,criado_em,total_gifs').eq('email', c.email).order('criado_em',{ascending:false}).limit(1);
+  const { data: fichas } = await SB.from('portal_fichas').select('titulo,criado_em,total_gifs,em_manutencao').eq('email', c.email).order('criado_em',{ascending:false}).limit(1);
   if(fichas?.length){
     const f = fichas[0];
     fichaEl.innerHTML = `✅ Ficha publicada em <strong>${new Date(f.criado_em).toLocaleDateString('pt-BR')}</strong> · ${f.total_gifs||0} GIF(s) incluído(s)`;
+    const manutCheck = document.getElementById('cliente-manutencao-check');
+    if(manutCheck) manutCheck.checked = !!f.em_manutencao;
   } else {
     fichaEl.textContent = '❌ Nenhuma ficha publicada ainda.';
+    const manutCheck = document.getElementById('cliente-manutencao-check');
+    if(manutCheck) manutCheck.checked = false;
   }
 
   // Renderizar editor de exercícios
   await renderizarEditorPortalAba();
   // Carregar alimentação salva
   carregarNutriPortalAba(c);
+}
+
+async function toggleManutencaoCliente(ativo){
+  const c = clienteAtual;
+  if(!c?.email || !SB){ notif('Cliente sem e-mail cadastrado','#ef4444'); return; }
+  notif(ativo ? '⏳ Ativando aviso de manutenção...' : '⏳ Removendo aviso de manutenção...','#eab308');
+
+  const { data: atualizado, error } = await SB.from('portal_fichas').update({em_manutencao:ativo}).eq('email', c.email).select();
+
+  if(error){ notif('Erro: '+error.message,'#ef4444'); document.getElementById('cliente-manutencao-check').checked = !ativo; return; }
+
+  if(!atualizado || atualizado.length === 0){
+    notif('Este aluno ainda não tem nenhuma ficha publicada — publique uma ficha primeiro.','#ef4444');
+    document.getElementById('cliente-manutencao-check').checked = false;
+    return;
+  }
+
+  notif(ativo ? '🚧 Ficha marcada como em atualização' : '✅ Ficha normalizada','#eab308');
+}
+
+function editarInfoPortal(){
+  const emailEl = document.getElementById('portal-aba-email');
+  if(!emailEl || !emailEl.textContent){ notif('Este aluno ainda não tem acesso gerado.','#ef4444'); return; }
+  document.getElementById('edit-portal-nome').value = clienteAtual?.nome || '';
+  document.getElementById('edit-portal-email').value = emailEl.textContent;
+  document.getElementById('portal-aba-view').style.display = 'none';
+  document.getElementById('portal-aba-edit').style.display = 'block';
+}
+
+function cancelarEdicaoInfoPortal(){
+  document.getElementById('portal-aba-view').style.display = 'block';
+  document.getElementById('portal-aba-edit').style.display = 'none';
+}
+
+async function salvarEdicaoInfoPortal(){
+  const c = clienteAtual;
+  if(!c || !SB) return;
+  const emailAntigo = document.getElementById('portal-aba-email').textContent;
+  const novoNome  = document.getElementById('edit-portal-nome').value.trim();
+  const novoEmail = document.getElementById('edit-portal-email').value.trim();
+
+  if(!novoEmail || !novoEmail.includes('@')){ notif('Informe um e-mail válido','#ef4444'); return; }
+
+  notif('⏳ Salvando...','#3b82f6');
+  const { error } = await SB.from('portal_alunos').update({
+    nome: novoNome || novoEmail,
+    email: novoEmail
+  }).eq('email', emailAntigo);
+
+  if(error){ notif('Erro ao salvar: '+error.message,'#ef4444'); return; }
+
+  // Se o e-mail mudou, atualizar também nas fichas/progresso publicados, pra não perder o vínculo
+  if(novoEmail !== emailAntigo){
+    await SB.from('portal_fichas').update({email:novoEmail}).eq('email', emailAntigo);
+    await SB.from('portal_progresso').update({email:novoEmail}).eq('email', emailAntigo);
+  }
+
+  notif('✅ Informações de acesso atualizadas!','#10b981');
+  document.getElementById('portal-aba-edit').style.display = 'none';
+  await carregarAbaPortal(c);
 }
 
 function enviarCredenciaisWA(){
@@ -4344,6 +4451,44 @@ function switchDegTab(tab){
   document.getElementById('deg-tab-nutri').style.borderBottomColor = tab==='nutri' ? '#10b981' : 'transparent';
   document.getElementById('deg-tab-nutri').style.color = tab==='nutri' ? '#10b981' : '#666';
   document.getElementById('deg-tab-nutri').style.background = tab==='nutri' ? 'rgba(16,185,129,.1)' : 'none';
+}
+
+async function carregarStatusManutencaoDegustacao(){
+  const check = document.getElementById('deg-manutencao-check');
+  if(!check || !SB) return;
+  try{
+    const { data } = await SB.from('portal_fichas').select('em_manutencao').eq('email','__degustacao_feminino__').limit(1);
+    check.checked = !!data?.[0]?.em_manutencao;
+  }catch(e){ console.warn('Coluna em_manutencao pode não existir ainda:', e); }
+}
+
+async function toggleManutencaoDegustacao(ativo){
+  if(!SB){ notif('Supabase não conectado','#ef4444'); return; }
+  notif(ativo ? '⏳ Ativando aviso de manutenção...' : '⏳ Removendo aviso de manutenção...','#eab308');
+
+  try{
+    for(const email of ['__degustacao_feminino__','__degustacao_masculino__']){
+      // Tenta update simples primeiro — preserva o treino já customizado, se existir
+      const { data: atualizado } = await SB.from('portal_fichas').update({em_manutencao:ativo}).eq('email', email).select();
+
+      if(!atualizado || atualizado.length === 0){
+        // Ficha ainda não existe — cria com o padrão + a flag de manutenção
+        const genero = email.includes('feminino') ? 'feminino' : 'masculino';
+        const treino = genero==='feminino' ? TREINO_DEMO_FEMININO_PADRAO : TREINO_DEMO_MASCULINO_PADRAO;
+        await SB.from('portal_fichas').upsert({
+          email, user_id: null,
+          titulo: `Treino Demonstrativo (${genero==='feminino'?'Feminino':'Masculino'}) — WillgomesFit`,
+          resumo: 'Treino de degustação exibido para visitantes do portal',
+          treino_json: treino, gifs: {}, total_gifs: 0, nutri_json: null,
+          criado_em: new Date().toISOString(), publicado_por: 'Prof. Will Gomes', em_manutencao: ativo
+        }, { onConflict: 'email' });
+      }
+    }
+    notif(ativo ? '🚧 Degustação marcada como em atualização' : '✅ Degustação normalizada','#eab308');
+  }catch(e){
+    notif('Erro ao atualizar: '+e.message,'#ef4444');
+    document.getElementById('deg-manutencao-check').checked = !ativo;
+  }
 }
 
 async function salvarTreinoDegustacao(){

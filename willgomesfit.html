@@ -684,7 +684,7 @@ footer a{color:var(--muted)}
           <div class="long-name">👑 365 Dias</div>
           <div class="long-desc">O compromisso mais completo: 1 ano inteiro de evolução acompanhada de perto.</div>
           <div class="long-price-big" style="color:#a78bfa">R$ 799<span style="font-size:1.2rem;color:var(--muted)">,90</span></div>
-          <div class="long-price-sub">⚠️ preço sugerido — confirme com o Will antes de publicar</div>
+          <div class="long-price-sub">⚠️ preço ainda a confirmar com o Will (só o link de pagamento chegou)</div>
           <div class="long-economy" style="color:#a78bfa">equivale a R$ 66,66/mês · o menor valor mensal de todos</div>
           <ul class="acomp-list" style="margin-bottom:24px">
             <li>Vídeo chamada de anamnese (até 30 min)</li>
@@ -696,7 +696,7 @@ footer a{color:var(--muted)}
             <li>Análise de fotos e medidas mensal</li>
             <li>Maior desconto por tempo de compromisso</li>
           </ul>
-          <button class="btn-card" style="background:#8b5cf6;color:#fff" onclick="window.location.href='https://wa.me/5585989383246?text=Ol%C3%A1%2C%20Will!%20Tenho%20interesse%20no%20Dark%20Anual.'">💬 Falar com o Will sobre o Anual</button>
+          <button class="btn-card" style="background:#8b5cf6;color:#fff" onclick="window.location.href='pedido.html?plano=Dark+Anual&tipo=Acompanhamento'">👑 QUERO O ANUAL AGORA</button>
         </div>
       </div>
     </div>
@@ -1400,14 +1400,18 @@ function goToPayment(type) {
 
   // Define link de pagamento por plano
   const payLinks = {
-    'Ficha Start': 'https://mpago.la/2dneDyK',
-    'Ficha Premium': 'https://mpago.la/2cibGzr',
-    'Ficha Evolução': 'https://mpago.la/2CgKtmY',
-    'Acompanhamento Start': 'https://mpago.la/2whVyDp',
-    'Acompanhamento Performance': 'https://mpago.la/24PYJiF',
+    'Ficha Start': 'https://mpago.la/1LM2FjR',
+    'Ficha Premium': 'https://mpago.la/2hzjsrk',
+    'Ficha Elite': 'https://mpago.la/2hzjsrk',
+    'Ficha Evolução': 'https://mpago.la/26SR1Na',
+    'Acompanhamento Start': 'https://mpago.la/2PKfZKv',
+    'Acompanhamento Performance': 'https://mpago.la/2CRo2UE',
     'Acompanhamento Elite': 'https://mpago.la/1WL4Ai6',
-    'Performance Trimestral': 'https://mpago.la/17yWVVF',
-    'Performance Semestral': 'https://mpago.la/2rXTG5A',
+    'Performance Trimestral': 'https://mpago.la/11SAtqG',
+    'Dark Trimestral': 'https://mpago.la/11SAtqG',
+    'Performance Semestral': 'https://mpago.la/1Vykmcz',
+    'Dark Semestral': 'https://mpago.la/1Vykmcz',
+    'Dark Anual': 'https://mpago.la/2Me2WLd',
   };
   const payUrl = payLinks[currentPlan] || '#';
   document.getElementById('pay-link').href = payUrl;
