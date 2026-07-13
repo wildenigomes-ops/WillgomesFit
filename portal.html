@@ -309,7 +309,10 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
       </div>
     </div>
 
-    <div style="margin-top:20px">
+    <!-- BLOCO DE DEGUSTAÇÃO — só aparece quando acessado pelo link específico (?demo=1),
+         nunca junto com a tela normal de login. Link fica disponível na página de vendas
+         e no painel administrativo (aba Degustação), pra enviar direto a um cliente. -->
+    <div id="demo-access-block" style="display:none;margin-top:20px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
         <div style="flex:1;height:1px;background:var(--border)"></div>
         <span style="color:#555;font-size:.75rem">ou</span>
@@ -796,6 +799,15 @@ const TREINO_DEMO_FEMININO = {
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async ()=>{
+  // Link de degustação (?demo=1): mostra só o formulário de degustação, escondendo o login.
+  // Sem esse parâmetro, o portal mostra só a tela normal de login — nunca os dois juntos.
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('demo') === '1'){
+    document.getElementById('form-login').style.display = 'none';
+    document.getElementById('demo-access-block').style.display = 'block';
+    document.querySelector('.auth-sub').textContent = 'Degustação grátis · Experimente por 2 horas';
+  }
+
   SB = window.supabase?.createClient(SB_URL, SB_KEY);
   if(!SB){ notif('Erro de conexão','#ef4444'); return; }
   const { data:{ session } } = await SB.auth.getSession();

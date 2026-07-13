@@ -338,6 +338,17 @@ tr:hover td{background:var(--card2)}
           </div>
         </label>
 
+        <!-- LINK DA DEGUSTAÇÃO -->
+        <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.25);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:.85rem;font-weight:700;color:#a78bfa;margin-bottom:4px">🔗 Link direto da degustação</div>
+          <div style="font-size:.75rem;color:#999;margin-bottom:10px">Envie esse link diretamente para um cliente específico (ex: pelo WhatsApp). Ele leva direto pra degustação, sem passar pela tela de login normal do portal.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input readonly id="deg-link-input" value="https://wildenigomes-ops.github.io/WillgomesFit/portal.html?demo=1" style="flex:1;min-width:220px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#ccc;font-size:.78rem;font-family:var(--font-b)"/>
+            <button onclick="copiarLinkDegustacao()" style="background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);color:#a78bfa;padding:9px 16px;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap">📋 Copiar</button>
+            <button onclick="window.open('https://wa.me/?text='+encodeURIComponent('Olá! Preparei uma degustação grátis de 2 horas do meu método de treino, dá uma olhada: https://wildenigomes-ops.github.io/WillgomesFit/portal.html?demo=1'),'_blank')" style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;padding:9px 16px;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap">💬 Enviar no WhatsApp</button>
+          </div>
+        </div>
+
         <!-- ABAS DEGUSTAÇÃO -->
         <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px">
           <button id="deg-tab-treino" onclick="switchDegTab('treino')" style="padding:9px 18px;background:rgba(139,92,246,.2);border:none;border-bottom:2px solid #8b5cf6;color:#a78bfa;font-family:var(--font-b);font-size:.8rem;font-weight:700;cursor:pointer;border-radius:6px 6px 0 0">🏋️ Treino</button>
@@ -4239,6 +4250,13 @@ function removerGifDemo(gifKey){
   renderizarEditorDegustacao();
 }
 
+
+function copiarLinkDegustacao(){
+  const input = document.getElementById('deg-link-input');
+  navigator.clipboard.writeText(input.value)
+    .then(()=> notif('🔗 Link copiado!','#a78bfa'))
+    .catch(()=>{ input.select(); document.execCommand('copy'); notif('🔗 Link copiado!','#a78bfa'); });
+}
 
 function copiarCredenciais(){
   const email = document.getElementById('portal-aba-email')?.textContent || '';
