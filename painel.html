@@ -260,6 +260,7 @@ tr:hover td{background:var(--card2)}
         <div class="topbar-actions">
           <button class="btn btn-orange" onclick="abrirNovoCliente()">+ Novo Cliente</button>
           <button class="btn" onclick="loadClientes()">↻ Atualizar</button>
+          <button class="btn" onclick="forcarAtualizacaoPainel()" title="Se o painel parecer desatualizado ou com bug, use este botão">🔄 Forçar atualização do App</button>
         </div>
       </div>
       <div class="stats">
@@ -867,6 +868,25 @@ async function gerarAcessoAutomatico(clienteData){
     criado_em: new Date().toISOString()
   });
   console.log('✅ Acesso ao portal criado automaticamente para', email);
+}
+
+// Força o navegador a descartar qualquer versão guardada do painel (HTML/JS/CSS)
+// e buscar a mais nova direto do servidor. Use se o painel parecer travado,
+// com bug estranho, ou sem alguma novidade que já deveria estar aparecendo.
+async function forcarAtualizacaoPainel(){
+  try{
+    if('caches' in window){
+      const nomes = await caches.keys();
+      await Promise.all(nomes.map(n => caches.delete(n)));
+    }
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  }catch(e){ console.warn('Erro ao limpar cache:', e); }
+  const url = new URL(window.location.href);
+  url.searchParams.set('_v', Date.now());
+  window.location.href = url.toString();
 }
 
 async function loadClientes(){
@@ -2141,10 +2161,11 @@ async function renderizarEditorPortalAba(){
   }
 
   if(!exerciciosPorDia || !Object.keys(exerciciosPorDia).length){
-    el.innerHTML = `<div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.2);border-radius:8px;padding:14px;font-size:.82rem;color:#fbbf24">
-      ⚠️ Nenhuma ficha encontrada. Publique uma ficha primeiro na aba Relatório ou peça ao aluno que preencha o questionário.
-    </div>`;
-    return;
+    // Nenhuma ficha existente ainda — em vez de travar, oferece um ponto de partida em branco
+    // pra você poder montar a ficha do zero, mesmo sem questionário preenchido.
+    exerciciosPorDia = {
+      'TREINO A': []
+    };
   }
 
   // 3. Renderizar editor com campos editáveis
@@ -2158,6 +2179,7 @@ async function renderizarEditorPortalAba(){
         <input type="text" value="${diaNome}" data-dia="${dIdx}" onchange="atualizarNomeDia(this)"
           style="flex:1;background:transparent;border:none;color:#a78bfa;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-b);outline:none"/>
         <button onclick="adicionarExercicio(${dIdx})" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">+ Exercício</button>
+        <button onclick="removerDiaTreino(${dIdx})" title="Remover este dia inteiro" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;padding:4px 9px;border-radius:6px;font-size:.7rem;cursor:pointer">🗑</button>
       </div>
       <div id="ex-list-${dIdx}">`;
 
@@ -2167,12 +2189,36 @@ async function renderizarEditorPortalAba(){
       html += renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData);
     });
 
+    if(!exercicios.length){
+      html += `<div style="padding:16px;text-align:center;color:#666;font-size:.78rem">Nenhum exercício ainda — clique em "+ Exercício" acima pra adicionar o primeiro.</div>`;
+    }
+
     html += `</div></div>`;
   });
+
+  html += `<button onclick="adicionarDiaTreino()" style="width:100%;background:rgba(139,92,246,.08);border:1px dashed rgba(139,92,246,.35);color:#a78bfa;padding:12px;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:14px">➕ Adicionar dia de treino (ex: Treino B)</button>`;
 
   // Salvar estrutura para edição
   window._fichaEditavel = exerciciosPorDia;
   el.innerHTML = html;
+}
+
+function adicionarDiaTreino(){
+  if(!window._fichaEditavel) return;
+  const letras = ['A','B','C','D','E','F','G'];
+  const n = Object.keys(window._fichaEditavel).length;
+  const nomeNovo = 'TREINO ' + (letras[n] || (n+1));
+  window._fichaEditavel[nomeNovo] = [];
+  renderizarEditorPortalAba();
+}
+
+function removerDiaTreino(dIdx){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  if(!dias[dIdx]) return;
+  if(!confirm(`Remover "${dias[dIdx]}" inteiro, com todos os exercícios dele?`)) return;
+  delete window._fichaEditavel[dias[dIdx]];
+  renderizarEditorPortalAba();
 }
 
 function renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData){
@@ -2182,12 +2228,12 @@ function renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData){
       <div style="flex-shrink:0">
         ${gifData
           ? `<div style="position:relative">
-               <img src="${gifData}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande('${gifKey}')"/>
+               ${midiaTag(gifData, 'width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--green);cursor:pointer', `verGifGrande('${gifKey}')`)}
                <button onclick="removerGifEx('${gifKey}',${dIdx},${eIdx})" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;padding:0">✕</button>
              </div>`
           : `<label style="cursor:pointer;width:56px;height:56px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;font-size:.6rem;color:#555;text-align:center">
-               📎<span>GIF</span>
-               <input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGifEx(this,'${gifKey}',${dIdx},${eIdx})"/>
+               📎<span>GIF/MP4</span>
+               <input type="file" accept=".gif,image/gif,.mp4,video/mp4" style="display:none" onchange="anexarGifEx(this,'${gifKey}',${dIdx},${eIdx})"/>
              </label>`
         }
       </div>
@@ -2245,19 +2291,15 @@ function atualizarExercicio(dIdx, eIdx, campo, valor){
 function atualizarNomeDia(input){
   if(!window._fichaEditavel) return;
   const dIdx = parseInt(input.dataset.dia);
-  const dias = Object.keys(window._fichaEditavel);
-  if(dias[dIdx]){
-    const exercicios = window._fichaEditavel[dias[dIdx]];
-    delete window._fichaEditavel[dias[dIdx]];
-    // Reinserir com novo nome mantendo ordem
-    const novaFicha = {};
-    Object.keys(window._fichaEditavel).forEach((k,i)=>{
-      if(i===dIdx) novaFicha[input.value] = exercicios;
-      else novaFicha[k] = window._fichaEditavel[k];
-    });
-    if(dIdx >= Object.keys(window._fichaEditavel).length) novaFicha[input.value] = exercicios;
-    window._fichaEditavel = novaFicha;
-  }
+  const diasOriginais = Object.keys(window._fichaEditavel);
+  if(!diasOriginais[dIdx]) return;
+  const novoNome = input.value.trim() || diasOriginais[dIdx];
+  const novaFicha = {};
+  diasOriginais.forEach((k, i) => {
+    const chave = (i === dIdx) ? novoNome : k;
+    novaFicha[chave] = window._fichaEditavel[k];
+  });
+  window._fichaEditavel = novaFicha;
 }
 
 function adicionarExercicio(dIdx){
@@ -2279,11 +2321,12 @@ function removerExercicio(dIdx, eIdx){
 function anexarGifEx(input, gifKey, dIdx, eIdx){
   const file = input.files[0];
   if(!file) return;
-  if(file.size > 8*1024*1024){ notif('GIF muito grande (máx. 8MB)','#ef4444'); return; }
+  const limiteMB = file.type.startsWith('video/') ? 20 : 8;
+  if(file.size > limiteMB*1024*1024){ notif(`Arquivo muito grande (máx. ${limiteMB}MB)`,'#ef4444'); return; }
   const reader = new FileReader();
   reader.onload = e => {
     gifCache[gifKey] = e.target.result;
-    notif('✅ GIF anexado!','#10b981');
+    notif('✅ Arquivo anexado!','#10b981');
     renderizarEditorPortalAba();
   };
   reader.readAsDataURL(file);
@@ -2366,11 +2409,12 @@ let gifCache = {};
 function anexarGif(input, gifKey){
   const file = input.files[0];
   if(!file) return;
-  if(file.size > 8 * 1024 * 1024){ notif('GIF muito grande (máx. 8MB)','#ef4444'); return; }
+  const limiteMB2 = file.type.startsWith('video/') ? 20 : 8;
+  if(file.size > limiteMB2 * 1024 * 1024){ notif(`Arquivo muito grande (máx. ${limiteMB2}MB)`,'#ef4444'); return; }
   const reader = new FileReader();
   reader.onload = e => {
     gifCache[gifKey] = e.target.result;
-    notif('✅ GIF anexado!','#10b981');
+    notif('✅ Arquivo anexado!','#10b981');
     renderizarFichaPainel();
   };
   reader.readAsDataURL(file);
@@ -2382,12 +2426,28 @@ function removerGif(gifKey){
   renderizarFichaPainel();
 }
 
+function ehVideo(dataUrl){
+  return typeof dataUrl === 'string' && dataUrl.startsWith('data:video/');
+}
+
+// Gera a tag certa (img pra GIF/imagem, video pra MP4) com o mesmo estilo/onclick nos dois casos
+function midiaTag(dataUrl, style, onclickAttr){
+  const onclickPart = onclickAttr ? ` onclick="${onclickAttr}"` : '';
+  if(ehVideo(dataUrl)){
+    return `<video src="${dataUrl}" style="${style}" autoplay loop muted playsinline${onclickPart}></video>`;
+  }
+  return `<img src="${dataUrl}" style="${style}"${onclickPart}/>`;
+}
+
 function verGifGrande(gifKey){
-  const data = gifCache[gifKey];
+  const data = gifCache[gifKey] || gifsDegustacao[gifKey];
   if(!data) return;
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
-  overlay.innerHTML = '<div style="position:relative;max-width:90vw;max-height:90vh"><img src="'+data+'" style="max-width:100%;max-height:90vh;border-radius:12px;border:2px solid var(--orange)"/><button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer">✕</button></div>';
+  const midia = ehVideo(data)
+    ? '<video src="'+data+'" style="max-width:100%;max-height:90vh;border-radius:12px;border:2px solid var(--orange)" autoplay loop muted playsinline controls></video>'
+    : '<img src="'+data+'" style="max-width:100%;max-height:90vh;border-radius:12px;border:2px solid var(--orange)"/>';
+  overlay.innerHTML = '<div style="position:relative;max-width:90vw;max-height:90vh">'+midia+'<button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:-12px;right:-12px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer">✕</button></div>';
   overlay.onclick = function(ev){ if(ev.target===overlay) overlay.remove(); };
   document.body.appendChild(overlay);
 }
@@ -2403,7 +2463,7 @@ function renderizarFichaPainel(){
         var gifData = gifCache[gifKey]||null;
         var gifCell = gifData
           ? '<div style="position:relative;display:inline-block"><img src="'+gifData+'" style="width:52px;height:52px;border-radius:6px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande(\''+gifKey+'\')" title="Ver em tela cheia"/><button onclick="removerGif(\''+gifKey+'\')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;padding:0">✕</button></div>'
-          : '<label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px;display:inline-block;font-size:.65rem;color:#777;white-space:nowrap" title="Anexar GIF para: '+(e.nome||'')+'">📎 GIF<input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGif(this,\''+gifKey+'\')"/></label>';
+          : '<label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px;display:inline-block;font-size:.65rem;color:#777;white-space:nowrap" title="Anexar GIF para: '+(e.nome||'')+'">📎 GIF<input type="file" accept=".gif,image/gif,.mp4,video/mp4" style="display:none" onchange="anexarGif(this,\''+gifKey+'\')"/></label>';
         return '<tr style="'+(i%2===0?'':'background:var(--card2)')+'">'
           +'<td style="padding:8px 10px;font-size:.78rem;color:var(--muted)">'+(i+1)+'</td>'
           +'<td style="padding:8px 10px;font-size:.82rem;font-weight:600;color:var(--white)">'+(e.nome||'—')+'</td>'
@@ -2899,12 +2959,12 @@ async function gerarRelatorioCliente(c){
               <td style="padding:6px 8px;text-align:center;vertical-align:middle">
                 ${gifData
                   ? `<div style="position:relative;display:inline-block">
-                       <img src="${gifData}" style="width:52px;height:52px;border-radius:6px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande('${gifKey}')" title="Ver em tela cheia"/>
+                       ${midiaTag(gifData, 'width:52px;height:52px;border-radius:6px;object-fit:cover;border:1px solid var(--green);cursor:pointer', `verGifGrande('${gifKey}')`)}
                        <button onclick="removerGif('${gifKey}')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;padding:0">✕</button>
                      </div>`
-                  : `<label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px;display:inline-block;font-size:.65rem;color:#777;transition:all .2s;white-space:nowrap" title="Anexar GIF para: ${e.nome}">
-                       📎 GIF
-                       <input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGif(this,'${gifKey}')"/>
+                  : `<label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px;display:inline-block;font-size:.65rem;color:#777;transition:all .2s;white-space:nowrap" title="Anexar GIF/MP4 para: ${e.nome}">
+                       📎 GIF/MP4
+                       <input type="file" accept=".gif,image/gif,.mp4,video/mp4" style="display:none" onchange="anexarGif(this,'${gifKey}')"/>
                      </label>`
                 }
               </td>
@@ -4171,12 +4231,12 @@ function renderExercicioEditavelDemo(ex, dIdx, eIdx, gifKey, gifData){
       <div style="flex-shrink:0">
         ${gifData
           ? `<div style="position:relative">
-               <img src="${gifData}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--green);cursor:pointer" onclick="verGifGrande('${gifKey}')"/>
+               ${midiaTag(gifData, 'width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--green);cursor:pointer', `verGifGrande('${gifKey}')`)}
                <button onclick="removerGifDemo('${gifKey}')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;padding:0">✕</button>
              </div>`
           : `<label style="cursor:pointer;width:56px;height:56px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;font-size:.6rem;color:#555;text-align:center">
-               📎<span>GIF</span>
-               <input type="file" accept=".gif,image/gif" style="display:none" onchange="anexarGifDemo(this,'${gifKey}')"/>
+               📎<span>GIF/MP4</span>
+               <input type="file" accept=".gif,image/gif,.mp4,video/mp4" style="display:none" onchange="anexarGifDemo(this,'${gifKey}')"/>
              </label>`
         }
       </div>
@@ -4263,11 +4323,12 @@ function removerExercicioDemo(dIdx, eIdx){
 function anexarGifDemo(input, gifKey){
   const file = input.files[0];
   if(!file) return;
-  if(file.size > 8*1024*1024){ notif('GIF muito grande (máx. 8MB)','#ef4444'); return; }
+  const limiteMB = file.type.startsWith('video/') ? 20 : 8;
+  if(file.size > limiteMB*1024*1024){ notif(`Arquivo muito grande (máx. ${limiteMB}MB)`,'#ef4444'); return; }
   const reader = new FileReader();
   reader.onload = e => {
     gifsDegustacao[gifKey] = e.target.result;
-    notif('✅ GIF anexado! Salve para publicar.','#10b981');
+    notif('✅ Arquivo anexado! Salve para publicar.','#10b981');
     renderizarEditorDegustacao();
   };
   reader.readAsDataURL(file);
@@ -4319,9 +4380,9 @@ function switchPortalTab(tab){
 }
 
 async function publicarNutricaoPortal(){
-  if(!SB || !clienteAtual){ notif('Selecione um cliente','#ef4444'); return; }
+  if(!SB || !clienteAtual){ notif('Selecione um cliente','#ef4444',true); return; }
   const c = clienteAtual;
-  if(!c.email){ notif('Cliente sem e-mail','#ef4444'); return; }
+  if(!c.email){ notif('Cliente sem e-mail','#ef4444',true); return; }
 
   const nutri = {
     proteina: document.getElementById('port-nutri-proteina')?.value || '',
@@ -4332,26 +4393,31 @@ async function publicarNutricaoPortal(){
   };
 
   notif('⏳ Publicando guia alimentar...','#10b981');
-  const { error } = await SB.from('portal_fichas')
-    .update({ nutri_json: nutri, atualizado_em: new Date().toISOString() })
-    .eq('email', c.email)
-    .order('criado_em', {ascending: false})
-    .limit(1);
 
-  if(error){
-    // Se não existe ficha ainda, inserir
-    const { error: e2 } = await SB.from('portal_fichas').insert({
+  try{
+    // Busca o que já existe pra não sobrescrever título/data da ficha de treino com valores genéricos
+    const { data: existente } = await SB.from('portal_fichas').select('titulo,criado_em').eq('email', c.email).limit(1);
+    const jaTinha = existente?.[0];
+
+    // upsert com onConflict:'email' — atualiza a linha existente (preservando treino_json
+    // e tudo mais que já estava lá) ou cria uma nova se o aluno ainda não tiver nenhuma ficha.
+    const { error } = await SB.from('portal_fichas').upsert({
       email: c.email,
-      titulo: 'Guia Alimentar',
       nutri_json: nutri,
-      criado_em: new Date().toISOString(),
+      atualizado_em: new Date().toISOString(),
+      titulo: jaTinha?.titulo || 'Ficha de Treino',
+      criado_em: jaTinha?.criado_em || new Date().toISOString(),
       publicado_por: 'Prof. Will Gomes'
-    });
-    if(e2){ notif('Erro: '+e2.message,'#ef4444'); return; }
-  }
+    }, { onConflict: 'email', ignoreDuplicates: false });
 
-  notif('✅ Guia alimentar publicado no portal!','#10b981');
-  carregarAbaPortal(c);
+    if(error){ notif('Erro ao publicar: '+error.message,'#ef4444',true); console.error('publicarNutricaoPortal:', error); return; }
+
+    notif('✅ Guia alimentar publicado no portal!','#10b981');
+    carregarAbaPortal(c);
+  }catch(e){
+    console.error('publicarNutricaoPortal — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+  }
 }
 
 async function carregarNutriPortalAba(c){

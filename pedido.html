@@ -103,6 +103,9 @@ h1{font-family:var(--font-d);font-size:2.2rem;line-height:1;margin-bottom:8px}
     </div>
 
     <div style="margin-bottom:10px;font-size:.8rem;color:#666;text-align:center">Plano selecionado: <strong id="plan-name-display" style="color:#e85d04"></strong></div>
+    <div id="aviso-cadastro-manual" style="display:none;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px;margin-bottom:14px;font-size:.82rem;color:#fca5a5;line-height:1.5">
+      ⚠️ <strong>Importante:</strong> não conseguimos confirmar seu cadastro automaticamente. Pra garantir que o Prof. Will receba seus dados, <strong>envie a mensagem do WhatsApp abaixo</strong> — ela já vem com tudo preenchido.
+    </div>
     <a href="#" id="payment-link" class="btn-payment" target="_blank">Ir para o pagamento →</a>
     <div class="divider">Já pagou?</div>
     <a id="wa-link" href="#" target="_blank" class="btn-whatsapp">💬 Enviar comprovante pelo WhatsApp</a>
@@ -182,42 +185,88 @@ document.getElementById('main-form').addEventListener('submit', async function(e
     preferidos:'—',estilo_alimentar:'—',condicao_saude:'—',intestino:'—',
   };
 
-  // 1. Salvar no Supabase para aparecer no painel
+  // 1. Salvar no Supabase para aparecer no painel (com nova tentativa automática se falhar)
   const clienteId = Date.now().toString();
-  try {
-    if(window.supabase) {
-      const sb = window.supabase.createClient('https://fkpgehyjwxkoyhdbhtva.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcGdlaHlqd3hrb3loZGJodHZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDE5MTQsImV4cCI6MjA5ODE3NzkxNH0.dPJGKvw0KIOOwAC-xf0djgixVSpz8J9S-L-gFsth1xk');
-      await sb.from('clientes').upsert({
-        id: clienteId,
-        email: email,
-        nome: nome,
-        status: 'pendente',
-        pagamento_confirmado: false,
-        plano: plano,
-        dados: { nome, email, whatsapp, plano, tipo, criado_em: new Date().toISOString(), data_envio: new Date().toLocaleString('pt-BR') },
-        criado_em: new Date().toISOString(),
-        atualizado_em: new Date().toISOString(),
-      });
+  let salvouNoSupabase = false;
+  let ultimoErroSupabase = null;
+
+  for(let tentativa = 1; tentativa <= 3 && !salvouNoSupabase; tentativa++){
+    try {
+      if(window.supabase) {
+        const sb = window.supabase.createClient('https://fkpgehyjwxkoyhdbhtva.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcGdlaHlqd3hrb3loZGJodHZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDE5MTQsImV4cCI6MjA5ODE3NzkxNH0.dPJGKvw0KIOOwAC-xf0djgixVSpz8J9S-L-gFsth1xk');
+        const { error } = await sb.from('clientes').upsert({
+          id: clienteId,
+          email: email,
+          nome: nome,
+          status: 'pendente',
+          pagamento_confirmado: false,
+          plano: plano,
+          dados: { nome, email, whatsapp, plano, tipo, criado_em: new Date().toISOString(), data_envio: new Date().toLocaleString('pt-BR') },
+          criado_em: new Date().toISOString(),
+          atualizado_em: new Date().toISOString(),
+        });
+        if(error){
+          ultimoErroSupabase = error;
+          console.error(`[pedido] Tentativa ${tentativa}/3 falhou ao salvar no Supabase:`, error);
+        } else {
+          salvouNoSupabase = true;
+          console.log('[pedido] Cliente salvo no Supabase com sucesso, id:', clienteId);
+        }
+      } else {
+        ultimoErroSupabase = new Error('window.supabase não carregou');
+        console.error('[pedido] window.supabase indisponível na tentativa', tentativa);
+      }
+    } catch(err) {
+      ultimoErroSupabase = err;
+      console.error(`[pedido] Tentativa ${tentativa}/3 — erro inesperado:`, err);
     }
-  } catch(err) { console.warn('Supabase:', err); }
-  // 2. Enviar e-mail
+    if(!salvouNoSupabase && tentativa < 3){
+      await new Promise(r => setTimeout(r, 1200)); // espera um pouco antes de tentar de novo
+    }
+  }
+
+  // 2. Enviar e-mail de alerta (best-effort — não temos como confirmar entrega por causa do CORS do Apps Script)
+  let tentouEnviarEmail = false;
   try {
     await fetch(SCRIPT_URL, {
       method: 'POST', mode: 'no-cors',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
     });
-  } catch(err) {}
+    tentouEnviarEmail = true;
+    console.log('[pedido] Requisição de e-mail enviada ao Apps Script (não é possível confirmar entrega por causa de mode:no-cors)');
+  } catch(err) {
+    console.error('[pedido] Falha ao chamar o Apps Script de e-mail:', err);
+  }
 
-  // Montar mensagem WhatsApp
-  const msg = encodeURIComponent(
-    'Olá Will! Acabei de realizar o pagamento do plano *' + plano + '*. ' +
-    'Meu nome é *' + nome + '*. Segue o comprovante!'
-  );
+  // Montar mensagem WhatsApp — se o salvamento automático falhou, inclui todos os dados
+  // do cadastro na mensagem, pra garantir que o Will receba a informação de algum jeito.
+  const msg = salvouNoSupabase
+    ? encodeURIComponent(
+        'Olá Will! Acabei de realizar o pagamento do plano *' + plano + '*. ' +
+        'Meu nome é *' + nome + '*. Segue o comprovante!'
+      )
+    : encodeURIComponent(
+        'Olá Will! Acabei de realizar o pagamento do plano *' + plano + '*, mas o cadastro automático pode não ter funcionado. ' +
+        'Segue meus dados pra você cadastrar manualmente:\n\n' +
+        '*Nome:* ' + nome + '\n' +
+        '*E-mail:* ' + email + '\n' +
+        '*WhatsApp:* ' + whatsapp + '\n' +
+        '*Plano:* ' + plano + '\n\n' +
+        'Segue o comprovante!'
+      );
   const waUrl = 'https://wa.me/5585989383246?text=' + msg;
 
   document.getElementById('payment-link').href = payLinks[plano] || '#';
   document.getElementById('wa-link').href = waUrl;
+
+  // Se o cadastro automático falhou, destaca visualmente que o WhatsApp é essencial agora
+  if(!salvouNoSupabase){
+    const avisoEl = document.getElementById('aviso-cadastro-manual');
+    if(avisoEl) avisoEl.style.display = 'block';
+    console.error('[pedido] Cadastro NÃO foi salvo automaticamente após 3 tentativas. Último erro:', ultimoErroSupabase);
+  }
+
   document.getElementById('form-screen').style.display = 'none';
   document.getElementById('success-screen').style.display = 'block';
   window.scrollTo(0, 0);

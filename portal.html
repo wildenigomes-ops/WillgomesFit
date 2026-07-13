@@ -205,7 +205,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
 
 /* GIF DO EXERCÍCIO */
 .mt-gif-wrap{padding:0 20px 20px}
-.mt-gif-wrap img{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.08);max-height:260px;object-fit:cover}
+.mt-gif-wrap img,.mt-gif-wrap video{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.08);max-height:260px;object-fit:cover}
 .mt-gif-placeholder{background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.1);border-radius:12px;height:140px;display:flex;align-items:center;justify-content:center;color:#444;font-size:.82rem;gap:8px}
 
 /* SÉRIES — MARCAR PROGRESSO */
@@ -450,6 +450,26 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
           <div class="pg-title" id="dash-titulo">Olá, Aluno!</div>
           <div class="pg-sub" id="dash-plano">Carregando seu plano...</div>
         </div>
+
+        <!-- INSTALAR COMO APP — some sozinho se já estiver instalado -->
+        <button id="dash-instalar-btn" onclick="acionarInstalacaoApp()" style="display:none;align-items:center;gap:12px;width:100%;background:rgba(240,89,10,.08);border:1px solid rgba(240,89,10,.25);border-radius:12px;padding:12px 16px;margin-bottom:12px;cursor:pointer;text-align:left">
+          <span style="font-size:1.3rem;flex-shrink:0">📲</span>
+          <span style="flex:1">
+            <span style="display:block;color:#fff;font-size:.82rem;font-weight:700">Instalar como app</span>
+            <span style="display:block;color:#888;font-size:.72rem">Adiciona um ícone na tela inicial do celular, pra abrir rapidinho da próxima vez.</span>
+          </span>
+          <span style="color:var(--orange);font-size:.75rem;flex-shrink:0">Instalar</span>
+        </button>
+
+        <!-- ATUALIZAR APP — importante pra quem usa pelo atalho da tela inicial -->
+        <button onclick="forcarAtualizacaoApp()" style="display:flex;align-items:center;gap:12px;width:100%;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);border-radius:12px;padding:12px 16px;margin-bottom:20px;cursor:pointer;text-align:left">
+          <span style="font-size:1.3rem;flex-shrink:0">🔄</span>
+          <span style="flex:1">
+            <span style="display:block;color:#fff;font-size:.82rem;font-weight:700">Buscar atualizações</span>
+            <span style="display:block;color:#888;font-size:.72rem">Usando pelo atalho da tela inicial? Toque aqui se algo parecer desatualizado.</span>
+          </span>
+          <span style="color:#a78bfa;font-size:.75rem;flex-shrink:0">Atualizar</span>
+        </button>
 
         <div class="metrics-grid">
           <div class="metric-card">
@@ -863,39 +883,87 @@ async function forcarAtualizacaoApp(){
   window.location.href = url.toString();
 }
 
-// ── BANNER DE INSTALAÇÃO (PWA) ──────────────────────────────────────────────
+// ── INSTALAR COMO APP (PWA) ──────────────────────────────────────────────────
+let _deferredInstallPrompt = null;
+const _isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+const _isAndroid = /Android/.test(navigator.userAgent);
+const _jaInstalado = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+// Captura o evento do Android assim que possível, pra qualquer botão poder usar depois
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+});
+
+// Função única, chamada por qualquer botão "instalar" da página (login ou dentro do app)
+async function acionarInstalacaoApp(){
+  if(_isAndroid && _deferredInstallPrompt){
+    _deferredInstallPrompt.prompt();
+    await _deferredInstallPrompt.userChoice;
+    _deferredInstallPrompt = null;
+    const banner = document.getElementById('pwa-install-banner');
+    if(banner) banner.style.display = 'none';
+    return;
+  }
+  if(_isIOS){
+    mostrarTutorialInstalarIOS();
+    return;
+  }
+  // Android sem o prompt capturado ainda, ou navegador que não suporta
+  notif('Abra o menu do navegador (⋮ ou compartilhar) e escolha "Adicionar à tela inicial".','#a78bfa',true);
+}
+
+function mostrarTutorialInstalarIOS(){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  overlay.innerHTML = `
+    <div style="background:#111;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:420px;width:100%;text-align:center">
+      <div style="font-size:2.2rem;margin-bottom:10px">📲</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#fff;letter-spacing:1px;margin-bottom:18px">COMO INSTALAR NO IPHONE</div>
+      <div style="display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:16px;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--orange);flex-shrink:0">1</div>
+        <div style="font-size:.85rem;color:#ddd">Toque no ícone <strong>compartilhar</strong> ⬆️ (embaixo, no meio da barra do Safari)</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:16px;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--orange);flex-shrink:0">2</div>
+        <div style="font-size:.85rem;color:#ddd">Deslize e toque em <strong>"Adicionar à Tela de Início"</strong></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:24px;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--orange);flex-shrink:0">3</div>
+        <div style="font-size:.85rem;color:#ddd">Toque em <strong>"Adicionar"</strong> no canto superior direito</div>
+      </div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:.9rem;cursor:pointer">Entendi!</button>
+    </div>`;
+  overlay.onclick = (ev)=>{ if(ev.target===overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
+
 (function(){
-  const jaInstalado = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if(jaInstalado) return; // já está instalado, não mostra nada
+  if(_jaInstalado) return; // já está instalado, não mostra nada
+
+  // Botão dentro do Dashboard (visível pra quem já está logado)
+  const dashBtn = document.getElementById('dash-instalar-btn');
+  if(dashBtn) dashBtn.style.display = 'flex';
 
   const banner = document.getElementById('pwa-install-banner');
   const textEl = document.getElementById('pwa-install-text');
   const btnEl  = document.getElementById('pwa-install-btn');
   if(!banner) return;
 
-  const ua = navigator.userAgent;
-  const isIOS = /iPhone|iPad|iPod/.test(ua);
-  const isAndroid = /Android/.test(ua);
-
-  if(isIOS){
+  if(_isIOS){
     textEl.innerHTML = 'Toque no ícone <strong>compartilhar</strong> (□↑) na barra do Safari e depois em <strong>"Adicionar à Tela de Início"</strong>.';
     banner.style.display = 'block';
-  } else if(isAndroid){
+    btnEl.style.display = 'block';
+    btnEl.textContent = '📲 Ver passo a passo';
+    btnEl.addEventListener('click', acionarInstalacaoApp);
+  } else if(_isAndroid){
     textEl.textContent = 'Instale para abrir direto da tela inicial, em tela cheia.';
     banner.style.display = 'block';
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e)=>{
-      e.preventDefault();
-      deferredPrompt = e;
-      btnEl.style.display = 'block';
-    });
-    btnEl.addEventListener('click', async ()=>{
-      if(!deferredPrompt) return;
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      banner.style.display = 'none';
-    });
+    const tentaMostrarBotao = setInterval(()=>{
+      if(_deferredInstallPrompt){ btnEl.style.display = 'block'; clearInterval(tentaMostrarBotao); }
+    }, 300);
+    btnEl.textContent = '⬇ Instalar agora';
+    btnEl.addEventListener('click', acionarInstalacaoApp);
   }
   // Desktop: não mostra o banner (instalação não é o foco nesse caso)
 })();
@@ -1202,7 +1270,9 @@ function renderizarExercicioAtivo(){
   const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
   const gifData = gifs[gifKey] || null;
   const gifHtml = gifData
-    ? `<div class="mt-gif-wrap"><img src="${gifData}" alt="${ex.nome}"/></div>`
+    ? (ehVideo(gifData)
+        ? `<div class="mt-gif-wrap"><video src="${gifData}" autoplay loop muted playsinline></video></div>`
+        : `<div class="mt-gif-wrap"><img src="${gifData}" alt="${ex.nome}"/></div>`)
     : `<div class="mt-gif-wrap"><div class="mt-gif-placeholder">🎬 <span>Execução: ${ex.obs||ex.nome}</span></div></div>`;
 
   // Séries
@@ -1652,7 +1722,11 @@ function montarFicha(fichas){
                 ${ex.rir!==undefined?`<span class="ex-tag">💪 RIR ${ex.rir}</span>`:''}
               </div>
             </div>
-            ${gifData ? `<img src="${gifData}" class="ex-gif" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"/>` : ''}
+            ${gifData
+              ? (ehVideo(gifData)
+                  ? `<video src="${gifData}" class="ex-gif" autoplay loop muted playsinline onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"></video>`
+                  : `<img src="${gifData}" class="ex-gif" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"/>`)
+              : ''}
           </div>`;
         });
       }
@@ -1852,6 +1926,10 @@ function showPage(id){
 }
 
 // ── NOTIF ─────────────────────────────────────────────────────────────────────
+function ehVideo(dataUrl){
+  return typeof dataUrl === 'string' && dataUrl.startsWith('data:video/');
+}
+
 function notif(msg, cor='#10b981', persistente=false){
   const el = document.getElementById('notif');
   el.textContent = msg;

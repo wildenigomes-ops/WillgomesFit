@@ -2,7 +2,7 @@
 // Objetivo: permitir que o Android/Chrome ofereça "Instalar app" automaticamente
 // e dar um cache básico para abrir mais rápido nas próximas vezes.
 
-const CACHE_NAME = 'willgomesfit-portal-v2';
+const CACHE_NAME = 'willgomesfit-portal-v3';
 const CORE_ASSETS = [
   './portal.html',
   './manifest.json',
@@ -26,13 +26,14 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Estratégia: network-first para tudo (dados do Supabase precisam ser sempre atuais).
-// Se a rede falhar (sem sinal), tenta servir do cache como fallback.
+// Estratégia: network-first para tudo, ignorando qualquer cache HTTP do navegador
+// (não só o Cache API) — importante pro app instalado sempre buscar a versão mais
+// nova ao abrir, em vez de confiar em uma resposta guardada.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-store' })
       .then((response) => {
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
