@@ -257,6 +257,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
     <a class="nav-item" onclick="showPage('vencimentos',this)"><span class="nav-icon">⏰</span>Vencimentos</a>
     <a class="nav-item" onclick="showPage('degustacoes',this)"><span class="nav-icon">🎯</span>Degustações</a>
     <a class="nav-item" onclick="showPage('captacao',this)"><span class="nav-icon">📥</span>Captação<span class="tab-cnt" id="cnt-captacao-novos" style="display:none"></span></a>
+    <a class="nav-item" onclick="showPage('bancoex',this)"><span class="nav-icon">🎬</span>Banco de Exercícios</a>
     <div class="sb-section">Ferramentas</div>
     <a class="nav-item" href="motor.html" target="_blank"><span class="nav-icon">⚙️</span>Motor de Fichas</a>
     <a class="nav-item" href="willgomesfit.html" target="_blank"><span class="nav-icon">🌐</span>Página de Vendas</a>
@@ -486,6 +487,81 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
       </div>
     </div>
 
+    <!-- PÁGINA BANCO DE EXERCÍCIOS -->
+    <div class="page" id="page-bancoex">
+      <div class="topbar">
+        <div class="page-title">BANCO DE<span> EXERCÍCIOS</span></div>
+        <button class="btn btn-orange" onclick="abrirNovoExercicioBanco()" style="font-size:.8rem;padding:8px 16px">+ Novo Exercício</button>
+      </div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px">Cadastre o exercício uma vez com nome e vídeo/GIF. Depois, ao montar a ficha de qualquer aluno, é só escolher aqui — o nome e o vídeo já vêm prontos, você só ajusta séries, reps, descanso e observações.</p>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <input type="text" id="banco-busca" placeholder="🔎 Buscar exercício..." oninput="filtrarBancoExercicios()" style="flex:1;min-width:200px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)"/>
+        <select id="banco-filtro-categoria" onchange="filtrarBancoExercicios()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
+          <option value="">Todas as categorias</option>
+          <option value="Peito">Peito</option>
+          <option value="Costas">Costas</option>
+          <option value="Ombro">Ombro</option>
+          <option value="Bíceps">Bíceps</option>
+          <option value="Tríceps">Tríceps</option>
+          <option value="Perna">Perna</option>
+          <option value="Glúteo">Glúteo</option>
+          <option value="Abdômen">Abdômen</option>
+          <option value="Cardio">Cardio</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+
+      <div id="banco-exercicios-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
+        <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">⏳ Carregando banco de exercícios...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL NOVO/EDITAR EXERCÍCIO DO BANCO -->
+<div class="modal-overlay" id="modal-banco-exercicio">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div style="flex:1">
+        <div class="modal-title" id="banco-modal-titulo">Novo Exercício</div>
+      </div>
+      <button class="modal-close" onclick="fecharModalBancoExercicio()">✕</button>
+    </div>
+    <div style="padding:20px">
+      <input type="hidden" id="banco-ex-id"/>
+      <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Nome do exercício</label>
+      <input type="text" id="banco-ex-nome" placeholder="Ex: Supino Reto com Barra" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem;font-family:var(--font-b);margin:6px 0 16px"/>
+
+      <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Categoria</label>
+      <select id="banco-ex-categoria" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem;font-family:var(--font-b);margin:6px 0 16px">
+        <option value="Peito">Peito</option>
+        <option value="Costas">Costas</option>
+        <option value="Ombro">Ombro</option>
+        <option value="Bíceps">Bíceps</option>
+        <option value="Tríceps">Tríceps</option>
+        <option value="Perna">Perna</option>
+        <option value="Glúteo">Glúteo</option>
+        <option value="Abdômen">Abdômen</option>
+        <option value="Cardio">Cardio</option>
+        <option value="Outro">Outro</option>
+      </select>
+
+      <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Vídeo (MP4) ou GIF</label>
+      <div style="margin:6px 0 8px">
+        <div id="banco-ex-preview-wrap" style="display:none;position:relative;width:120px;margin-bottom:10px">
+          <div id="banco-ex-preview"></div>
+          <button onclick="removerMidiaBancoExercicio()" style="position:absolute;top:-6px;right:-6px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer">✕</button>
+        </div>
+        <label style="cursor:pointer;display:inline-block;background:rgba(255,255,255,.05);border:1px dashed var(--border);border-radius:8px;padding:10px 16px;font-size:.8rem;color:#999">
+          📎 Escolher arquivo (GIF ou MP4)
+          <input type="file" id="banco-ex-midia-input" accept=".gif,image/gif,.mp4,video/mp4" style="display:none" onchange="preverMidiaBancoExercicio(this)"/>
+        </label>
+      </div>
+
+      <button onclick="salvarExercicioBanco()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:12px;border-radius:8px;font-weight:800;font-size:.88rem;cursor:pointer;margin-top:12px">💾 Salvar no Banco</button>
+    </div>
   </div>
 </div>
 
@@ -1714,6 +1790,7 @@ function showPage(id,el){
   if(el) el.classList.add('active');
   if(id==='degustacoes'){ renderizarEditorDegustacao(); carregarStatusManutencaoDegustacao(); }
   if(id==='captacao'){ carregarCaptacao(); }
+  if(id==='bancoex'){ carregarBancoExercicios(); }
 }
 function switchTab(id,el){
   document.querySelectorAll('#page-clientes .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -2496,6 +2573,7 @@ async function renderizarEditorPortalAba(){
         <div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:10px 14px;display:flex;align-items:center;gap:8px">
           <input type="text" value="${escHtml(diaNome)}" data-dia="${dIdx}" onchange="atualizarNomeDia(this)"
             style="flex:1;background:transparent;border:none;color:#a78bfa;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-b);outline:none"/>
+          <button onclick="abrirSeletorBancoParaFicha(${dIdx})" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">📚 Do Banco</button>
           <button onclick="adicionarExercicio(${dIdx})" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">+ Exercício</button>
           <button onclick="removerDiaTreino(${dIdx})" title="Remover este dia inteiro" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;padding:4px 9px;border-radius:6px;font-size:.7rem;cursor:pointer">🗑</button>
         </div>
@@ -2757,6 +2835,239 @@ function ehVideo(dataUrl){
 }
 
 // Gera a tag certa (img pra GIF/imagem, video pra MP4) com o mesmo estilo/onclick nos dois casos
+// ══════════════════════════════════════════════════════════════════════════
+// BANCO DE EXERCÍCIOS — cadastro reutilizável de nome + vídeo/GIF
+// ══════════════════════════════════════════════════════════════════════════
+
+async function carregarBancoExercicios(){
+  const grid = document.getElementById('banco-exercicios-grid');
+  if(!SB){ if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">Supabase não conectado.</div>'; return; }
+
+  try{
+    const { data, error } = await SB.from('banco_exercicios').select('*').order('nome',{ascending:true});
+    if(error){
+      if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">Ainda não disponível — rode o sql_banco_exercicios.sql no Supabase.</div>';
+      console.error('carregarBancoExercicios:', error);
+      return;
+    }
+    window._bancoExercicios = data || [];
+    renderGridBancoExercicios(window._bancoExercicios);
+  }catch(e){
+    console.error('carregarBancoExercicios — erro inesperado:', e);
+    if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">Erro ao carregar.</div>';
+  }
+}
+
+function renderGridBancoExercicios(lista){
+  const grid = document.getElementById('banco-exercicios-grid');
+  if(!grid) return;
+
+  if(!lista.length){
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted);border:1px dashed var(--border);border-radius:12px">Nenhum exercício cadastrado ainda. Clique em "+ Novo Exercício" pra começar.</div>';
+    return;
+  }
+
+  grid.innerHTML = lista.map(ex=>{
+    const midia = ex.midia
+      ? midiaTag(ex.midia, 'width:100%;height:130px;object-fit:cover;border-radius:10px 10px 0 0', '')
+      : `<div style="width:100%;height:130px;background:rgba(255,255,255,.04);border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;color:#555;font-size:1.8rem">🎬</div>`;
+    return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      ${midia}
+      <div style="padding:10px 12px">
+        <div style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:2px">${escHtml(ex.nome)}</div>
+        <div style="font-size:.68rem;color:#666;margin-bottom:10px">${escHtml(ex.categoria)||'Sem categoria'}</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="editarExercicioBanco('${ex.id}')" style="flex:1;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#60a5fa;padding:6px;border-radius:6px;font-size:.72rem;cursor:pointer">✏️ Editar</button>
+          <button onclick="excluirExercicioBanco('${ex.id}')" style="flex:1;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:6px;border-radius:6px;font-size:.72rem;cursor:pointer">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarBancoExercicios(){
+  const termo = (document.getElementById('banco-busca')?.value||'').toLowerCase().trim();
+  const categoria = document.getElementById('banco-filtro-categoria')?.value||'';
+  const lista = (window._bancoExercicios||[]).filter(ex=>{
+    const bateNome = !termo || (ex.nome||'').toLowerCase().includes(termo);
+    const bateCategoria = !categoria || ex.categoria===categoria;
+    return bateNome && bateCategoria;
+  });
+  renderGridBancoExercicios(lista);
+}
+
+function abrirNovoExercicioBanco(){
+  document.getElementById('banco-modal-titulo').textContent = 'Novo Exercício';
+  document.getElementById('banco-ex-id').value = '';
+  document.getElementById('banco-ex-nome').value = '';
+  document.getElementById('banco-ex-categoria').value = 'Peito';
+  removerMidiaBancoExercicio();
+  document.getElementById('modal-banco-exercicio').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function editarExercicioBanco(id){
+  const ex = (window._bancoExercicios||[]).find(e=>e.id===id);
+  if(!ex) return;
+  document.getElementById('banco-modal-titulo').textContent = 'Editar Exercício';
+  document.getElementById('banco-ex-id').value = ex.id;
+  document.getElementById('banco-ex-nome').value = ex.nome||'';
+  document.getElementById('banco-ex-categoria').value = ex.categoria||'Peito';
+  window._bancoExMidiaAtual = ex.midia || null;
+  atualizarPreviewMidiaBanco();
+  document.getElementById('modal-banco-exercicio').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function fecharModalBancoExercicio(){
+  document.getElementById('modal-banco-exercicio').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function preverMidiaBancoExercicio(input){
+  const file = input.files[0];
+  if(!file) return;
+  const limiteMB = file.type.startsWith('video/') ? 20 : 8;
+  if(file.size > limiteMB*1024*1024){ notif(`Arquivo muito grande (máx. ${limiteMB}MB)`,'#ef4444',true); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._bancoExMidiaAtual = e.target.result;
+    atualizarPreviewMidiaBanco();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerMidiaBancoExercicio(){
+  window._bancoExMidiaAtual = null;
+  atualizarPreviewMidiaBanco();
+}
+
+function atualizarPreviewMidiaBanco(){
+  const wrap = document.getElementById('banco-ex-preview-wrap');
+  const prev = document.getElementById('banco-ex-preview');
+  if(!wrap || !prev) return;
+  if(window._bancoExMidiaAtual){
+    wrap.style.display = 'block';
+    prev.innerHTML = midiaTag(window._bancoExMidiaAtual, 'width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--border)', '');
+  } else {
+    wrap.style.display = 'none';
+    prev.innerHTML = '';
+  }
+}
+
+async function salvarExercicioBanco(){
+  const id = document.getElementById('banco-ex-id').value;
+  const nome = document.getElementById('banco-ex-nome').value.trim();
+  const categoria = document.getElementById('banco-ex-categoria').value;
+  const midia = window._bancoExMidiaAtual || null;
+
+  if(!nome){ notif('Informe o nome do exercício','#ef4444',true); return; }
+  if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
+
+  notif('⏳ Salvando...','#3b82f6');
+  try{
+    let error;
+    if(id){
+      ({ error } = await SB.from('banco_exercicios').update({ nome, categoria, midia }).eq('id', id));
+    } else {
+      ({ error } = await SB.from('banco_exercicios').insert({ nome, categoria, midia, criado_em: new Date().toISOString() }));
+    }
+    if(error){ notif('Erro ao salvar: '+error.message,'#ef4444',true); console.error('salvarExercicioBanco:', error); return; }
+
+    notif('✅ Exercício salvo no banco!','#10b981');
+    fecharModalBancoExercicio();
+    await carregarBancoExercicios();
+  }catch(e){
+    console.error('salvarExercicioBanco — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+  }
+}
+
+async function excluirExercicioBanco(id){
+  const ex = (window._bancoExercicios||[]).find(e=>e.id===id);
+  if(!ex) return;
+  if(!confirm(`Excluir "${ex.nome}" do banco de exercícios? Isso não afeta fichas que já usam esse exercício, só remove daqui.`)) return;
+  if(!SB) return;
+  try{
+    const { error } = await SB.from('banco_exercicios').delete().eq('id', id);
+    if(error){ notif('Erro ao excluir: '+error.message,'#ef4444',true); return; }
+    notif('Exercício removido do banco.','#f59e0b');
+    await carregarBancoExercicios();
+  }catch(e){ console.error('excluirExercicioBanco:', e); }
+}
+
+// ── SELETOR "LANÇAR DO BANCO" DENTRO DO EDITOR DE FICHA ─────────────────────
+
+async function abrirSeletorBancoParaFicha(dIdx){
+  window._bancoDiaAlvo = dIdx;
+  if(!window._bancoExercicios){ await carregarBancoExercicios(); }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'seletor-banco-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:520px;width:100%;max-height:80vh;display:flex;flex-direction:column">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.95rem;font-weight:800;color:#fff">📚 Lançar do Banco de Exercícios</div>
+        <button onclick="document.getElementById('seletor-banco-overlay').remove()" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:12px 18px">
+        <input type="text" id="seletor-banco-busca" placeholder="🔎 Buscar exercício..." oninput="filtrarSeletorBanco()"
+          style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.85rem;font-family:var(--font-b)"/>
+      </div>
+      <div id="seletor-banco-lista" style="overflow-y:auto;padding:0 18px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  renderSeletorBancoLista(window._bancoExercicios||[]);
+}
+
+function renderSeletorBancoLista(lista){
+  const el = document.getElementById('seletor-banco-lista');
+  if(!el) return;
+  if(!lista.length){
+    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted);font-size:.82rem">Nenhum exercício encontrado. Cadastre no menu 🎬 Banco de Exercícios.</div>';
+    return;
+  }
+  el.innerHTML = lista.map(ex=>{
+    const midia = ex.midia
+      ? midiaTag(ex.midia, 'width:100%;height:80px;object-fit:cover;border-radius:8px 8px 0 0', '')
+      : `<div style="width:100%;height:80px;background:rgba(255,255,255,.04);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#555;font-size:1.3rem">🎬</div>`;
+    return `<div onclick="lancarExercicioDoBanco('${ex.id}')" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
+      ${midia}
+      <div style="padding:7px 8px;font-size:.72rem;color:#fff;font-weight:600;line-height:1.3">${escHtml(ex.nome)}</div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarSeletorBanco(){
+  const termo = (document.getElementById('seletor-banco-busca')?.value||'').toLowerCase().trim();
+  const lista = (window._bancoExercicios||[]).filter(ex=> !termo || (ex.nome||'').toLowerCase().includes(termo));
+  renderSeletorBancoLista(lista);
+}
+
+function lancarExercicioDoBanco(exId){
+  const ex = (window._bancoExercicios||[]).find(e=>e.id===exId);
+  const dIdx = window._bancoDiaAlvo;
+  if(!ex || dIdx===undefined || !window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  if(!dias[dIdx]) return;
+
+  window._fichaEditavel[dias[dIdx]].push({
+    nome: ex.nome, series:'3', reps:'10-12', descanso:'90s', rir:'2', obs:''
+  });
+
+  // Copia a mídia do banco pro cache de GIFs da ficha, usando a mesma chave que o editor espera
+  if(ex.midia){
+    const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
+    gifCache[gifKey] = ex.midia;
+  }
+
+  const overlay = document.getElementById('seletor-banco-overlay');
+  if(overlay) overlay.remove();
+  notif(`✅ "${ex.nome}" lançado! Ajuste séries, reps e descanso.`,'#10b981');
+  renderizarEditorPortalAba();
+}
+
 function escHtml(v){
   return String(v ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
