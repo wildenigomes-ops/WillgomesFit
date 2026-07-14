@@ -600,6 +600,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
             <div class="empty-title">Guia alimentar em preparação</div>
             <div class="empty-sub">O Prof. Will está preparando suas orientações de alimentação. Em breve aparecerá aqui!</div>
           </div>
+          <div id="nutri-rotina" style="display:none;flex-direction:column;gap:14px;margin-bottom:14px"></div>
           <div id="nutri-cards" style="display:none;display:flex;flex-direction:column;gap:14px"></div>
         </div>
       </div>
@@ -1656,17 +1657,67 @@ function fecharModoTreino(){
 // ── GUIA ALIMENTAR ────────────────────────────────────────────────────────────
 function montarNutricao(fichas){
   const nutri = fichas?.[0]?.nutri_json;
+  const refeicoes = fichas?.[0]?.refeicoes_json;
   const empty = document.getElementById('nutri-empty');
   const cards = document.getElementById('nutri-cards');
+  const rotinaEl = document.getElementById('nutri-rotina');
   if(!empty || !cards) return;
 
-  if(!nutri || !Object.values(nutri).some(v=>v)){
+  const temNutri = nutri && Object.values(nutri).some(v=>v);
+  const temRotina = refeicoes && refeicoes.length;
+
+  if(!temNutri && !temRotina){
     empty.style.display = 'flex';
     cards.style.display = 'none';
+    if(rotinaEl) rotinaEl.style.display = 'none';
     return;
   }
 
   empty.style.display = 'none';
+
+  // Rotina alimentar estruturada (refeições com alimentos, calorias e substituições)
+  if(rotinaEl){
+    if(temRotina){
+      const totalDia = refeicoes.reduce((s,r)=> s + (r.alimentos||[]).reduce((s2,a)=>s2+(parseFloat(a.calorias)||0),0), 0);
+      rotinaEl.style.display = 'flex';
+      rotinaEl.innerHTML = `
+        <div style="background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(16,185,129,.04));border:1px solid rgba(16,185,129,.25);border-radius:14px;padding:16px 20px;text-align:center">
+          <div style="font-size:.68rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#34d399;margin-bottom:4px">Total do dia</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#fff">${totalDia} kcal</div>
+        </div>
+      ` + refeicoes.map(ref=>{
+        const totalRef = (ref.alimentos||[]).reduce((s,a)=>s+(parseFloat(a.calorias)||0),0);
+        const alimentosComConteudo = (ref.alimentos||[]).filter(a=>a.item);
+        if(!alimentosComConteudo.length) return '';
+        return `
+        <div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px;border-left:3px solid #10b981">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:1.1rem">🍽️</span>
+              <span style="font-size:.85rem;font-weight:800;color:#fff">${ref.nome}</span>
+              ${ref.horario ? `<span style="font-size:.72rem;color:#666">· ${ref.horario}</span>` : ''}
+            </div>
+            <span style="font-size:.72rem;color:#34d399;font-weight:700">${totalRef} kcal</span>
+          </div>
+          ${alimentosComConteudo.map(a=>`
+            <div style="padding:8px 0;border-top:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+                <span style="font-size:.85rem;color:#fff;font-weight:600">${a.item}${a.quantidade?' — '+a.quantidade:''}</span>
+                ${a.calorias ? `<span style="font-size:.72rem;color:#888;white-space:nowrap">${a.calorias} kcal</span>` : ''}
+              </div>
+              ${a.substituicao ? `<div style="font-size:.74rem;color:#a78bfa;margin-top:3px">🔄 Pode substituir por: ${a.substituicao}</div>` : ''}
+            </div>`).join('')}
+        </div>`;
+      }).join('');
+    } else {
+      rotinaEl.style.display = 'none';
+    }
+  }
+
+  if(!temNutri){
+    cards.style.display = 'none';
+    return;
+  }
   cards.style.display = 'flex';
 
   const itens = [
