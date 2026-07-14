@@ -256,6 +256,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
     <a class="nav-item" onclick="showPage('clientes',this)"><span class="nav-icon">👥</span>Clientes</a>
     <a class="nav-item" onclick="showPage('vencimentos',this)"><span class="nav-icon">⏰</span>Vencimentos</a>
     <a class="nav-item" onclick="showPage('degustacoes',this)"><span class="nav-icon">🎯</span>Degustações</a>
+    <a class="nav-item" onclick="showPage('captacao',this)"><span class="nav-icon">📥</span>Captação<span class="tab-cnt" id="cnt-captacao-novos" style="display:none"></span></a>
     <div class="sb-section">Ferramentas</div>
     <a class="nav-item" href="motor.html" target="_blank"><span class="nav-icon">⚙️</span>Motor de Fichas</a>
     <a class="nav-item" href="willgomesfit.html" target="_blank"><span class="nav-icon">🌐</span>Página de Vendas</a>
@@ -330,7 +331,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
     <div class="page" id="page-degustacoes">
       <div class="topbar">
         <div class="page-title">DEGUS<span>TAÇÕES</span></div>
-        <button class="btn btn-green" onclick="carregarDegustacoes()" style="font-size:.8rem;padding:8px 16px">🔄 Atualizar</button>
+        <button class="btn btn-green" onclick="renderizarEditorDegustacao();carregarStatusManutencaoDegustacao()" style="font-size:.8rem;padding:8px 16px">🔄 Atualizar</button>
       </div>
 
       <!-- TREINO DE DEGUSTAÇÃO -->
@@ -416,21 +417,54 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
         </div>
       </div>
       <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:.82rem;color:#fff;font-weight:700;margin-bottom:2px">📥 Leads capturados na degustação</div>
+            <div style="font-size:.75rem;color:var(--muted)">Nome, WhatsApp e status de contato de quem já experimentou.</div>
+          </div>
+          <button class="btn btn-orange" onclick="showPage('captacao',document.querySelector('[onclick*=captacao]'))" style="font-size:.8rem;padding:8px 16px">Ver no menu Captação →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PÁGINA CAPTAÇÃO -->
+    <div class="page" id="page-captacao">
+      <div class="topbar">
+        <div class="page-title">CAPTA<span>ÇÃO</span></div>
+        <button class="btn btn-green" onclick="carregarCaptacao()" style="font-size:.8rem;padding:8px 16px">🔄 Atualizar</button>
+      </div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px">Todo mundo que preencheu o cadastro básico pra acessar a degustação cai aqui automaticamente — são leads reais, possíveis vendas futuras. Use pra marketing e reconversão.</p>
+
+      <div class="card" style="margin-bottom:16px">
         <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
-          <div style="flex:1;min-width:200px">
+          <div style="flex:1;min-width:160px">
             <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Total de Leads</div>
-            <div style="font-family:var(--font-d);font-size:2rem;color:var(--white)" id="deg-total">—</div>
+            <div style="font-family:var(--font-d);font-size:2rem;color:var(--white)" id="cap-total">—</div>
           </div>
-          <div style="flex:1;min-width:200px">
+          <div style="flex:1;min-width:160px">
             <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Não contatados</div>
-            <div style="font-family:var(--font-d);font-size:2rem;color:var(--yellow)" id="deg-novos">—</div>
+            <div style="font-family:var(--font-d);font-size:2rem;color:var(--yellow)" id="cap-novos">—</div>
           </div>
-          <div style="flex:1;min-width:200px">
+          <div style="flex:1;min-width:160px">
+            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Contatados</div>
+            <div style="font-family:var(--font-d);font-size:2rem;color:#60a5fa" id="cap-contatados">—</div>
+          </div>
+          <div style="flex:1;min-width:160px">
             <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Convertidos</div>
-            <div style="font-family:var(--font-d);font-size:2rem;color:var(--green)" id="deg-convertidos">—</div>
+            <div style="font-family:var(--font-d);font-size:2rem;color:var(--green)" id="cap-convertidos">—</div>
+          </div>
+          <div style="flex:1;min-width:160px">
+            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Últimos 7 dias</div>
+            <div style="font-family:var(--font-d);font-size:2rem;color:#a78bfa" id="cap-semana">—</div>
           </div>
         </div>
       </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <input type="text" id="cap-busca" placeholder="🔎 Buscar por nome ou WhatsApp..." oninput="filtrarCaptacao()" style="flex:1;min-width:200px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)"/>
+        <button onclick="exportarCaptacaoCSV()" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399;padding:9px 16px;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer">⬇ Exportar CSV</button>
+      </div>
+
       <div class="card">
         <div class="table-wrap">
           <table>
@@ -438,13 +472,14 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
               <tr>
                 <th>Nome</th>
                 <th>WhatsApp</th>
+                <th>Gênero</th>
                 <th>Data</th>
                 <th>Status</th>
                 <th>Ações</th>
               </tr>
             </thead>
-            <tbody id="tbody-degustacoes">
-              <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Carregando leads...</td></tr>
+            <tbody id="tbody-captacao">
+              <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">Carregando leads...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1499,7 +1534,7 @@ async function confirmarPagamento(){
   const elQ3=document.getElementById('m-link-q2');
   if(elQ3){ elQ3.textContent=link3; elQ3.dataset.link=link3; }
   renderDashboard(); renderClientes(); renderVencimentos();
-  if(p==='degustacoes') carregarDegustacoes();
+  if(p==='degustacoes') carregarCaptacao();
   notif('✅ Pagamento confirmado! Envie o link ao cliente.');
 }
 
@@ -1677,7 +1712,8 @@ function showPage(id,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
-  if(id==='degustacoes'){ carregarDegustacoes(); renderizarEditorDegustacao(); carregarStatusManutencaoDegustacao(); }
+  if(id==='degustacoes'){ renderizarEditorDegustacao(); carregarStatusManutencaoDegustacao(); }
+  if(id==='captacao'){ carregarCaptacao(); }
 }
 function switchTab(id,el){
   document.querySelectorAll('#page-clientes .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -5021,19 +5057,36 @@ async function salvarTreinoDegustacao(){
 }
 
 // ── DEGUSTAÇÕES ───────────────────────────────────────────────────────────────
-async function carregarDegustacoes(){
+async function carregarCaptacao(){
   if(!SB){ notif('Supabase não conectado','#ef4444'); return; }
   const { data, error } = await SB.from('leads_degustacao').select('*').order('criado_em',{ascending:false});
-  if(error){ notif('Erro ao carregar leads: '+error.message,'#ef4444'); return; }
+  if(error){ notif('Erro ao carregar leads: '+error.message,'#ef4444',true); console.error('carregarCaptacao:', error); return; }
 
   const leads = data || [];
-  document.getElementById('deg-total').textContent = leads.length;
-  document.getElementById('deg-novos').textContent = leads.filter(l=>l.status==='novo').length;
-  document.getElementById('deg-convertidos').textContent = leads.filter(l=>l.status==='convertido').length;
+  window._captacaoLeads = leads;
 
-  const tbody = document.getElementById('tbody-degustacoes');
+  const seteDiasAtras = Date.now() - 7*24*60*60*1000;
+  document.getElementById('cap-total').textContent = leads.length;
+  document.getElementById('cap-novos').textContent = leads.filter(l=>l.status==='novo'||!l.status).length;
+  document.getElementById('cap-contatados').textContent = leads.filter(l=>l.status==='contatado').length;
+  document.getElementById('cap-convertidos').textContent = leads.filter(l=>l.status==='convertido').length;
+  document.getElementById('cap-semana').textContent = leads.filter(l=>new Date(l.criado_em).getTime()>=seteDiasAtras).length;
+
+  const badgeMenu = document.getElementById('cnt-captacao-novos');
+  const novos = leads.filter(l=>l.status==='novo'||!l.status).length;
+  if(badgeMenu){
+    if(novos>0){ badgeMenu.textContent = novos; badgeMenu.style.display='inline-block'; }
+    else{ badgeMenu.style.display='none'; }
+  }
+
+  renderTabelaCaptacao(leads);
+}
+
+function renderTabelaCaptacao(leads){
+  const tbody = document.getElementById('tbody-captacao');
+  if(!tbody) return;
   if(!leads.length){
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Nenhum lead ainda. Aguardando degustações.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">Nenhum lead ainda. Aguardando degustações.</td></tr>';
     return;
   }
 
@@ -5041,15 +5094,16 @@ async function carregarDegustacoes(){
     const data_br = new Date(l.criado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
     const wpp = (l.numero_formatado||l.whatsapp||'').replace(/\D/g,'');
     const msgWpp = encodeURIComponent(`Olá ${l.nome}! 👋 Vi que você fez a degustação do portal WillgomesFit. Que tal transformar esse treino de exemplo em um treino 100% personalizado para você? Posso te passar mais detalhes dos nossos planos! 💪`);
-    const statusColor = l.status==='convertido'?'var(--green)':l.status==='contatado'?'var(--yellow)':'var(--orange)';
-    const statusLabel = l.status==='convertido'?'✅ Convertido':l.status==='contatado'?'📞 Contatado':'🆕 Novo';
+    const statusColor = l.status==='convertido'?'var(--green)':l.status==='contatado'?'#60a5fa':'var(--orange)';
+    const generoLabel = l.genero==='feminino' ? '🚺 Mulher' : l.genero==='masculino' ? '🚹 Homem' : '—';
     return `<tr>
-      <td style="padding:10px 12px;font-weight:600">${l.nome||'—'}</td>
-      <td style="padding:10px 12px;font-size:.82rem">${l.whatsapp||'—'}</td>
+      <td style="padding:10px 12px;font-weight:600">${escHtml(l.nome)||'—'}</td>
+      <td style="padding:10px 12px;font-size:.82rem">${escHtml(l.whatsapp)||'—'}</td>
+      <td style="padding:10px 12px;font-size:.8rem">${generoLabel}</td>
       <td style="padding:10px 12px;font-size:.78rem;color:var(--muted)">${data_br}</td>
       <td style="padding:10px 12px">
         <select onchange="atualizarStatusLead('${l.id}',this.value)" style="background:var(--card2);border:1px solid var(--border);color:${statusColor};border-radius:6px;padding:4px 8px;font-size:.75rem;font-weight:700;cursor:pointer">
-          <option value="novo" ${l.status==='novo'?'selected':''}>🆕 Novo</option>
+          <option value="novo" ${(l.status==='novo'||!l.status)?'selected':''}>🆕 Novo</option>
           <option value="contatado" ${l.status==='contatado'?'selected':''}>📞 Contatado</option>
           <option value="convertido" ${l.status==='convertido'?'selected':''}>✅ Convertido</option>
         </select>
@@ -5063,11 +5117,47 @@ async function carregarDegustacoes(){
   }).join('');
 }
 
+function filtrarCaptacao(){
+  const termo = (document.getElementById('cap-busca').value||'').toLowerCase().trim();
+  const leads = window._captacaoLeads || [];
+  if(!termo){ renderTabelaCaptacao(leads); return; }
+  const filtrados = leads.filter(l=>
+    (l.nome||'').toLowerCase().includes(termo) ||
+    (l.whatsapp||'').toLowerCase().includes(termo)
+  );
+  renderTabelaCaptacao(filtrados);
+}
+
+function exportarCaptacaoCSV(){
+  const leads = window._captacaoLeads || [];
+  if(!leads.length){ notif('Nenhum lead pra exportar ainda.','#f59e0b',true); return; }
+
+  const linhas = [['Nome','WhatsApp','Gênero','Status','Data de captação']];
+  leads.forEach(l=>{
+    linhas.push([
+      l.nome||'', l.whatsapp||'', l.genero||'', l.status||'novo',
+      new Date(l.criado_em).toLocaleString('pt-BR')
+    ]);
+  });
+  const csv = linhas.map(l => l.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Leads_Degustacao_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  notif('✅ CSV exportado!','#10b981');
+}
+
 async function atualizarStatusLead(id, status){
   if(!SB) return;
-  await SB.from('leads_degustacao').update({ status }).eq('id', id);
+  const { error } = await SB.from('leads_degustacao').update({ status }).eq('id', id);
+  if(error){ notif('Erro ao atualizar: '+error.message,'#ef4444',true); return; }
   notif(`Status atualizado: ${status}`,'#10b981');
-  carregarDegustacoes();
+  carregarCaptacao();
 }
 
 async function resetarTudoCliente(){
@@ -5207,6 +5297,7 @@ async function resetarQuestionario(){
 async function init(){
   await initSB();
   await loadClientes();
+  carregarCaptacao().catch(e=>console.warn('carregarCaptacao (init):', e));
 }
 
 init();

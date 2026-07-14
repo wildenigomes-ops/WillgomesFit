@@ -1106,7 +1106,20 @@ async function coletarLeadEIniciar(){
       origem: 'degustacao_portal'
     };
     try{
-      if(SB) await SB.from('leads_degustacao').insert(payload);
+      if(SB){
+        let salvou = false;
+        let ultimoErro = null;
+        for(let tentativa=1; tentativa<=3 && !salvou; tentativa++){
+          const { error } = await SB.from('leads_degustacao').insert(payload);
+          if(!error){ salvou = true; }
+          else{
+            ultimoErro = error;
+            console.error(`[coletarLeadEIniciar] tentativa ${tentativa}/3 falhou:`, error);
+            if(tentativa<3) await new Promise(r=>setTimeout(r,1000));
+          }
+        }
+        if(!salvou) console.error('[coletarLeadEIniciar] não foi possível salvar o lead após 3 tentativas:', ultimoErro);
+      }
     }catch(e){ console.warn('Erro ao salvar lead:', e); }
 
     // Alerta por e-mail pro Will — mesma via usada nas compras, pra ele acompanhar em tempo real
