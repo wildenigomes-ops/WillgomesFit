@@ -34,6 +34,20 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--white);font-family:var(--font-b);min-height:100vh}
 
+/* ── Proteção contra cópia casual de fichas/vídeos ──
+   Não impede 100% (print de tela nunca dá pra bloquear), mas evita
+   clique-direito, seleção de texto e arrastar imagem/vídeo pra fora. */
+#app{
+  -webkit-user-select:none; -moz-user-select:none; user-select:none;
+  -webkit-touch-callout:none; /* evita o menu de "salvar imagem" no long-press do iOS */
+}
+#app input, #app textarea, #app select{
+  -webkit-user-select:text; -moz-user-select:text; user-select:text; /* mantém digitável nos formulários */
+}
+#app img, #app video{
+  pointer-events:auto; -webkit-user-drag:none; user-drag:none;
+}
+
 /* ── AUTH ── */
 #auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at top,rgba(232,93,4,.08),transparent 60%)}
 .auth-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px 32px;width:100%;max-width:420px}
@@ -573,6 +587,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
             ▶ INICIAR TREINO
           </button>
         </div>
+        <div id="ficha-watermark" style="font-size:.62rem;color:#444;text-align:right;margin-top:-8px;margin-bottom:8px"></div>
         <!-- SELETOR DE DIA PARA INICIAR TREINO -->
         <div id="seletor-dia" style="display:none;margin-bottom:20px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
           <div style="font-size:.72rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:12px">▶ Qual treino você vai fazer hoje?</div>
@@ -841,6 +856,21 @@ const TREINO_DEMO_FEMININO = {
 };
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
+// ── Proteção contra cópia (clique-direito, arrastar, atalhos de salvar) ──────
+// Só dentro do app autenticado (#app) — não afeta a tela de login/degustação.
+document.addEventListener('contextmenu', (e)=>{
+  if(e.target.closest('#app')) e.preventDefault();
+});
+document.addEventListener('dragstart', (e)=>{
+  if(e.target.closest('#app') && (e.target.tagName==='IMG' || e.target.tagName==='VIDEO')) e.preventDefault();
+});
+document.addEventListener('keydown', (e)=>{
+  if(!document.getElementById('app') || document.getElementById('app').style.display==='none') return;
+  const k = e.key.toLowerCase();
+  // Ctrl/Cmd+S (salvar página) e Ctrl/Cmd+P (imprimir)
+  if((e.ctrlKey||e.metaKey) && (k==='s' || k==='p')){ e.preventDefault(); notif('Essa ação não está disponível aqui.','#f59e0b'); }
+});
+
 window.addEventListener('DOMContentLoaded', async ()=>{
   // Link de degustação (?demo=1): mostra só o formulário de degustação, escondendo o login.
   // Sem esse parâmetro, o portal mostra só a tela normal de login — nunca os dois juntos.
@@ -1436,8 +1466,8 @@ function renderizarExercicioAtivo(){
   const gifData = gifs[gifKey] || null;
   const gifHtml = gifData
     ? (ehVideo(gifData)
-        ? `<div class="mt-gif-wrap"><video src="${gifData}" autoplay loop muted playsinline></video></div>`
-        : `<div class="mt-gif-wrap"><img src="${gifData}" alt="${ex.nome}"/></div>`)
+        ? `<div class="mt-gif-wrap"><video src="${gifData}" autoplay loop muted playsinline controlsList="nodownload noremoteplayback nofullscreen" disablePictureInPicture oncontextmenu="return false"></video></div>`
+        : `<div class="mt-gif-wrap"><img src="${gifData}" alt="${ex.nome}" draggable="false" oncontextmenu="return false"/></div>`)
     : `<div class="mt-gif-wrap"><div class="mt-gif-placeholder">🎬 <span>Execução: ${ex.obs||ex.nome}</span></div></div>`;
 
   // Séries
@@ -1883,6 +1913,15 @@ function montarDashboard(fichas, progressos){
 
 // ── FICHA DE TREINO ───────────────────────────────────────────────────────────
 function montarFicha(fichas){
+  const wmEl = document.getElementById('ficha-watermark');
+  if(wmEl){
+    if(modoDemo){
+      wmEl.textContent = `Degustação · ${window._leadDemo?.nome || 'visitante'} · ${window._leadDemo?.whatsapp || ''} · não copie ou compartilhe`;
+    } else if(usuario?.email){
+      wmEl.textContent = `Uso exclusivo de ${usuario.email} · não copie ou compartilhe`;
+    }
+  }
+
   if(!fichas.length){
     document.getElementById('ficha-content').innerHTML = `
       <div class="empty-state">
@@ -1939,8 +1978,8 @@ function montarFicha(fichas){
             </div>
             ${gifData
               ? (ehVideo(gifData)
-                  ? `<video src="${gifData}" class="ex-gif" autoplay loop muted playsinline onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"></video>`
-                  : `<img src="${gifData}" class="ex-gif" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"/>`)
+                  ? `<video src="${gifData}" class="ex-gif" autoplay loop muted playsinline controlsList="nodownload noremoteplayback nofullscreen" disablePictureInPicture oncontextmenu="return false" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"></video>`
+                  : `<img src="${gifData}" class="ex-gif" draggable="false" oncontextmenu="return false" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"/>`)
               : ''}
           </div>`;
         });
