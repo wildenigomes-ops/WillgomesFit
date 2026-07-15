@@ -6002,8 +6002,8 @@ function renderRotinaAlimentar(){
         <input type="text" value="${escHtml(al.substituicao)}" placeholder="Substituições (ex: Batata doce 120g)"
           onchange="atualizarAlimentoCampo(${rIdx},${aIdx},'substituicao',this.value)"
           style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:#a78bfa;font-size:.76rem;font-family:var(--font-b)"/>
-        <button onclick="abrirSeletorBancoAlimentoParaRotina(${rIdx},${aIdx})" title="Preencher do Banco de Alimentos" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#60a5fa;padding:5px 8px;border-radius:6px;font-size:.7rem;cursor:pointer">📖</button>
-        <button onclick="removerAlimento(${rIdx},${aIdx})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:5px 8px;border-radius:6px;font-size:.7rem;cursor:pointer">✕</button>
+        <button onclick="abrirSeletorBancoAlimentoParaRotina(${rIdx},${aIdx})" title="Preencher do Banco de Alimentos" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.35);color:#60a5fa;padding:8px 10px;border-radius:6px;font-size:.85rem;cursor:pointer;min-width:36px">📖</button>
+        <button onclick="removerAlimento(${rIdx},${aIdx})" title="Excluir este alimento" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);color:#f87171;padding:8px 10px;border-radius:6px;font-size:.85rem;font-weight:800;cursor:pointer;min-width:36px">✕</button>
       </div>`;
     });
 
@@ -6057,7 +6057,15 @@ function adicionarAlimento(rIdx){
 }
 
 function removerAlimento(rIdx, aIdx){
-  if(!window._rotinaAlimentar?.[rIdx]) return;
+  console.log('[removerAlimento] rIdx:', rIdx, 'aIdx:', aIdx, '| existe:', !!window._rotinaAlimentar?.[rIdx]);
+  if(!window._rotinaAlimentar?.[rIdx]){
+    notif('Erro: refeição não encontrada. Recarregue a página.','#ef4444',true);
+    return;
+  }
+  if(!window._rotinaAlimentar[rIdx].alimentos?.[aIdx]){
+    notif('Erro: esse alimento já não existe mais nessa refeição.','#ef4444',true);
+    return;
+  }
   window._rotinaAlimentar[rIdx].alimentos.splice(aIdx,1);
   renderRotinaAlimentar();
 }
@@ -6065,6 +6073,10 @@ function removerAlimento(rIdx, aIdx){
 // ── SELETOR "DO BANCO" DENTRO DA ROTINA ALIMENTAR ────────────────────────────
 
 async function abrirSeletorBancoAlimentoParaRotina(rIdx, aIdx){
+  // Remove qualquer seletor que porventura já esteja aberto, evitando sobreposição
+  const existente = document.getElementById('seletor-alim-overlay');
+  if(existente) existente.remove();
+
   window._alimentoAlvo = {rIdx, aIdx};
   if(!window._bancoAlimentos){ await carregarBancoAlimentos(); }
 
@@ -6101,8 +6113,17 @@ async function abrirSeletorBancoAlimentoParaRotina(rIdx, aIdx){
 function renderSeletorAlimentoLista(lista){
   const el = document.getElementById('seletor-alim-lista');
   if(!el) return;
+  const bancoTotalmenteVazio = !(window._bancoAlimentos && window._bancoAlimentos.length);
+
   if(!lista.length){
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem">Nenhum alimento encontrado. Cadastre no menu 🥗 Banco de Alimentos, ou clique em "🌱 Popular com alimentos padrão" lá.</div>';
+    if(bancoTotalmenteVazio){
+      el.innerHTML = `<div style="text-align:center;padding:24px 16px;color:var(--muted);font-size:.82rem">
+        <div style="margin-bottom:12px">Seu Banco de Alimentos ainda está vazio.</div>
+        <button onclick="popularESetarSeletorAlimento()" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34d399;padding:9px 18px;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer">🌱 Popular com alimentos padrão agora</button>
+      </div>`;
+    } else {
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem">Nenhum alimento encontrado com esse nome. Tente outro termo, ou cadastre no menu 🥗 Banco de Alimentos.</div>';
+    }
     return;
   }
   const restricoes = window._restricoesDetectadasAtual||[];
@@ -6119,6 +6140,13 @@ function renderSeletorAlimentoLista(lista){
   }).join('');
 }
 
+async function popularESetarSeletorAlimento(){
+  const el = document.getElementById('seletor-alim-lista');
+  if(el) el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem">⏳ Populando banco de alimentos...</div>';
+  await popularBancoAlimentosPadrao();
+  filtrarSeletorAlimento();
+}
+
 function filtrarSeletorAlimento(){
   const termo = (document.getElementById('seletor-alim-busca')?.value||'').toLowerCase().trim();
   const lista = (window._bancoAlimentos||[]).filter(a => !termo || (a.nome||'').toLowerCase().includes(termo));
@@ -6126,21 +6154,34 @@ function filtrarSeletorAlimento(){
 }
 
 function selecionarAlimentoDoBanco(alimId){
-  const a = (window._bancoAlimentos||[]).find(x=>x.id===alimId);
-  const alvo = window._alimentoAlvo;
-  if(!a || !alvo || !window._rotinaAlimentar?.[alvo.rIdx]?.alimentos?.[alvo.aIdx]) return;
+  try{
+    const a = (window._bancoAlimentos||[]).find(x=>x.id===alimId);
+    const alvo = window._alimentoAlvo;
+    console.log('[selecionarAlimentoDoBanco] alimId:', alimId, '| encontrado:', !!a, '| alvo:', JSON.stringify(alvo));
 
-  window._rotinaAlimentar[alvo.rIdx].alimentos[alvo.aIdx] = {
-    item: a.nome,
-    quantidade: a.porcao_padrao || '',
-    calorias: a.calorias || 0,
-    substituicao: a.substituicoes || ''
-  };
+    if(!a){ notif('Erro: alimento não encontrado no banco (tente recarregar a página).','#ef4444',true); return; }
+    if(!alvo){ notif('Erro: não sei em qual linha inserir. Feche e clique em "📖" de novo.','#ef4444',true); return; }
+    if(!window._rotinaAlimentar?.[alvo.rIdx]?.alimentos?.[alvo.aIdx]){
+      notif('Erro: a linha de destino não existe mais. Feche e tente de novo.','#ef4444',true);
+      console.error('[selecionarAlimentoDoBanco] linha de destino inválida', alvo, window._rotinaAlimentar);
+      return;
+    }
 
-  const overlay = document.getElementById('seletor-alim-overlay');
-  if(overlay) overlay.remove();
-  notif(`✅ "${a.nome}" preenchido!`,'#10b981');
-  renderRotinaAlimentar();
+    window._rotinaAlimentar[alvo.rIdx].alimentos[alvo.aIdx] = {
+      item: a.nome,
+      quantidade: a.porcao_padrao || '',
+      calorias: a.calorias || 0,
+      substituicao: a.substituicoes || ''
+    };
+
+    const overlay = document.getElementById('seletor-alim-overlay');
+    if(overlay) overlay.remove();
+    notif(`✅ "${a.nome}" preenchido!`,'#10b981');
+    renderRotinaAlimentar();
+  }catch(e){
+    console.error('[selecionarAlimentoDoBanco] erro inesperado:', e);
+    notif('Erro inesperado ao selecionar: '+(e.message||e),'#ef4444',true);
+  }
 }
 
 // ── ABA PROGRESSO — HISTÓRICO DE PESO E MEDIDAS DO ALUNO ─────────────────────
