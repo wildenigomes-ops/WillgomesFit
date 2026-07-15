@@ -2097,18 +2097,49 @@ function prescreverTreino(){
     bloqueados.push('Rosca Direta Barra','Tríceps Testa','Supino com Barra');
 
   // ── BUSCA DE EXERCÍCIOS ───────────────────────────────────────────────────
+  // Mapeia os grupos musculares do motor pras categorias usadas no Banco de Exercícios
+  const MAPA_GRUPO_BANCO = {
+    'abdômen':'Abdômen', 'bíceps':'Bíceps', 'costas':'Costas', 'glúteos':'Glúteo',
+    'ombro':'Ombro', 'panturrilha':'Perna', 'peitoral':'Peito', 'quadríceps':'Perna', 'tríceps':'Tríceps',
+  };
+
   function buscarEx(grupo, n){
-    let pool = EX.filter(e=>{
-      if(!e.grupo.toLowerCase().includes(grupo.toLowerCase())) return false;
-      if(bloqueados.includes(e.nome)) return false;
-      if(equipFiltro && !equipFiltro.some(eq=>e.equipamento.toLowerCase().includes(eq.toLowerCase()))) return false;
-      return true;
-    });
-    const multi = pool.filter(e=>
-      e.equipamento&&(e.equipamento.includes('Barra')||e.equipamento.includes('Halter')||e.equipamento.includes('Máquina')||e.equipamento.includes('Cabo'))
-    );
-    const final = (multi.length >= n) ? multi : pool;
-    return final.slice(0, n+3).sort(()=>Math.random()-0.5).slice(0,n);
+    const resultado = [];
+
+    // 1) Prioriza exercícios do Banco de Exercícios (já têm vídeo pronto pra publicar)
+    const categoriaBanco = MAPA_GRUPO_BANCO[grupo.toLowerCase()];
+    if(categoriaBanco && window._bancoExercicios && window._bancoExercicios.length){
+      let poolBanco = window._bancoExercicios.filter(be => be.categoria === categoriaBanco);
+      // Se o gênero do cliente for conhecido, prioriza exercícios com demonstração compatível (sem excluir unissex)
+      if(sexoRaw){
+        const generoAlvo = isFem ? 'feminino' : 'masculino';
+        const compat = poolBanco.filter(be => be.genero === generoAlvo || be.genero === 'unissex' || !be.genero);
+        if(compat.length) poolBanco = compat;
+      }
+      poolBanco = poolBanco.filter(be => !bloqueados.includes(be.nome));
+      poolBanco.sort(()=>Math.random()-0.5).slice(0, n).forEach(be=>{
+        resultado.push({ nome: be.nome, grupo, secundarios:'', _doBanco:true, _midia: be.midia||null });
+      });
+    }
+
+    // 2) Completa com o pool interno do motor, se ainda faltar
+    const faltam = n - resultado.length;
+    if(faltam > 0){
+      let pool = EX.filter(e=>{
+        if(!e.grupo.toLowerCase().includes(grupo.toLowerCase())) return false;
+        if(bloqueados.includes(e.nome)) return false;
+        if(resultado.some(r=>r.nome===e.nome)) return false; // evita repetir o que já veio do banco
+        if(equipFiltro && !equipFiltro.some(eq=>e.equipamento.toLowerCase().includes(eq.toLowerCase()))) return false;
+        return true;
+      });
+      const multi = pool.filter(e=>
+        e.equipamento&&(e.equipamento.includes('Barra')||e.equipamento.includes('Halter')||e.equipamento.includes('Máquina')||e.equipamento.includes('Cabo'))
+      );
+      const final = (multi.length >= faltam) ? multi : pool;
+      final.slice(0, faltam+3).sort(()=>Math.random()-0.5).slice(0,faltam).forEach(e=>resultado.push(e));
+    }
+
+    return resultado;
   }
 
   // ── MONTAGEM DE BLOCO ─────────────────────────────────────────────────────
@@ -2118,12 +2149,24 @@ function prescreverTreino(){
     grupos.forEach(({g, n, reps: repsCustom})=>{
       const repsUsar = repsCustom || repsObj;
       buscarEx(g, n).forEach(ex=>{
-        const info = EX.find(e=>e.nome===ex.nome) || ex;
-        const ins  = (info.instrucao||info.obs||'').split('.')[0].substring(0,90);
+        let ins, secundarios;
+        if(ex._doBanco){
+          // Exercício veio do Banco — já tem vídeo, então prepara ele no cache de GIFs pra publicação
+          ins = `Amplitude completa. RIR ${rir}.`;
+          secundarios = '';
+          if(ex._midia){
+            const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
+            gifCache[gifKey] = ex._midia;
+          }
+        } else {
+          const info = EX.find(e=>e.nome===ex.nome) || ex;
+          ins = (info.instrucao||info.obs||'').split('.')[0].substring(0,90);
+          secundarios = info.secundarios||'';
+        }
         exercicios.push({
           nome: ex.nome,
           grupo: ex.grupo||g,
-          secundarios: info.secundarios||'',
+          secundarios: secundarios,
           series:   seriesObj,
           reps:     repsUsar,
           descanso: descObj,
@@ -2407,6 +2450,11 @@ async function carregarAbaPortal(c){
   if(planoDisplay) planoDisplay.textContent = c?.plano || '—';
   const migForm = document.getElementById('migracao-plano-form');
   if(migForm) migForm.style.display = 'none';
+
+  // Garante que os Bancos de Exercícios e Alimentos já estejam em memória antes de
+  // qualquer geração automática de ficha (o motor de prescrição usa eles como prioridade)
+  if(!window._bancoExercicios){ await carregarBancoExercicios(); }
+  if(!window._bancoAlimentos){ await carregarBancoAlimentos(); }
 
   if(!SB) return;
   const badge   = document.getElementById('portal-aba-badge');
@@ -3310,61 +3358,511 @@ async function excluirAlimentoBanco(id){
 
 // Lista curada com base na Tabela TACO (UNICAMP) — valores aproximados por porção padrão
 const ALIMENTOS_PADRAO = [
-  {nome:'Arroz branco cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:128,proteina:2.5,carboidrato:28,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz integral, quinoa ou macarrão'},
-  {nome:'Arroz integral cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:124,proteina:2.6,carboidrato:25.8,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz branco ou quinoa'},
-  {nome:'Batata doce cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:77,proteina:0.6,carboidrato:18.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mandioca, batata inglesa ou inhame'},
-  {nome:'Batata inglesa cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:52,proteina:1.2,carboidrato:11.9,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce ou mandioca'},
-  {nome:'Aveia em flocos',categoria:'Cereais',porcao_padrao:'30g',calorias:117,proteina:4.2,carboidrato:20,gordura:2.1,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Granola sem açúcar ou quinoa em flocos'},
-  {nome:'Pão integral',categoria:'Cereais',porcao_padrao:'2 fatias (50g)',calorias:130,proteina:5,carboidrato:24,gordura:2,tags:['vegetariano','sem_lactose'],substituicoes:'Tapioca ou pão francês'},
-  {nome:'Pão francês',categoria:'Cereais',porcao_padrao:'1 unidade (50g)',calorias:150,proteina:4,carboidrato:28,gordura:1.5,tags:['vegetariano'],substituicoes:'Pão integral ou tapioca'},
-  {nome:'Tapioca (goma)',categoria:'Cereais',porcao_padrao:'30g',calorias:105,proteina:0.1,carboidrato:26,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pão integral ou cuscuz'},
-  {nome:'Macarrão cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:158,proteina:5.8,carboidrato:30.9,gordura:0.9,tags:['vegetariano'],substituicoes:'Arroz ou quinoa'},
+  {nome:'Arroz branco cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:128,proteina:2.5,carboidrato:28,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz integral, quinoa'},
+  {nome:'Arroz integral cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:124,proteina:2.6,carboidrato:25.8,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz branco'},
+  {nome:'Arroz parboilizado cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:123,proteina:2.7,carboidrato:26.2,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz branco'},
+  {nome:'Arroz negro cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:356,proteina:8.9,carboidrato:72,gordura:2.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz integral'},
+  {nome:'Arroz cateto/japonês cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:130,proteina:2.4,carboidrato:28.6,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz branco'},
+  {nome:'Batata doce cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:77,proteina:0.6,carboidrato:18.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mandioca, inhame'},
+  {nome:'Batata doce assada',categoria:'Cereais',porcao_padrao:'100g',calorias:90,proteina:1.6,carboidrato:20.7,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce cozida'},
+  {nome:'Batata inglesa cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:52,proteina:1.2,carboidrato:11.9,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce'},
+  {nome:'Batata inglesa assada',categoria:'Cereais',porcao_padrao:'100g',calorias:93,proteina:2,carboidrato:21.1,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce assada'},
+  {nome:'Batata inglesa purê',categoria:'Cereais',porcao_padrao:'100g',calorias:78,proteina:1.6,carboidrato:16,gordura:1.2,tags:['vegetariano'],substituicoes:'Batata assada'},
+  {nome:'Batata baroa/mandioquinha cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:80,proteina:1.5,carboidrato:18.6,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce'},
+  {nome:'Aveia em flocos',categoria:'Cereais',porcao_padrao:'30g',calorias:117,proteina:4.2,carboidrato:20,gordura:2.1,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Granola, quinoa em flocos'},
+  {nome:'Aveia em flocos finos',categoria:'Cereais',porcao_padrao:'30g',calorias:115,proteina:4,carboidrato:19.5,gordura:2,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Aveia em flocos'},
+  {nome:'Farinha de aveia',categoria:'Cereais',porcao_padrao:'30g',calorias:118,proteina:4.5,carboidrato:19.9,gordura:2.5,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Aveia em flocos'},
+  {nome:'Granola sem açúcar',categoria:'Cereais',porcao_padrao:'30g',calorias:130,proteina:3.5,carboidrato:19,gordura:4.5,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Aveia em flocos'},
+  {nome:'Granola com frutas',categoria:'Cereais',porcao_padrao:'30g',calorias:135,proteina:3,carboidrato:21,gordura:4,tags:['vegetariano'],substituicoes:'Aveia'},
+  {nome:'Pão integral',categoria:'Cereais',porcao_padrao:'2 fatias (50g)',calorias:130,proteina:5,carboidrato:24,gordura:2,tags:['vegetariano','sem_lactose'],substituicoes:'Tapioca, pão francês'},
+  {nome:'Pão francês',categoria:'Cereais',porcao_padrao:'1 unidade (50g)',calorias:150,proteina:4,carboidrato:28,gordura:1.5,tags:['vegetariano'],substituicoes:'Pão integral'},
+  {nome:'Pão de forma tradicional',categoria:'Cereais',porcao_padrao:'2 fatias (50g)',calorias:135,proteina:4.2,carboidrato:25,gordura:1.8,tags:['vegetariano'],substituicoes:'Pão integral'},
+  {nome:'Pão sem glúten',categoria:'Cereais',porcao_padrao:'2 fatias (50g)',calorias:140,proteina:2.5,carboidrato:27,gordura:2.2,tags:['vegetariano','sem_gluten'],substituicoes:'Tapioca, cuscuz'},
+  {nome:'Pão de centeio',categoria:'Cereais',porcao_padrao:'2 fatias (50g)',calorias:125,proteina:4.5,carboidrato:23,gordura:1.5,tags:['vegetariano'],substituicoes:'Pão integral'},
+  {nome:'Pão sírio integral',categoria:'Cereais',porcao_padrao:'1 unidade (60g)',calorias:165,proteina:6,carboidrato:32,gordura:1.5,tags:['vegetariano'],substituicoes:'Pão integral'},
+  {nome:'Pão de queijo',categoria:'Cereais',porcao_padrao:'2 unidades (40g)',calorias:140,proteina:3.5,carboidrato:15,gordura:7,tags:['vegetariano','sem_gluten'],substituicoes:'Tapioca'},
+  {nome:'Tapioca (goma)',categoria:'Cereais',porcao_padrao:'30g',calorias:105,proteina:0.1,carboidrato:26,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pão integral, cuscuz'},
+  {nome:'Cuscuz de milho',categoria:'Cereais',porcao_padrao:'100g',calorias:112,proteina:2.5,carboidrato:24.7,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tapioca'},
+  {nome:'Cuscuz marroquino cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:112,proteina:3.8,carboidrato:23.2,gordura:0.2,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Quinoa'},
+  {nome:'Macarrão cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:158,proteina:5.8,carboidrato:30.9,gordura:0.9,tags:['vegetariano'],substituicoes:'Arroz, quinoa'},
+  {nome:'Macarrão integral cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:145,proteina:5.5,carboidrato:28,gordura:1.2,tags:['vegetariano'],substituicoes:'Macarrão comum'},
+  {nome:'Macarrão de arroz cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:109,proteina:2,carboidrato:25,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Macarrão comum'},
+  {nome:'Lasanha (massa cozida)',categoria:'Cereais',porcao_padrao:'100g',calorias:160,proteina:5.5,carboidrato:31,gordura:1,tags:['vegetariano'],substituicoes:'Macarrão comum'},
+  {nome:'Nhoque de batata',categoria:'Cereais',porcao_padrao:'100g',calorias:167,proteina:3.5,carboidrato:34,gordura:1.5,tags:['vegetariano'],substituicoes:'Macarrão'},
   {nome:'Quinoa cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:120,proteina:4.4,carboidrato:21.3,gordura:1.9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz integral'},
-  {nome:'Mandioca cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:125,proteina:0.6,carboidrato:30,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce ou inhame'},
-  {nome:'Peito de frango grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:159,proteina:32,carboidrato:0,gordura:2.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia, carne magra ou tofu'},
+  {nome:'Quinoa em flocos',categoria:'Cereais',porcao_padrao:'30g',calorias:112,proteina:4,carboidrato:19.5,gordura:1.8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Aveia'},
+  {nome:'Mandioca cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:125,proteina:0.6,carboidrato:30,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce, inhame'},
+  {nome:'Mandioca frita',categoria:'Cereais',porcao_padrao:'100g',calorias:210,proteina:1.5,carboidrato:32,gordura:8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mandioca cozida'},
+  {nome:'Inhame cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:97,proteina:1.5,carboidrato:23.2,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce'},
+  {nome:'Milho cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:98,proteina:3.3,carboidrato:19,gordura:1.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce'},
+  {nome:'Milho verde em lata',categoria:'Cereais',porcao_padrao:'100g',calorias:98,proteina:3,carboidrato:21,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Milho cozido'},
+  {nome:'Pipoca sem óleo',categoria:'Cereais',porcao_padrao:'30g',calorias:110,proteina:3,carboidrato:22,gordura:1.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Farofa simples',categoria:'Cereais',porcao_padrao:'30g',calorias:135,proteina:1,carboidrato:22,gordura:5,tags:['vegetariano','vegano'],substituicoes:'Farinha de mandioca pura'},
+  {nome:'Farinha de mandioca',categoria:'Cereais',porcao_padrao:'30g',calorias:107,proteina:0.5,carboidrato:25,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Farinha de trigo',categoria:'Cereais',porcao_padrao:'30g',calorias:108,proteina:3,carboidrato:22.6,gordura:0.4,tags:['vegetariano'],substituicoes:'Farinha de aveia'},
+  {nome:'Torrada integral',categoria:'Cereais',porcao_padrao:'4 unidades (24g)',calorias:100,proteina:3,carboidrato:19,gordura:1.5,tags:['vegetariano'],substituicoes:'Pão integral'},
+  {nome:'Biscoito de arroz',categoria:'Cereais',porcao_padrao:'2 unidades (20g)',calorias:78,proteina:1.5,carboidrato:17,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Torrada'},
+  {nome:'Barra de cereal',categoria:'Cereais',porcao_padrao:'1 unidade (25g)',calorias:95,proteina:1.5,carboidrato:18,gordura:2,tags:['vegetariano'],substituicoes:'Fruta + castanhas'},
+  {nome:'Panqueca americana',categoria:'Cereais',porcao_padrao:'2 unidades (80g)',calorias:180,proteina:5,carboidrato:28,gordura:5,tags:['vegetariano'],substituicoes:'Aveia'},
+  {nome:'Waffle',categoria:'Cereais',porcao_padrao:'1 unidade (75g)',calorias:220,proteina:6,carboidrato:30,gordura:8,tags:['vegetariano'],substituicoes:'Panqueca'},
+  {nome:'Peito de frango grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:159,proteina:32,carboidrato:0,gordura:2.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia, carne magra'},
+  {nome:'Peito de frango cozido (desfiado)',categoria:'Proteinas',porcao_padrao:'100g',calorias:148,proteina:29.8,carboidrato:0,gordura:2.7,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango grelhado'},
+  {nome:'Peito de frango empanado',categoria:'Proteinas',porcao_padrao:'100g',calorias:245,proteina:20,carboidrato:12,gordura:13,tags:[],substituicoes:'Frango grelhado'},
   {nome:'Coxa de frango assada',categoria:'Proteinas',porcao_padrao:'100g',calorias:195,proteina:26,carboidrato:0,gordura:9.7,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de frango'},
-  {nome:'Carne bovina magra (patinho)',categoria:'Proteinas',porcao_padrao:'100g',calorias:163,proteina:27,carboidrato:0,gordura:5.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango ou peixe'},
-  {nome:'Ovo cozido',categoria:'Proteinas',porcao_padrao:'1 unidade (50g)',calorias:78,proteina:6.3,carboidrato:0.6,gordura:5.3,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Clara de ovo ou tofu'},
+  {nome:'Coxa de frango sem pele',categoria:'Proteinas',porcao_padrao:'100g',calorias:165,proteina:24,carboidrato:0,gordura:6.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de frango'},
+  {nome:'Sobrecoxa de frango grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:180,proteina:25,carboidrato:0,gordura:8,tags:['sem_gluten','sem_lactose'],substituicoes:'Coxa de frango'},
+  {nome:'Frango à passarinho',categoria:'Proteinas',porcao_padrao:'100g',calorias:220,proteina:27,carboidrato:2,gordura:11,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de frango grelhado'},
+  {nome:'Frango desfiado ao molho',categoria:'Proteinas',porcao_padrao:'100g',calorias:175,proteina:22,carboidrato:4,gordura:7,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango grelhado'},
+  {nome:'Carne bovina magra (patinho)',categoria:'Proteinas',porcao_padrao:'100g',calorias:163,proteina:27,carboidrato:0,gordura:5.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango, peixe'},
+  {nome:'Carne bovina moída (magra)',categoria:'Proteinas',porcao_padrao:'100g',calorias:172,proteina:26,carboidrato:0,gordura:7,tags:['sem_gluten','sem_lactose'],substituicoes:'Patinho, frango moído'},
+  {nome:'Carne bovina moída (85% magra)',categoria:'Proteinas',porcao_padrao:'100g',calorias:215,proteina:22,carboidrato:0,gordura:14,tags:['sem_gluten','sem_lactose'],substituicoes:'Moída magra'},
+  {nome:'Alcatra grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:179,proteina:26.5,carboidrato:0,gordura:7.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Patinho'},
+  {nome:'Picanha grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:230,proteina:24,carboidrato:0,gordura:14,tags:['sem_gluten','sem_lactose'],substituicoes:'Alcatra'},
+  {nome:'Fraldinha grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:195,proteina:25,carboidrato:0,gordura:10,tags:['sem_gluten','sem_lactose'],substituicoes:'Alcatra'},
+  {nome:'Contra filé grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:200,proteina:25,carboidrato:0,gordura:11,tags:['sem_gluten','sem_lactose'],substituicoes:'Alcatra'},
+  {nome:'Coxão mole cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:170,proteina:26,carboidrato:0,gordura:6.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Patinho'},
+  {nome:'Coxão duro cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:165,proteina:27,carboidrato:0,gordura:5.8,tags:['sem_gluten','sem_lactose'],substituicoes:'Coxão mole'},
+  {nome:'Músculo bovino cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:160,proteina:28,carboidrato:0,gordura:4.8,tags:['sem_gluten','sem_lactose'],substituicoes:'Patinho'},
+  {nome:'Costela bovina assada',categoria:'Proteinas',porcao_padrao:'100g',calorias:290,proteina:23,carboidrato:0,gordura:22,tags:['sem_gluten','sem_lactose'],substituicoes:'Alcatra (mais magra)'},
+  {nome:'Carne seca dessalgada',categoria:'Proteinas',porcao_padrao:'100g',calorias:180,proteina:32,carboidrato:0,gordura:5,tags:['sem_gluten','sem_lactose'],substituicoes:'Carne bovina magra'},
+  {nome:'Bife à role',categoria:'Proteinas',porcao_padrao:'100g',calorias:190,proteina:24,carboidrato:3,gordura:9,tags:['sem_gluten','sem_lactose'],substituicoes:'Alcatra grelhada'},
+  {nome:'Hambúrguer bovino grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:240,proteina:20,carboidrato:1,gordura:17,tags:['sem_gluten','sem_lactose'],substituicoes:'Carne moída magra'},
+  {nome:'Carne suína (lombo)',categoria:'Proteinas',porcao_padrao:'100g',calorias:210,proteina:25,carboidrato:0,gordura:12,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango, peixe'},
+  {nome:'Carne suína (pernil assado)',categoria:'Proteinas',porcao_padrao:'100g',calorias:195,proteina:27,carboidrato:0,gordura:9,tags:['sem_gluten','sem_lactose'],substituicoes:'Lombo suíno'},
+  {nome:'Bacon frito',categoria:'Proteinas',porcao_padrao:'30g',calorias:160,proteina:10,carboidrato:0.5,gordura:13,tags:['sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Linguiça de frango grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:180,proteina:17,carboidrato:2,gordura:11,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango grelhado'},
+  {nome:'Linguiça toscana grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:280,proteina:15,carboidrato:2,gordura:24,tags:['sem_gluten','sem_lactose'],substituicoes:'Linguiça de frango'},
+  {nome:'Presunto magro',categoria:'Proteinas',porcao_padrao:'30g',calorias:34,proteina:5.5,carboidrato:0.5,gordura:1,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de peru'},
+  {nome:'Peito de peru fatiado',categoria:'Proteinas',porcao_padrao:'30g',calorias:29,proteina:6,carboidrato:0.5,gordura:0.4,tags:['sem_gluten','sem_lactose'],substituicoes:'Presunto magro'},
+  {nome:'Mortadela',categoria:'Proteinas',porcao_padrao:'30g',calorias:90,proteina:4,carboidrato:1.5,gordura:7.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de peru'},
+  {nome:'Salame',categoria:'Proteinas',porcao_padrao:'30g',calorias:130,proteina:7,carboidrato:0.5,gordura:11,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de peru'},
+  {nome:'Ovo cozido',categoria:'Proteinas',porcao_padrao:'1 unidade (50g)',calorias:78,proteina:6.3,carboidrato:0.6,gordura:5.3,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Clara de ovo, tofu'},
+  {nome:'Ovo frito',categoria:'Proteinas',porcao_padrao:'1 unidade (50g)',calorias:92,proteina:6.3,carboidrato:0.4,gordura:7,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Ovo cozido'},
+  {nome:'Ovo mexido',categoria:'Proteinas',porcao_padrao:'2 unidades',calorias:180,proteina:13,carboidrato:1.5,gordura:14,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Omelete de claras'},
+  {nome:'Ovo de codorna cozido',categoria:'Proteinas',porcao_padrao:'5 unidades (50g)',calorias:71,proteina:6,carboidrato:0.5,gordura:5,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Ovo de galinha'},
   {nome:'Clara de ovo',categoria:'Proteinas',porcao_padrao:'100g',calorias:52,proteina:11,carboidrato:0.7,gordura:0.2,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Whey protein'},
-  {nome:'Tilápia grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:128,proteina:26,carboidrato:0,gordura:2.7,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango ou atum'},
-  {nome:'Salmão grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:208,proteina:20,carboidrato:0,gordura:13,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia ou atum'},
-  {nome:'Atum em água',categoria:'Proteinas',porcao_padrao:'100g',calorias:116,proteina:26,carboidrato:0,gordura:0.8,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia ou frango'},
-  {nome:'Whey protein',categoria:'Suplementos',porcao_padrao:'1 scoop (30g)',calorias:120,proteina:24,carboidrato:3,gordura:1.5,tags:['sem_gluten'],substituicoes:'Albumina ou clara de ovo (conferir lactose no rótulo)'},
-  {nome:'Feijão carioca cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:76,proteina:4.8,carboidrato:13.6,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Lentilha ou grão de bico'},
-  {nome:'Lentilha cozida',categoria:'Proteinas',porcao_padrao:'100g',calorias:93,proteina:6.3,carboidrato:16.3,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Feijão ou grão de bico'},
-  {nome:'Grão de bico cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:121,proteina:7,carboidrato:20,gordura:1.9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Lentilha ou feijão'},
-  {nome:'Tofu',categoria:'Proteinas',porcao_padrao:'100g',calorias:76,proteina:8,carboidrato:1.9,gordura:4.8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Proteína de soja texturizada'},
-  {nome:'Proteína de soja texturizada',categoria:'Proteinas',porcao_padrao:'100g (hidratada)',calorias:89,proteina:13,carboidrato:6,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tofu ou grão de bico'},
-  {nome:'Leite integral',categoria:'Laticinios',porcao_padrao:'200ml',calorias:122,proteina:6.4,carboidrato:9.4,gordura:6.6,tags:['vegetariano'],substituicoes:'Leite desnatado ou leite vegetal'},
+  {nome:'Omelete simples',categoria:'Proteinas',porcao_padrao:'2 ovos (100g)',calorias:154,proteina:11,carboidrato:1.5,gordura:12,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Ovo mexido'},
+  {nome:'Tilápia grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:128,proteina:26,carboidrato:0,gordura:2.7,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango, atum'},
+  {nome:'Tilápia frita',categoria:'Proteinas',porcao_padrao:'100g',calorias:190,proteina:22,carboidrato:5,gordura:9,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia grelhada'},
+  {nome:'Salmão grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:208,proteina:20,carboidrato:0,gordura:13,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia, atum'},
+  {nome:'Salmão defumado',categoria:'Proteinas',porcao_padrao:'50g',calorias:117,proteina:11,carboidrato:0,gordura:7.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Salmão grelhado'},
+  {nome:'Atum em água',categoria:'Proteinas',porcao_padrao:'100g',calorias:116,proteina:26,carboidrato:0,gordura:0.8,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia, frango'},
+  {nome:'Atum em óleo (drenado)',categoria:'Proteinas',porcao_padrao:'100g',calorias:190,proteina:25,carboidrato:0,gordura:10,tags:['sem_gluten','sem_lactose'],substituicoes:'Atum em água'},
+  {nome:'Sardinha em lata (água)',categoria:'Proteinas',porcao_padrao:'100g',calorias:150,proteina:21,carboidrato:0,gordura:7,tags:['sem_gluten','sem_lactose'],substituicoes:'Atum'},
+  {nome:'Sardinha em lata (óleo)',categoria:'Proteinas',porcao_padrao:'100g',calorias:210,proteina:20,carboidrato:0,gordura:14,tags:['sem_gluten','sem_lactose'],substituicoes:'Sardinha em água'},
+  {nome:'Bacalhau dessalgado cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:105,proteina:23,carboidrato:0,gordura:0.8,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia'},
+  {nome:'Camarão cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:99,proteina:20.9,carboidrato:0.9,gordura:1,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia'},
+  {nome:'Camarão à milanesa',categoria:'Proteinas',porcao_padrao:'100g',calorias:210,proteina:18,carboidrato:12,gordura:10,tags:[],substituicoes:'Camarão cozido'},
+  {nome:'Lula grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:92,proteina:15.6,carboidrato:3.1,gordura:1.4,tags:['sem_gluten','sem_lactose'],substituicoes:'Camarão'},
+  {nome:'Polvo cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:82,proteina:15,carboidrato:2.2,gordura:1,tags:['sem_gluten','sem_lactose'],substituicoes:'Lula'},
+  {nome:'Merluza grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:90,proteina:17,carboidrato:0,gordura:2,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia'},
+  {nome:'Whey protein concentrado',categoria:'Suplementos',porcao_padrao:'1 scoop (30g)',calorias:120,proteina:24,carboidrato:3,gordura:1.5,tags:['sem_gluten'],substituicoes:'Albumina, clara de ovo'},
+  {nome:'Whey protein isolado',categoria:'Suplementos',porcao_padrao:'1 scoop (30g)',calorias:110,proteina:26,carboidrato:1,gordura:0.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Whey concentrado'},
+  {nome:'Caseína',categoria:'Suplementos',porcao_padrao:'1 scoop (30g)',calorias:115,proteina:24,carboidrato:3,gordura:1,tags:['sem_gluten','sem_lactose'],substituicoes:'Whey protein',observacoes:'Absorção lenta, ideal antes de dormir'},
+  {nome:'Feijão carioca cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:76,proteina:4.8,carboidrato:13.6,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Lentilha, grão de bico'},
+  {nome:'Feijão preto cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:77,proteina:4.5,carboidrato:14,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Feijão carioca'},
+  {nome:'Feijão branco cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:95,proteina:6.5,carboidrato:17,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Feijão carioca'},
+  {nome:'Feijão fradinho cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:90,proteina:6,carboidrato:16,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Feijão carioca'},
+  {nome:'Lentilha cozida',categoria:'Proteinas',porcao_padrao:'100g',calorias:93,proteina:6.3,carboidrato:16.3,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Feijão, grão de bico'},
+  {nome:'Grão de bico cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:121,proteina:7,carboidrato:20,gordura:1.9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Lentilha, feijão'},
+  {nome:'Ervilha cozida',categoria:'Proteinas',porcao_padrao:'100g',calorias:81,proteina:5.4,carboidrato:14.5,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Grão de bico'},
+  {nome:'Soja cozida',categoria:'Proteinas',porcao_padrao:'100g',calorias:173,proteina:16.6,carboidrato:9.9,gordura:9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Feijão, grão de bico'},
+  {nome:'Tofu',categoria:'Proteinas',porcao_padrao:'100g',calorias:76,proteina:8,carboidrato:1.9,gordura:4.8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Proteína de soja'},
+  {nome:'Tofu grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:90,proteina:9,carboidrato:2,gordura:5.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tofu'},
+  {nome:'Proteína de soja texturizada',categoria:'Proteinas',porcao_padrao:'100g (hidratada)',calorias:89,proteina:13,carboidrato:6,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tofu, grão de bico'},
+  {nome:'Seitan',categoria:'Proteinas',porcao_padrao:'100g',calorias:120,proteina:21,carboidrato:4,gordura:1.9,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Tofu (contém glúten)'},
+  {nome:'Tempeh',categoria:'Proteinas',porcao_padrao:'100g',calorias:190,proteina:20,carboidrato:7.6,gordura:10.8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tofu'},
+  {nome:'Leite integral',categoria:'Laticinios',porcao_padrao:'200ml',calorias:122,proteina:6.4,carboidrato:9.4,gordura:6.6,tags:['vegetariano'],substituicoes:'Leite desnatado, leite vegetal'},
   {nome:'Leite desnatado',categoria:'Laticinios',porcao_padrao:'200ml',calorias:70,proteina:6.8,carboidrato:9.8,gordura:0.4,tags:['vegetariano'],substituicoes:'Leite vegetal'},
-  {nome:'Iogurte natural integral',categoria:'Laticinios',porcao_padrao:'170g',calorias:105,proteina:6.1,carboidrato:7.8,gordura:5.4,tags:['vegetariano'],substituicoes:'Iogurte grego ou iogurte vegetal'},
-  {nome:'Iogurte grego natural',categoria:'Laticinios',porcao_padrao:'100g',calorias:97,proteina:9,carboidrato:3.6,gordura:5,tags:['vegetariano'],substituicoes:'Iogurte natural integral'},
-  {nome:'Queijo minas frescal',categoria:'Laticinios',porcao_padrao:'30g',calorias:71,proteina:5.1,carboidrato:1,gordura:5.2,tags:['vegetariano'],substituicoes:'Cottage ou ricota'},
-  {nome:'Queijo cottage',categoria:'Laticinios',porcao_padrao:'100g',calorias:98,proteina:11,carboidrato:3.4,gordura:4.3,tags:['vegetariano'],substituicoes:'Queijo minas frescal'},
+  {nome:'Leite semidesnatado',categoria:'Laticinios',porcao_padrao:'200ml',calorias:96,proteina:6.6,carboidrato:9.6,gordura:3,tags:['vegetariano'],substituicoes:'Leite desnatado'},
+  {nome:'Leite condensado',categoria:'Laticinios',porcao_padrao:'1 colher sopa (20g)',calorias:65,proteina:1.6,carboidrato:11,gordura:1.7,tags:['vegetariano'],substituicoes:'Leite comum + adoçante'},
+  {nome:'Creme de leite',categoria:'Laticinios',porcao_padrao:'1 colher sopa (15g)',calorias:30,proteina:0.4,carboidrato:1.2,gordura:2.7,tags:['vegetariano'],substituicoes:'Iogurte grego'},
+  {nome:'Iogurte natural integral',categoria:'Laticinios',porcao_padrao:'170g',calorias:105,proteina:6.1,carboidrato:7.8,gordura:5.4,tags:['vegetariano'],substituicoes:'Iogurte grego, vegetal'},
+  {nome:'Iogurte natural desnatado',categoria:'Laticinios',porcao_padrao:'170g',calorias:70,proteina:6.5,carboidrato:9,gordura:0.5,tags:['vegetariano'],substituicoes:'Iogurte grego light'},
+  {nome:'Iogurte grego natural',categoria:'Laticinios',porcao_padrao:'100g',calorias:97,proteina:9,carboidrato:3.6,gordura:5,tags:['vegetariano'],substituicoes:'Iogurte integral'},
+  {nome:'Iogurte grego light',categoria:'Laticinios',porcao_padrao:'100g',calorias:59,proteina:10,carboidrato:4,gordura:0.4,tags:['vegetariano'],substituicoes:'Iogurte grego natural'},
+  {nome:'Iogurte de frutas (industrializado)',categoria:'Laticinios',porcao_padrao:'170g',calorias:145,proteina:5,carboidrato:24,gordura:3,tags:['vegetariano'],substituicoes:'Iogurte natural + fruta'},
+  {nome:'Iogurte vegetal (coco/soja)',categoria:'Laticinios',porcao_padrao:'170g',calorias:90,proteina:3,carboidrato:10,gordura:4,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Iogurte natural'},
+  {nome:'Queijo minas frescal',categoria:'Laticinios',porcao_padrao:'30g',calorias:71,proteina:5.1,carboidrato:1,gordura:5.2,tags:['vegetariano'],substituicoes:'Cottage, ricota'},
+  {nome:'Queijo minas padrão',categoria:'Laticinios',porcao_padrao:'30g',calorias:100,proteina:7,carboidrato:1,gordura:7.5,tags:['vegetariano'],substituicoes:'Minas frescal'},
+  {nome:'Queijo cottage',categoria:'Laticinios',porcao_padrao:'100g',calorias:98,proteina:11,carboidrato:3.4,gordura:4.3,tags:['vegetariano'],substituicoes:'Queijo minas'},
+  {nome:'Ricota',categoria:'Laticinios',porcao_padrao:'50g',calorias:65,proteina:5.5,carboidrato:1.5,gordura:4,tags:['vegetariano'],substituicoes:'Cottage'},
+  {nome:'Queijo mussarela',categoria:'Laticinios',porcao_padrao:'30g',calorias:90,proteina:6.5,carboidrato:0.9,gordura:6.9,tags:['vegetariano'],substituicoes:'Queijo minas (menos gordo)'},
+  {nome:'Queijo prato',categoria:'Laticinios',porcao_padrao:'30g',calorias:106,proteina:6.6,carboidrato:0.5,gordura:8.7,tags:['vegetariano'],substituicoes:'Mussarela'},
+  {nome:'Queijo parmesão ralado',categoria:'Laticinios',porcao_padrao:'1 colher sopa (10g)',calorias:42,proteina:3.8,carboidrato:0.3,gordura:2.8,tags:['vegetariano'],substituicoes:'—'},
+  {nome:'Queijo coalho grelhado',categoria:'Laticinios',porcao_padrao:'50g',calorias:180,proteina:12,carboidrato:1,gordura:14,tags:['vegetariano'],substituicoes:'Queijo minas'},
+  {nome:'Requeijão light',categoria:'Laticinios',porcao_padrao:'30g',calorias:55,proteina:2.7,carboidrato:1.5,gordura:4.2,tags:['vegetariano'],substituicoes:'Cottage batido'},
+  {nome:'Requeijão tradicional',categoria:'Laticinios',porcao_padrao:'30g',calorias:85,proteina:2.5,carboidrato:1.2,gordura:7.7,tags:['vegetariano'],substituicoes:'Requeijão light'},
+  {nome:'Manteiga',categoria:'Laticinios',porcao_padrao:'1 colher chá (5g)',calorias:36,proteina:0,carboidrato:0,gordura:4.1,tags:['vegetariano'],substituicoes:'Margarina light'},
+  {nome:'Cream cheese',categoria:'Laticinios',porcao_padrao:'30g',calorias:100,proteina:2,carboidrato:1.5,gordura:10,tags:['vegetariano'],substituicoes:'Cottage batido'},
   {nome:'Leite vegetal (aveia/amêndoa)',categoria:'Laticinios',porcao_padrao:'200ml',calorias:60,proteina:1,carboidrato:8,gordura:2.5,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Leite desnatado'},
-  {nome:'Abacate',categoria:'Gorduras',porcao_padrao:'100g',calorias:96,proteina:1.2,carboidrato:6,gordura:8.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Castanhas ou azeite'},
+  {nome:'Leite de coco',categoria:'Laticinios',porcao_padrao:'200ml',calorias:180,proteina:1.6,carboidrato:6,gordura:17,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Leite de amêndoa'},
+  {nome:'Leite de soja',categoria:'Laticinios',porcao_padrao:'200ml',calorias:66,proteina:6.6,carboidrato:3,gordura:3.5,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Leite de aveia'},
+  {nome:'Abacate',categoria:'Gorduras',porcao_padrao:'100g',calorias:96,proteina:1.2,carboidrato:6,gordura:8.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Castanhas, azeite'},
   {nome:'Azeite de oliva',categoria:'Gorduras',porcao_padrao:'1 colher sopa (13g)',calorias:115,proteina:0,carboidrato:0,gordura:13,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Óleo de coco'},
-  {nome:'Castanha do Pará',categoria:'Gorduras',porcao_padrao:'2 unidades (8g)',calorias:55,proteina:1.2,carboidrato:1,gordura:5.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amêndoas ou castanha de caju'},
+  {nome:'Óleo de coco',categoria:'Gorduras',porcao_padrao:'1 colher sopa (13g)',calorias:117,proteina:0,carboidrato:0,gordura:13,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Azeite de oliva'},
+  {nome:'Óleo de soja',categoria:'Gorduras',porcao_padrao:'1 colher sopa (13g)',calorias:120,proteina:0,carboidrato:0,gordura:13.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Azeite de oliva'},
+  {nome:'Castanha do Pará',categoria:'Gorduras',porcao_padrao:'2 unidades (8g)',calorias:55,proteina:1.2,carboidrato:1,gordura:5.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amêndoas, castanha de caju'},
+  {nome:'Castanha de caju',categoria:'Gorduras',porcao_padrao:'30g',calorias:170,proteina:5,carboidrato:9,gordura:13.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amêndoas'},
+  {nome:'Castanha de caju torrada',categoria:'Gorduras',porcao_padrao:'30g',calorias:175,proteina:5,carboidrato:10,gordura:14,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Castanha de caju crua'},
+  {nome:'Amêndoas',categoria:'Gorduras',porcao_padrao:'30g',calorias:174,proteina:6.3,carboidrato:5.5,gordura:15,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Castanhas em geral'},
+  {nome:'Amêndoas laminadas',categoria:'Gorduras',porcao_padrao:'20g',calorias:116,proteina:4.2,carboidrato:3.7,gordura:10,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amêndoas inteiras'},
+  {nome:'Nozes',categoria:'Gorduras',porcao_padrao:'30g',calorias:196,proteina:4.6,carboidrato:4,gordura:19.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amêndoas'},
+  {nome:'Pistache',categoria:'Gorduras',porcao_padrao:'30g',calorias:165,proteina:6,carboidrato:8,gordura:13,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amêndoas'},
+  {nome:'Macadâmia',categoria:'Gorduras',porcao_padrao:'30g',calorias:204,proteina:2.2,carboidrato:4,gordura:21.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Nozes'},
   {nome:'Amendoim',categoria:'Gorduras',porcao_padrao:'30g',calorias:170,proteina:7.7,carboidrato:5.9,gordura:14.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Castanhas variadas'},
+  {nome:'Amendoim torrado sem sal',categoria:'Gorduras',porcao_padrao:'30g',calorias:165,proteina:7.5,carboidrato:5,gordura:14,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amendoim comum'},
   {nome:'Pasta de amendoim integral',categoria:'Gorduras',porcao_padrao:'1 colher sopa (20g)',calorias:120,proteina:5,carboidrato:4,gordura:10,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amendoim in natura'},
+  {nome:'Pasta de castanha de caju',categoria:'Gorduras',porcao_padrao:'1 colher sopa (20g)',calorias:115,proteina:4,carboidrato:6,gordura:9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pasta de amendoim'},
   {nome:'Chia',categoria:'Gorduras',porcao_padrao:'1 colher sopa (12g)',calorias:58,proteina:2,carboidrato:5,gordura:3.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Linhaça'},
   {nome:'Linhaça',categoria:'Gorduras',porcao_padrao:'1 colher sopa (10g)',calorias:53,proteina:1.8,carboidrato:2.9,gordura:4.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Chia'},
-  {nome:'Banana',categoria:'Frutas',porcao_padrao:'1 unidade (100g)',calorias:89,proteina:1.1,carboidrato:22.8,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maçã ou mamão'},
-  {nome:'Maçã',categoria:'Frutas',porcao_padrao:'1 unidade (130g)',calorias:68,proteina:0.3,carboidrato:18,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pera ou banana'},
-  {nome:'Morango',categoria:'Frutas',porcao_padrao:'100g',calorias:32,proteina:0.7,carboidrato:7.7,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mamão ou abacaxi'},
-  {nome:'Mamão',categoria:'Frutas',porcao_padrao:'100g',calorias:40,proteina:0.5,carboidrato:10.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Melão ou abacaxi'},
-  {nome:'Abacaxi',categoria:'Frutas',porcao_padrao:'100g',calorias:50,proteina:0.5,carboidrato:13,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mamão ou morango'},
-  {nome:'Laranja',categoria:'Frutas',porcao_padrao:'1 unidade (130g)',calorias:61,proteina:1.3,carboidrato:15.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mexerica ou limão'},
-  {nome:'Uva',categoria:'Frutas',porcao_padrao:'100g',calorias:69,proteina:0.7,carboidrato:18.1,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maçã ou morango'},
-  {nome:'Brócolis cozido',categoria:'Vegetais',porcao_padrao:'100g',calorias:25,proteina:3,carboidrato:4,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Couve-flor ou espinafre'},
-  {nome:'Espinafre cozido',categoria:'Vegetais',porcao_padrao:'100g',calorias:23,proteina:3,carboidrato:3.6,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Couve ou rúcula'},
-  {nome:'Alface',categoria:'Vegetais',porcao_padrao:'100g',calorias:15,proteina:1.4,carboidrato:2.4,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Rúcula ou agrião'},
+  {nome:'Gergelim',categoria:'Gorduras',porcao_padrao:'1 colher sopa (10g)',calorias:57,proteina:1.8,carboidrato:2.3,gordura:4.9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Linhaça'},
+  {nome:'Coco ralado',categoria:'Gorduras',porcao_padrao:'30g',calorias:178,proteina:1.8,carboidrato:6.4,gordura:17,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Castanhas'},
+  {nome:'Azeitona verde',categoria:'Gorduras',porcao_padrao:'5 unidades (15g)',calorias:22,proteina:0.2,carboidrato:0.6,gordura:2.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Azeitona preta'},
+  {nome:'Azeitona preta',categoria:'Gorduras',porcao_padrao:'5 unidades (15g)',calorias:35,proteina:0.3,carboidrato:1,gordura:3.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Azeitona verde'},
+  {nome:'Banana prata',categoria:'Frutas',porcao_padrao:'1 unidade (75g)',calorias:67,proteina:0.8,carboidrato:17,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Banana nanica'},
+  {nome:'Banana nanica',categoria:'Frutas',porcao_padrao:'1 unidade (100g)',calorias:89,proteina:1.1,carboidrato:22.8,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Banana prata'},
+  {nome:'Banana da terra frita',categoria:'Frutas',porcao_padrao:'100g',calorias:180,proteina:1.5,carboidrato:35,gordura:4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Banana assada'},
+  {nome:'Maçã',categoria:'Frutas',porcao_padrao:'1 unidade (130g)',calorias:68,proteina:0.3,carboidrato:18,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pera, banana'},
+  {nome:'Maçã com casca',categoria:'Frutas',porcao_padrao:'1 unidade (130g)',calorias:72,proteina:0.4,carboidrato:19,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maçã'},
+  {nome:'Pera',categoria:'Frutas',porcao_padrao:'1 unidade (130g)',calorias:70,proteina:0.5,carboidrato:18,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maçã'},
+  {nome:'Morango',categoria:'Frutas',porcao_padrao:'100g',calorias:32,proteina:0.7,carboidrato:7.7,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mamão, abacaxi'},
+  {nome:'Mamão papaia',categoria:'Frutas',porcao_padrao:'100g',calorias:40,proteina:0.5,carboidrato:10.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Melão, abacaxi'},
+  {nome:'Mamão formosa',categoria:'Frutas',porcao_padrao:'100g',calorias:45,proteina:0.6,carboidrato:11.6,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mamão papaia'},
+  {nome:'Abacaxi',categoria:'Frutas',porcao_padrao:'100g',calorias:50,proteina:0.5,carboidrato:13,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mamão, morango'},
+  {nome:'Laranja',categoria:'Frutas',porcao_padrao:'1 unidade (130g)',calorias:61,proteina:1.3,carboidrato:15.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mexerica, limão'},
+  {nome:'Laranja lima',categoria:'Frutas',porcao_padrao:'1 unidade (130g)',calorias:58,proteina:1,carboidrato:14.5,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Laranja'},
+  {nome:'Mexerica/Tangerina',categoria:'Frutas',porcao_padrao:'1 unidade (100g)',calorias:46,proteina:0.8,carboidrato:11.5,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Laranja'},
+  {nome:'Limão',categoria:'Frutas',porcao_padrao:'1 unidade (70g)',calorias:20,proteina:0.5,carboidrato:6.5,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Uva verde',categoria:'Frutas',porcao_padrao:'100g',calorias:69,proteina:0.7,carboidrato:18.1,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maçã, morango'},
+  {nome:'Uva rosada',categoria:'Frutas',porcao_padrao:'100g',calorias:65,proteina:0.6,carboidrato:17,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Uva verde'},
+  {nome:'Melancia',categoria:'Frutas',porcao_padrao:'100g',calorias:33,proteina:0.9,carboidrato:8.1,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Melão'},
+  {nome:'Melão',categoria:'Frutas',porcao_padrao:'100g',calorias:29,proteina:0.7,carboidrato:7.5,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Melancia'},
+  {nome:'Manga',categoria:'Frutas',porcao_padrao:'100g',calorias:64,proteina:0.4,carboidrato:17,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mamão'},
+  {nome:'Manga espada',categoria:'Frutas',porcao_padrao:'100g',calorias:60,proteina:0.4,carboidrato:15.9,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Manga'},
+  {nome:'Kiwi',categoria:'Frutas',porcao_padrao:'1 unidade (70g)',calorias:44,proteina:0.8,carboidrato:10.5,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Morango'},
+  {nome:'Abacaxi com hortelã',categoria:'Frutas',porcao_padrao:'100g',calorias:50,proteina:0.5,carboidrato:13,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Abacaxi'},
+  {nome:'Açaí polpa (sem xarope)',categoria:'Frutas',porcao_padrao:'100g',calorias:58,proteina:0.8,carboidrato:6.2,gordura:3.9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Frutas vermelhas'},
+  {nome:'Goiaba',categoria:'Frutas',porcao_padrao:'100g',calorias:54,proteina:1.1,carboidrato:12.4,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mamão'},
+  {nome:'Goiaba vermelha',categoria:'Frutas',porcao_padrao:'100g',calorias:52,proteina:1.2,carboidrato:11.9,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Goiaba branca'},
+  {nome:'Caqui',categoria:'Frutas',porcao_padrao:'1 unidade (150g)',calorias:106,proteina:1.2,carboidrato:28,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Manga'},
+  {nome:'Ameixa',categoria:'Frutas',porcao_padrao:'1 unidade (60g)',calorias:29,proteina:0.4,carboidrato:7.5,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Uva'},
+  {nome:'Ameixa seca',categoria:'Frutas',porcao_padrao:'30g',calorias:70,proteina:0.7,carboidrato:18.6,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Ameixa fresca'},
+  {nome:'Damasco seco',categoria:'Frutas',porcao_padrao:'30g',calorias:78,proteina:1.2,carboidrato:18,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Ameixa seca'},
+  {nome:'Uva passa',categoria:'Frutas',porcao_padrao:'30g',calorias:90,proteina:0.9,carboidrato:22,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Ameixa seca'},
+  {nome:'Figo',categoria:'Frutas',porcao_padrao:'1 unidade (50g)',calorias:37,proteina:0.4,carboidrato:9.5,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Ameixa'},
+  {nome:'Maracujá (polpa)',categoria:'Frutas',porcao_padrao:'100g',calorias:68,proteina:2,carboidrato:17.9,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Suco natural'},
+  {nome:'Carambola',categoria:'Frutas',porcao_padrao:'100g',calorias:31,proteina:1,carboidrato:6.7,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Kiwi'},
+  {nome:'Pitaya',categoria:'Frutas',porcao_padrao:'100g',calorias:50,proteina:1.2,carboidrato:11,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Kiwi'},
+  {nome:'Cereja',categoria:'Frutas',porcao_padrao:'100g',calorias:63,proteina:1,carboidrato:16,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Morango'},
+  {nome:'Framboesa',categoria:'Frutas',porcao_padrao:'100g',calorias:52,proteina:1.2,carboidrato:12,gordura:0.7,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Morango'},
+  {nome:'Mirtilo (blueberry)',categoria:'Frutas',porcao_padrao:'100g',calorias:57,proteina:0.7,carboidrato:14.5,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Morango'},
+  {nome:'Coco fresco',categoria:'Frutas',porcao_padrao:'100g',calorias:354,proteina:3.3,carboidrato:15,gordura:33,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Jaca',categoria:'Frutas',porcao_padrao:'100g',calorias:95,proteina:1.7,carboidrato:23.2,gordura:0.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Manga'},
+  {nome:'Graviola (polpa)',categoria:'Frutas',porcao_padrao:'100g',calorias:61,proteina:1,carboidrato:14.4,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Manga'},
+  {nome:'Fruta do conde/Pinha',categoria:'Frutas',porcao_padrao:'100g',calorias:94,proteina:1.8,carboidrato:23.6,gordura:0.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Manga'},
+  {nome:'Brócolis cozido',categoria:'Vegetais',porcao_padrao:'100g',calorias:25,proteina:3,carboidrato:4,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Couve-flor, espinafre'},
+  {nome:'Brócolis no vapor',categoria:'Vegetais',porcao_padrao:'100g',calorias:28,proteina:3.2,carboidrato:4.5,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Brócolis cozido'},
+  {nome:'Couve-flor cozida',categoria:'Vegetais',porcao_padrao:'100g',calorias:23,proteina:1.9,carboidrato:4.5,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Brócolis'},
+  {nome:'Espinafre cozido',categoria:'Vegetais',porcao_padrao:'100g',calorias:23,proteina:3,carboidrato:3.6,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Couve, rúcula'},
+  {nome:'Espinafre cru',categoria:'Vegetais',porcao_padrao:'100g',calorias:16,proteina:2.5,carboidrato:2.4,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Espinafre cozido'},
+  {nome:'Couve refogada',categoria:'Vegetais',porcao_padrao:'100g',calorias:36,proteina:2,carboidrato:5.9,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Espinafre'},
+  {nome:'Couve crua picada',categoria:'Vegetais',porcao_padrao:'100g',calorias:27,proteina:2,carboidrato:5,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Couve refogada'},
+  {nome:'Alface americana',categoria:'Vegetais',porcao_padrao:'100g',calorias:15,proteina:1.4,carboidrato:2.4,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Rúcula, agrião'},
+  {nome:'Alface crespa',categoria:'Vegetais',porcao_padrao:'100g',calorias:14,proteina:1.3,carboidrato:2.3,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Alface americana'},
+  {nome:'Rúcula',categoria:'Vegetais',porcao_padrao:'100g',calorias:22,proteina:1.9,carboidrato:3.4,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Alface'},
+  {nome:'Agrião',categoria:'Vegetais',porcao_padrao:'100g',calorias:21,proteina:2.3,carboidrato:3,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Rúcula'},
+  {nome:'Repolho cru',categoria:'Vegetais',porcao_padrao:'100g',calorias:24,proteina:1.2,carboidrato:5.5,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Alface'},
+  {nome:'Repolho refogado',categoria:'Vegetais',porcao_padrao:'100g',calorias:28,proteina:1.4,carboidrato:6,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Repolho cru'},
   {nome:'Tomate',categoria:'Vegetais',porcao_padrao:'100g',calorias:15,proteina:1.1,carboidrato:3.1,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pepino'},
+  {nome:'Tomate cereja',categoria:'Vegetais',porcao_padrao:'100g',calorias:18,proteina:0.9,carboidrato:3.9,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tomate comum'},
+  {nome:'Pepino',categoria:'Vegetais',porcao_padrao:'100g',calorias:10,proteina:0.9,carboidrato:1.6,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tomate'},
   {nome:'Cenoura',categoria:'Vegetais',porcao_padrao:'100g',calorias:34,proteina:1.3,carboidrato:7.7,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Beterraba'},
+  {nome:'Cenoura ralada',categoria:'Vegetais',porcao_padrao:'100g',calorias:34,proteina:1.3,carboidrato:7.7,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Cenoura cozida'},
+  {nome:'Beterraba cozida',categoria:'Vegetais',porcao_padrao:'100g',calorias:32,proteina:1.3,carboidrato:7.3,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Cenoura'},
+  {nome:'Beterraba crua ralada',categoria:'Vegetais',porcao_padrao:'100g',calorias:43,proteina:1.6,carboidrato:9.6,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Beterraba cozida'},
+  {nome:'Abobrinha refogada',categoria:'Vegetais',porcao_padrao:'100g',calorias:19,proteina:1.2,carboidrato:4.1,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Berinjela'},
+  {nome:'Abobrinha crua',categoria:'Vegetais',porcao_padrao:'100g',calorias:17,proteina:1.2,carboidrato:3.1,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Abobrinha refogada'},
+  {nome:'Berinjela refogada',categoria:'Vegetais',porcao_padrao:'100g',calorias:24,proteina:0.9,carboidrato:5.5,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Abobrinha'},
+  {nome:'Berinjela grelhada',categoria:'Vegetais',porcao_padrao:'100g',calorias:22,proteina:0.8,carboidrato:5,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Berinjela refogada'},
+  {nome:'Chuchu cozido',categoria:'Vegetais',porcao_padrao:'100g',calorias:19,proteina:0.6,carboidrato:4.5,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Abobrinha'},
+  {nome:'Abóbora cozida',categoria:'Vegetais',porcao_padrao:'100g',calorias:40,proteina:1.4,carboidrato:10,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce'},
+  {nome:'Abóbora moranga cozida',categoria:'Vegetais',porcao_padrao:'100g',calorias:30,proteina:1,carboidrato:7,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Abóbora cozida'},
+  {nome:'Pimentão vermelho',categoria:'Vegetais',porcao_padrao:'100g',calorias:20,proteina:0.9,carboidrato:4.6,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tomate'},
+  {nome:'Pimentão verde',categoria:'Vegetais',porcao_padrao:'100g',calorias:18,proteina:0.8,carboidrato:4.2,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pimentão vermelho'},
+  {nome:'Pimentão amarelo',categoria:'Vegetais',porcao_padrao:'100g',calorias:22,proteina:1,carboidrato:5,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pimentão vermelho'},
+  {nome:'Cebola crua',categoria:'Vegetais',porcao_padrao:'100g',calorias:39,proteina:1.2,carboidrato:9,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Cebola refogada',categoria:'Vegetais',porcao_padrao:'100g',calorias:45,proteina:1.3,carboidrato:10,gordura:1.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Cebola crua'},
+  {nome:'Alho',categoria:'Vegetais',porcao_padrao:'1 dente (3g)',calorias:4,proteina:0.2,carboidrato:1,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Vagem cozida',categoria:'Vegetais',porcao_padrao:'100g',calorias:30,proteina:1.8,carboidrato:6.7,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Ervilha'},
+  {nome:'Quiabo cozido',categoria:'Vegetais',porcao_padrao:'100g',calorias:26,proteina:1.9,carboidrato:5.5,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Vagem'},
+  {nome:'Aspargo cozido',categoria:'Vegetais',porcao_padrao:'100g',calorias:22,proteina:2.2,carboidrato:4,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Vagem'},
+  {nome:'Palmito em conserva',categoria:'Vegetais',porcao_padrao:'100g',calorias:26,proteina:2.1,carboidrato:4.3,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Cogumelo Paris',categoria:'Vegetais',porcao_padrao:'100g',calorias:22,proteina:3.1,carboidrato:3.3,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Cogumelo Shitake'},
+  {nome:'Cogumelo Shitake',categoria:'Vegetais',porcao_padrao:'100g',calorias:34,proteina:2.2,carboidrato:6.8,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Cogumelo Paris'},
+  {nome:'Rabanete',categoria:'Vegetais',porcao_padrao:'100g',calorias:16,proteina:0.7,carboidrato:3.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pepino'},
+  {nome:'Salsão/Aipo',categoria:'Vegetais',porcao_padrao:'100g',calorias:16,proteina:0.7,carboidrato:3,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pepino'},
+  {nome:'Nabo cozido',categoria:'Vegetais',porcao_padrao:'100g',calorias:22,proteina:0.8,carboidrato:5,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Cenoura'},
+  {nome:'Salsinha',categoria:'Vegetais',porcao_padrao:'1 colher sopa (5g)',calorias:2,proteina:0.2,carboidrato:0.4,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Cebolinha',categoria:'Vegetais',porcao_padrao:'1 colher sopa (5g)',calorias:2,proteina:0.1,carboidrato:0.4,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
   {nome:'Creatina',categoria:'Suplementos',porcao_padrao:'1 dose (3-5g)',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—',observacoes:'Tomar todos os dias, horário não importa'},
   {nome:'BCAA',categoria:'Suplementos',porcao_padrao:'1 dose (5g)',calorias:20,proteina:5,carboidrato:0,gordura:0,tags:['sem_gluten'],substituicoes:'—'},
-  {nome:'Albumina',categoria:'Suplementos',porcao_padrao:'1 colher sopa (15g)',calorias:55,proteina:12,carboidrato:1,gordura:0,tags:['sem_gluten','sem_lactose'],substituicoes:'Whey protein ou clara de ovo'},
-  {nome:'Maltodextrina',categoria:'Suplementos',porcao_padrao:'1 dose (30g)',calorias:114,proteina:0,carboidrato:28,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Banana ou mel',observacoes:'Ideal no pré ou intra-treino'},
+  {nome:'Glutamina',categoria:'Suplementos',porcao_padrao:'1 dose (5g)',calorias:20,proteina:5,carboidrato:0,gordura:0,tags:['sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Albumina',categoria:'Suplementos',porcao_padrao:'1 colher sopa (15g)',calorias:55,proteina:12,carboidrato:1,gordura:0,tags:['sem_gluten','sem_lactose'],substituicoes:'Whey protein, clara de ovo'},
+  {nome:'Maltodextrina',categoria:'Suplementos',porcao_padrao:'1 dose (30g)',calorias:114,proteina:0,carboidrato:28,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Banana, mel',observacoes:'Ideal no pré ou intra-treino'},
+  {nome:'Dextrose',categoria:'Suplementos',porcao_padrao:'1 dose (30g)',calorias:120,proteina:0,carboidrato:30,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maltodextrina'},
+  {nome:'Waxy maize',categoria:'Suplementos',porcao_padrao:'1 dose (30g)',calorias:112,proteina:0,carboidrato:27,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maltodextrina'},
+  {nome:'Hipercalórico',categoria:'Suplementos',porcao_padrao:'1 dose (50g)',calorias:190,proteina:10,carboidrato:32,gordura:3,tags:[],substituicoes:'Aveia + whey + pasta de amendoim'},
+  {nome:'Cafeína (cápsula)',categoria:'Suplementos',porcao_padrao:'1 cápsula (200mg)',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Café coado',observacoes:'Tomar 30-45min antes do treino'},
+  {nome:'Termogênico',categoria:'Suplementos',porcao_padrao:'1 dose',calorias:5,proteina:0,carboidrato:1,gordura:0,tags:[],substituicoes:'Cafeína + chá verde'},
+  {nome:'Ômega 3',categoria:'Suplementos',porcao_padrao:'1 cápsula (1g)',calorias:9,proteina:0,carboidrato:0,gordura:1,tags:['sem_gluten','sem_lactose'],substituicoes:'Peixes gordurosos'},
+  {nome:'Multivitamínico',categoria:'Suplementos',porcao_padrao:'1 cápsula',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Vitamina D',categoria:'Suplementos',porcao_padrao:'1 cápsula',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Zinco',categoria:'Suplementos',porcao_padrao:'1 cápsula',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Magnésio',categoria:'Suplementos',porcao_padrao:'1 cápsula',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Colágeno hidrolisado',categoria:'Suplementos',porcao_padrao:'1 dose (10g)',calorias:36,proteina:9,carboidrato:0,gordura:0,tags:['sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Beta-alanina',categoria:'Suplementos',porcao_padrao:'1 dose (3g)',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Citrulina malato',categoria:'Suplementos',porcao_padrao:'1 dose (6g)',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Pré-treino (mix)',categoria:'Suplementos',porcao_padrao:'1 dose (10g)',calorias:15,proteina:0,carboidrato:3,gordura:0,tags:[],substituicoes:'Cafeína + BCAA'},
+  {nome:'Chocolate ao leite',categoria:'Outro',porcao_padrao:'1 quadrado (20g)',calorias:107,proteina:1.5,carboidrato:12,gordura:6,tags:['vegetariano'],substituicoes:'Chocolate 70% cacau'},
+  {nome:'Chocolate 70% cacau',categoria:'Outro',porcao_padrao:'1 quadrado (20g)',calorias:112,proteina:1.8,carboidrato:9,gordura:7.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Chocolate ao leite'},
+  {nome:'Chocolate amargo 85%',categoria:'Outro',porcao_padrao:'1 quadrado (20g)',calorias:118,proteina:2,carboidrato:7,gordura:9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Chocolate 70%'},
+  {nome:'Gelatina diet',categoria:'Outro',porcao_padrao:'100g',calorias:7,proteina:1.5,carboidrato:0.3,gordura:0,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Pudim',categoria:'Outro',porcao_padrao:'100g',calorias:150,proteina:4,carboidrato:25,gordura:4,tags:['vegetariano'],substituicoes:'Gelatina'},
+  {nome:'Sorvete de massa (tradicional)',categoria:'Outro',porcao_padrao:'1 bola (60g)',calorias:120,proteina:2,carboidrato:16,gordura:5.5,tags:['vegetariano'],substituicoes:'Sorvete de frutas'},
+  {nome:'Sorvete de frutas (sem leite)',categoria:'Outro',porcao_padrao:'1 bola (60g)',calorias:70,proteina:0.5,carboidrato:17,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Açaí na tigela'},
+  {nome:'Açaí na tigela (sem xarope)',categoria:'Outro',porcao_padrao:'200g',calorias:180,proteina:2,carboidrato:25,gordura:8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Bolo simples (fatia)',categoria:'Outro',porcao_padrao:'1 fatia (60g)',calorias:180,proteina:3,carboidrato:28,gordura:6,tags:['vegetariano'],substituicoes:'Bolo integral'},
+  {nome:'Bolo integral (fatia)',categoria:'Outro',porcao_padrao:'1 fatia (60g)',calorias:160,proteina:4,carboidrato:25,gordura:5,tags:['vegetariano'],substituicoes:'Bolo simples'},
+  {nome:'Biscoito recheado',categoria:'Outro',porcao_padrao:'3 unidades (30g)',calorias:145,proteina:1.5,carboidrato:22,gordura:6,tags:['vegetariano'],substituicoes:'Biscoito integral'},
+  {nome:'Biscoito integral',categoria:'Outro',porcao_padrao:'3 unidades (30g)',calorias:120,proteina:2.5,carboidrato:20,gordura:3.5,tags:['vegetariano'],substituicoes:'Torrada integral'},
+  {nome:'Mousse de maracujá',categoria:'Outro',porcao_padrao:'100g',calorias:160,proteina:3,carboidrato:20,gordura:7,tags:['vegetariano'],substituicoes:'Gelatina'},
+  {nome:'Brigadeiro',categoria:'Outro',porcao_padrao:'1 unidade (15g)',calorias:60,proteina:0.8,carboidrato:9,gordura:2.5,tags:['vegetariano'],substituicoes:'—'},
+  {nome:'Doce de leite',categoria:'Outro',porcao_padrao:'1 colher sopa (20g)',calorias:65,proteina:1.4,carboidrato:11,gordura:1.7,tags:['vegetariano'],substituicoes:'—'},
+  {nome:'Café coado (sem açúcar)',categoria:'Outro',porcao_padrao:'100ml',calorias:2,proteina:0.1,carboidrato:0.3,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Chá verde'},
+  {nome:'Café com leite',categoria:'Outro',porcao_padrao:'200ml',calorias:70,proteina:3.5,carboidrato:6,gordura:3.5,tags:['vegetariano'],substituicoes:'Café coado'},
+  {nome:'Chá verde',categoria:'Outro',porcao_padrao:'200ml',calorias:1,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Café'},
+  {nome:'Chá mate',categoria:'Outro',porcao_padrao:'200ml',calorias:2,proteina:0,carboidrato:0.5,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Chá verde'},
+  {nome:'Chá de camomila',categoria:'Outro',porcao_padrao:'200ml',calorias:1,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Água de coco',categoria:'Outro',porcao_padrao:'200ml',calorias:38,proteina:0.4,carboidrato:8.4,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Água com limão'},
+  {nome:'Suco de laranja natural',categoria:'Outro',porcao_padrao:'200ml',calorias:90,proteina:1.4,carboidrato:21,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Laranja in natura'},
+  {nome:'Suco de uva integral',categoria:'Outro',porcao_padrao:'200ml',calorias:120,proteina:0.4,carboidrato:30,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Uva in natura'},
+  {nome:'Suco de maracujá (com açúcar)',categoria:'Outro',porcao_padrao:'200ml',calorias:95,proteina:0.6,carboidrato:24,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maracujá in natura'},
+  {nome:'Suco verde (couve/limão)',categoria:'Outro',porcao_padrao:'300ml',calorias:60,proteina:2,carboidrato:13,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Refrigerante comum',categoria:'Outro',porcao_padrao:'350ml',calorias:140,proteina:0,carboidrato:37,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Água com gás + limão'},
+  {nome:'Refrigerante zero',categoria:'Outro',porcao_padrao:'350ml',calorias:1,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Água com gás'},
+  {nome:'Cerveja pilsen',categoria:'Outro',porcao_padrao:'350ml',calorias:150,proteina:1.5,carboidrato:11,gordura:0,tags:['vegetariano','vegano'],substituicoes:'Cerveja sem álcool'},
+  {nome:'Cerveja sem álcool',categoria:'Outro',porcao_padrao:'350ml',calorias:65,proteina:0.5,carboidrato:14,gordura:0,tags:['vegetariano','vegano'],substituicoes:'—'},
+  {nome:'Vinho tinto seco',categoria:'Outro',porcao_padrao:'150ml',calorias:125,proteina:0.1,carboidrato:4,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Vodka',categoria:'Outro',porcao_padrao:'50ml',calorias:110,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Água tônica',categoria:'Outro',porcao_padrao:'200ml',calorias:70,proteina:0,carboidrato:18,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Água com gás'},
+  {nome:'Isotônico esportivo',categoria:'Outro',porcao_padrao:'500ml',calorias:130,proteina:0,carboidrato:32,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Água de coco',observacoes:'Útil em treinos longos/calor intenso'},
+  {nome:'Mel',categoria:'Outro',porcao_padrao:'1 colher sopa (20g)',calorias:61,proteina:0.1,carboidrato:16.5,gordura:0,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Geleia sem açúcar'},
+  {nome:'Geleia sem açúcar',categoria:'Outro',porcao_padrao:'1 colher sopa (20g)',calorias:25,proteina:0.1,carboidrato:6,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mel'},
+  {nome:'Adoçante (stevia)',categoria:'Outro',porcao_padrao:'1 sachê',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Açúcar (em pequena qtd)'},
+  {nome:'Açúcar refinado',categoria:'Outro',porcao_padrao:'1 colher chá (5g)',calorias:19,proteina:0,carboidrato:5,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Adoçante'},
+  {nome:'Canela em pó',categoria:'Outro',porcao_padrao:'1 colher chá (2g)',calorias:5,proteina:0.1,carboidrato:1.7,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Pizza mussarela (fatia)',categoria:'Outro',porcao_padrao:'1 fatia (100g)',calorias:266,proteina:11,carboidrato:33,gordura:10,tags:['vegetariano'],substituicoes:'Pizza de vegetais'},
+  {nome:'Hambúrguer completo (fast food)',categoria:'Outro',porcao_padrao:'1 unidade (150g)',calorias:450,proteina:20,carboidrato:40,gordura:24,tags:[],substituicoes:'Hambúrguer caseiro grelhado'},
+  {nome:'Batata frita (fast food)',categoria:'Outro',porcao_padrao:'100g',calorias:312,proteina:3.4,carboidrato:41,gordura:15,tags:['vegetariano','vegano'],substituicoes:'Batata doce assada'},
+  {nome:'Coxinha',categoria:'Outro',porcao_padrao:'1 unidade (70g)',calorias:210,proteina:7,carboidrato:22,gordura:10,tags:[],substituicoes:'Frango grelhado + arroz'},
+  {nome:'Pastel de carne frito',categoria:'Outro',porcao_padrao:'1 unidade (60g)',calorias:210,proteina:6,carboidrato:18,gordura:13,tags:[],substituicoes:'Pastel assado'},
+  {nome:'Esfiha de carne',categoria:'Outro',porcao_padrao:'1 unidade (60g)',calorias:165,proteina:7,carboidrato:18,gordura:7,tags:[],substituicoes:'Esfiha assada'},
+  {nome:'Empada de frango',categoria:'Outro',porcao_padrao:'1 unidade (80g)',calorias:230,proteina:6,carboidrato:22,gordura:13,tags:[],substituicoes:'Frango grelhado'},
+  {nome:'Salgado assado (geral)',categoria:'Outro',porcao_padrao:'1 unidade (60g)',calorias:150,proteina:5,carboidrato:18,gordura:6,tags:[],substituicoes:'Salgado frito'},
+  {nome:'Lasanha à bolonhesa',categoria:'Outro',porcao_padrao:'200g',calorias:380,proteina:20,carboidrato:35,gordura:17,tags:[],substituicoes:'Nhoque + molho magro'},
+  {nome:'Feijoada (porção)',categoria:'Outro',porcao_padrao:'200g',calorias:320,proteina:18,carboidrato:25,gordura:17,tags:['sem_gluten','sem_lactose'],substituicoes:'Feijão + carnes magras'},
+  {nome:'Strogonoff de frango',categoria:'Outro',porcao_padrao:'200g',calorias:280,proteina:20,carboidrato:18,gordura:14,tags:[],substituicoes:'Frango grelhado + creme light'},
+  {nome:'Escondidinho de carne',categoria:'Outro',porcao_padrao:'200g',calorias:290,proteina:15,carboidrato:30,gordura:12,tags:[],substituicoes:'Purê de batata doce + carne magra'},
+  {nome:'Nuggets de frango',categoria:'Outro',porcao_padrao:'6 unidades (100g)',calorias:250,proteina:14,carboidrato:15,gordura:15,tags:[],substituicoes:'Frango grelhado'},
+  {nome:'Sushi (combinado, média)',categoria:'Outro',porcao_padrao:'6 peças (150g)',calorias:280,proteina:12,carboidrato:42,gordura:7,tags:[],substituicoes:'—'},
+  {nome:'Temaki salmão',categoria:'Outro',porcao_padrao:'1 unidade (180g)',calorias:380,proteina:15,carboidrato:55,gordura:10,tags:[],substituicoes:'Sushi'},
+  {nome:'Painço cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:119,proteina:3.5,carboidrato:23,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Quinoa'},
+  {nome:'Trigo sarraceno cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:92,proteina:3.4,carboidrato:20,gordura:0.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Quinoa'},
+  {nome:'Amaranto cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:103,proteina:4,carboidrato:19,gordura:1.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Quinoa'},
+  {nome:'Cevadinha cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:123,proteina:2.3,carboidrato:28,gordura:0.4,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Arroz integral'},
+  {nome:'Trigo em grão cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:83,proteina:3,carboidrato:17.7,gordura:0.4,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Quinoa'},
+  {nome:'Cará cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:98,proteina:1.9,carboidrato:23,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Inhame'},
+  {nome:'Farinha de mandioca temperada',categoria:'Cereais',porcao_padrao:'30g',calorias:112,proteina:0.6,carboidrato:25,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Farofa simples'},
+  {nome:'Farinha de milho (fubá)',categoria:'Cereais',porcao_padrao:'30g',calorias:107,proteina:2,carboidrato:23,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Farinha de trigo'},
+  {nome:'Polenta cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:85,proteina:1.8,carboidrato:18,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Purê de batata'},
+  {nome:'Polenta frita',categoria:'Cereais',porcao_padrao:'100g',calorias:165,proteina:2,carboidrato:20,gordura:8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Polenta cozida'},
+  {nome:'Macarrão de abobrinha (zoodles)',categoria:'Cereais',porcao_padrao:'100g',calorias:17,proteina:1.2,carboidrato:3.1,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Macarrão comum'},
+  {nome:'Massa de pastel crua',categoria:'Cereais',porcao_padrao:'1 unidade (30g)',calorias:95,proteina:2.5,carboidrato:17,gordura:2,tags:['vegetariano'],substituicoes:'—'},
+  {nome:'Bolacha água e sal',categoria:'Cereais',porcao_padrao:'4 unidades (20g)',calorias:85,proteina:1.8,carboidrato:15,gordura:2,tags:['vegetariano'],substituicoes:'Torrada integral'},
+  {nome:'Bolacha cream cracker',categoria:'Cereais',porcao_padrao:'4 unidades (20g)',calorias:88,proteina:2,carboidrato:15,gordura:2.5,tags:['vegetariano'],substituicoes:'Bolacha água e sal'},
+  {nome:'Rap10/wrap integral',categoria:'Cereais',porcao_padrao:'1 unidade (50g)',calorias:140,proteina:4.5,carboidrato:24,gordura:3,tags:['vegetariano'],substituicoes:'Pão integral'},
+  {nome:'Pão de hambúrguer',categoria:'Cereais',porcao_padrao:'1 unidade (60g)',calorias:170,proteina:5,carboidrato:30,gordura:3,tags:['vegetariano'],substituicoes:'Pão francês'},
+  {nome:'Pão australiano',categoria:'Cereais',porcao_padrao:'1 fatia (40g)',calorias:110,proteina:3.5,carboidrato:20,gordura:1.8,tags:['vegetariano'],substituicoes:'Pão integral'},
+  {nome:'Croissant',categoria:'Cereais',porcao_padrao:'1 unidade (60g)',calorias:240,proteina:5,carboidrato:26,gordura:13,tags:['vegetariano'],substituicoes:'Pão francês'},
+  {nome:'Bagel',categoria:'Cereais',porcao_padrao:'1 unidade (85g)',calorias:245,proteina:9,carboidrato:48,gordura:1.5,tags:['vegetariano'],substituicoes:'Pão integral'},
+  {nome:'Muffin integral',categoria:'Cereais',porcao_padrao:'1 unidade (60g)',calorias:165,proteina:4,carboidrato:26,gordura:5,tags:['vegetariano'],substituicoes:'Bolo integral'},
+  {nome:'Peito de chester assado',categoria:'Proteinas',porcao_padrao:'100g',calorias:165,proteina:26,carboidrato:1,gordura:6,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de frango'},
+  {nome:'Peru assado (peito)',categoria:'Proteinas',porcao_padrao:'100g',calorias:135,proteina:30,carboidrato:0,gordura:1,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango grelhado'},
+  {nome:'Pato assado',categoria:'Proteinas',porcao_padrao:'100g',calorias:240,proteina:19,carboidrato:0,gordura:18,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango'},
+  {nome:'Codorna assada',categoria:'Proteinas',porcao_padrao:'100g',calorias:192,proteina:22,carboidrato:0,gordura:11,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango'},
+  {nome:'Coelho cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:173,proteina:29,carboidrato:0,gordura:5.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango'},
+  {nome:'Cordeiro grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:235,proteina:25,carboidrato:0,gordura:15,tags:['sem_gluten','sem_lactose'],substituicoes:'Carne bovina magra'},
+  {nome:'Cabrito assado',categoria:'Proteinas',porcao_padrao:'100g',calorias:165,proteina:27,carboidrato:0,gordura:5.4,tags:['sem_gluten','sem_lactose'],substituicoes:'Cordeiro'},
+  {nome:'Fígado bovino grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:175,proteina:26,carboidrato:4,gordura:4.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Carne bovina magra'},
+  {nome:'Língua bovina cozida',categoria:'Proteinas',porcao_padrao:'100g',calorias:210,proteina:22,carboidrato:0,gordura:14,tags:['sem_gluten','sem_lactose'],substituicoes:'Carne bovina magra'},
+  {nome:'Coração de frango grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:180,proteina:20,carboidrato:0,gordura:10,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de frango'},
+  {nome:'Rã (coxa) grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:73,proteina:16.4,carboidrato:0,gordura:0.3,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango'},
+  {nome:'Truta grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:148,proteina:21,carboidrato:0,gordura:6.6,tags:['sem_gluten','sem_lactose'],substituicoes:'Salmão'},
+  {nome:'Robalo grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:97,proteina:18,carboidrato:0,gordura:2,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia'},
+  {nome:'Dourado grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:95,proteina:19,carboidrato:0,gordura:1.8,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia'},
+  {nome:'Cação/Tubarão grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:130,proteina:21,carboidrato:0,gordura:4.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia'},
+  {nome:'Pescada grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:89,proteina:18,carboidrato:0,gordura:1.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Merluza'},
+  {nome:'Corvina grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:100,proteina:19,carboidrato:0,gordura:2.3,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia'},
+  {nome:'Linguado grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:90,proteina:17,carboidrato:0,gordura:2,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia'},
+  {nome:'Mexilhão cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:86,proteina:12,carboidrato:3.7,gordura:2.2,tags:['sem_gluten','sem_lactose'],substituicoes:'Camarão'},
+  {nome:'Ostra crua',categoria:'Proteinas',porcao_padrao:'100g',calorias:68,proteina:9,carboidrato:4,gordura:2,tags:['sem_gluten','sem_lactose'],substituicoes:'Camarão'},
+  {nome:'Siri/Caranguejo cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:97,proteina:19,carboidrato:0,gordura:1.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Camarão'},
+  {nome:'Lagosta cozida',categoria:'Proteinas',porcao_padrao:'100g',calorias:89,proteina:19,carboidrato:0.5,gordura:0.9,tags:['sem_gluten','sem_lactose'],substituicoes:'Camarão'},
+  {nome:'Ovo de pata cozido',categoria:'Proteinas',porcao_padrao:'1 unidade (70g)',calorias:130,proteina:9,carboidrato:1,gordura:10,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Ovo de galinha'},
+  {nome:'Hambúrguer de grão de bico',categoria:'Proteinas',porcao_padrao:'1 unidade (100g)',calorias:165,proteina:8,carboidrato:22,gordura:5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Hambúrguer de lentilha'},
+  {nome:'Hambúrguer de lentilha',categoria:'Proteinas',porcao_padrao:'1 unidade (100g)',calorias:150,proteina:9,carboidrato:20,gordura:4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Hambúrguer de grão de bico'},
+  {nome:'Hambúrguer vegetal (soja)',categoria:'Proteinas',porcao_padrao:'1 unidade (100g)',calorias:180,proteina:15,carboidrato:10,gordura:9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Hambúrguer de grão de bico'},
+  {nome:'Almôndega vegetal',categoria:'Proteinas',porcao_padrao:'100g',calorias:160,proteina:10,carboidrato:15,gordura:7,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Almôndega de carne magra'},
+  {nome:'Almôndega de carne magra',categoria:'Proteinas',porcao_padrao:'100g',calorias:175,proteina:18,carboidrato:4,gordura:10,tags:['sem_gluten','sem_lactose'],substituicoes:'Almôndega vegetal'},
+  {nome:'Edamame cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:122,proteina:11,carboidrato:10,gordura:5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Ervilha'},
+  {nome:'Feijão azuki cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:128,proteina:7.5,carboidrato:25,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Feijão carioca'},
+  {nome:'Feijão mungo cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:105,proteina:7,carboidrato:19,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Lentilha'},
+  {nome:'Grão de bico assado (snack)',categoria:'Proteinas',porcao_padrao:'30g',calorias:120,proteina:5,carboidrato:18,gordura:3.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amendoim'},
+  {nome:'Queijo gorgonzola',categoria:'Laticinios',porcao_padrao:'30g',calorias:110,proteina:6,carboidrato:0.6,gordura:9,tags:['vegetariano'],substituicoes:'Queijo prato'},
+  {nome:'Queijo brie',categoria:'Laticinios',porcao_padrao:'30g',calorias:95,proteina:6,carboidrato:0.1,gordura:8,tags:['vegetariano'],substituicoes:'Queijo minas'},
+  {nome:'Queijo camembert',categoria:'Laticinios',porcao_padrao:'30g',calorias:85,proteina:5.8,carboidrato:0.1,gordura:7,tags:['vegetariano'],substituicoes:'Brie'},
+  {nome:'Queijo provolone',categoria:'Laticinios',porcao_padrao:'30g',calorias:100,proteina:7,carboidrato:0.6,gordura:7.5,tags:['vegetariano'],substituicoes:'Mussarela'},
+  {nome:'Queijo gouda',categoria:'Laticinios',porcao_padrao:'30g',calorias:113,proteina:7,carboidrato:0.6,gordura:9,tags:['vegetariano'],substituicoes:'Prato'},
+  {nome:'Queijo cheddar',categoria:'Laticinios',porcao_padrao:'30g',calorias:113,proteina:7,carboidrato:0.4,gordura:9.3,tags:['vegetariano'],substituicoes:'Prato'},
+  {nome:'Queijo emmental/suíço',categoria:'Laticinios',porcao_padrao:'30g',calorias:115,proteina:8,carboidrato:1,gordura:8.5,tags:['vegetariano'],substituicoes:'Gouda'},
+  {nome:'Queijo feta',categoria:'Laticinios',porcao_padrao:'30g',calorias:75,proteina:4,carboidrato:1.2,gordura:6,tags:['vegetariano'],substituicoes:'Minas frescal'},
+  {nome:'Queijo tipo petit suisse',categoria:'Laticinios',porcao_padrao:'1 unidade (45g)',calorias:55,proteina:1.8,carboidrato:7,gordura:2,tags:['vegetariano'],substituicoes:'Iogurte de frutas'},
+  {nome:'Bebida láctea (achocolatada)',categoria:'Laticinios',porcao_padrao:'200ml',calorias:130,proteina:4,carboidrato:22,gordura:3,tags:['vegetariano'],substituicoes:'Leite com cacau'},
+  {nome:'Iogurte funcional (probiótico)',categoria:'Laticinios',porcao_padrao:'80ml',calorias:50,proteina:1.5,carboidrato:9,gordura:1,tags:['vegetariano'],substituicoes:'Iogurte natural'},
+  {nome:'Whey protein com leite',categoria:'Laticinios',porcao_padrao:'250ml',calorias:220,proteina:26,carboidrato:10,gordura:7,tags:['vegetariano'],substituicoes:'Whey com água'},
+  {nome:'Vitamina de frutas com leite',categoria:'Laticinios',porcao_padrao:'300ml',calorias:210,proteina:7,carboidrato:35,gordura:5,tags:['vegetariano'],substituicoes:'Suco de frutas'},
+  {nome:'Óleo de girassol',categoria:'Gorduras',porcao_padrao:'1 colher sopa (13g)',calorias:120,proteina:0,carboidrato:0,gordura:13.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Azeite de oliva'},
+  {nome:'Óleo de canola',categoria:'Gorduras',porcao_padrao:'1 colher sopa (13g)',calorias:120,proteina:0,carboidrato:0,gordura:13.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Azeite de oliva'},
+  {nome:'Óleo de gergelim',categoria:'Gorduras',porcao_padrao:'1 colher sopa (13g)',calorias:120,proteina:0,carboidrato:0,gordura:13.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Azeite de oliva'},
+  {nome:'Manteiga ghee',categoria:'Gorduras',porcao_padrao:'1 colher chá (5g)',calorias:45,proteina:0,carboidrato:0,gordura:5,tags:['vegetariano','sem_lactose'],substituicoes:'Manteiga comum'},
+  {nome:'Margarina',categoria:'Gorduras',porcao_padrao:'1 colher chá (5g)',calorias:36,proteina:0,carboidrato:0,gordura:4,tags:['vegetariano','vegano'],substituicoes:'Manteiga'},
+  {nome:'Tahine (pasta de gergelim)',categoria:'Gorduras',porcao_padrao:'1 colher sopa (15g)',calorias:89,proteina:2.6,carboidrato:3.2,gordura:8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pasta de amendoim'},
+  {nome:'Pasta de amêndoas',categoria:'Gorduras',porcao_padrao:'1 colher sopa (20g)',calorias:98,proteina:3.4,carboidrato:3,gordura:8.8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pasta de amendoim'},
+  {nome:'Baru',categoria:'Gorduras',porcao_padrao:'30g',calorias:180,proteina:7,carboidrato:10,gordura:13,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amêndoas'},
+  {nome:'Pinhão cozido',categoria:'Gorduras',porcao_padrao:'100g',calorias:191,proteina:4,carboidrato:42,gordura:1.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Castanhas'},
+  {nome:'Semente de abóbora',categoria:'Gorduras',porcao_padrao:'30g',calorias:165,proteina:9,carboidrato:4,gordura:14,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amendoim'},
+  {nome:'Semente de girassol',categoria:'Gorduras',porcao_padrao:'30g',calorias:175,proteina:6,carboidrato:6,gordura:15,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Semente de abóbora'},
+  {nome:'Jabuticaba',categoria:'Frutas',porcao_padrao:'100g',calorias:58,proteina:0.6,carboidrato:15.6,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Uva'},
+  {nome:'Pêssego',categoria:'Frutas',porcao_padrao:'1 unidade (100g)',calorias:39,proteina:0.9,carboidrato:9.5,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Nectarina'},
+  {nome:'Nectarina',categoria:'Frutas',porcao_padrao:'1 unidade (100g)',calorias:44,proteina:1.1,carboidrato:10.5,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pêssego'},
+  {nome:'Physalis',categoria:'Frutas',porcao_padrao:'100g',calorias:53,proteina:1.9,carboidrato:11,gordura:0.7,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Morango'},
+  {nome:'Amora',categoria:'Frutas',porcao_padrao:'100g',calorias:43,proteina:1.4,carboidrato:9.6,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Framboesa'},
+  {nome:'Tamarindo',categoria:'Frutas',porcao_padrao:'30g',calorias:71,proteina:0.8,carboidrato:18.6,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Ameixa'},
+  {nome:'Umbu',categoria:'Frutas',porcao_padrao:'100g',calorias:37,proteina:0.8,carboidrato:8.9,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Manga'},
+  {nome:'Cupuaçu (polpa)',categoria:'Frutas',porcao_padrao:'100g',calorias:47,proteina:1.4,carboidrato:11.2,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maracujá'},
+  {nome:'Acerola (polpa)',categoria:'Frutas',porcao_padrao:'100g',calorias:33,proteina:0.9,carboidrato:7.9,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Laranja'},
+  {nome:'Caju (fruta)',categoria:'Frutas',porcao_padrao:'100g',calorias:43,proteina:1,carboidrato:11,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Manga'},
+  {nome:'Pequi',categoria:'Frutas',porcao_padrao:'100g',calorias:164,proteina:2.3,carboidrato:13.6,gordura:10.8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Jambo',categoria:'Frutas',porcao_padrao:'100g',calorias:25,proteina:0.6,carboidrato:6,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Melancia'},
+  {nome:'Grapefruit/Toranja',categoria:'Frutas',porcao_padrao:'100g',calorias:42,proteina:0.8,carboidrato:10.7,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Laranja'},
+  {nome:'Lichia',categoria:'Frutas',porcao_padrao:'100g',calorias:66,proteina:0.8,carboidrato:16.5,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Uva'},
+  {nome:'Romã',categoria:'Frutas',porcao_padrao:'100g',calorias:83,proteina:1.7,carboidrato:18.7,gordura:1.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Uva'},
+  {nome:'Frutas secas mix',categoria:'Frutas',porcao_padrao:'30g',calorias:95,proteina:1,carboidrato:22,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Frutas frescas'},
+  {nome:'Escarola refogada',categoria:'Vegetais',porcao_padrao:'100g',calorias:22,proteina:1.5,carboidrato:3.8,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Couve'},
+  {nome:'Almeirão refogado',categoria:'Vegetais',porcao_padrao:'100g',calorias:20,proteina:1.4,carboidrato:3.5,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Escarola'},
+  {nome:'Acelga refogada',categoria:'Vegetais',porcao_padrao:'100g',calorias:19,proteina:1.8,carboidrato:3.7,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Espinafre'},
+  {nome:'Mostarda (folha) refogada',categoria:'Vegetais',porcao_padrao:'100g',calorias:27,proteina:2.7,carboidrato:4.7,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Couve'},
+  {nome:'Taioba refogada',categoria:'Vegetais',porcao_padrao:'100g',calorias:22,proteina:2.5,carboidrato:3.4,gordura:0.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Espinafre'},
+  {nome:'Ora-pro-nóbis refogado',categoria:'Vegetais',porcao_padrao:'100g',calorias:24,proteina:2.8,carboidrato:3.8,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Espinafre'},
+  {nome:'Jiló refogado',categoria:'Vegetais',porcao_padrao:'100g',calorias:29,proteina:1.6,carboidrato:6.3,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Berinjela'},
+  {nome:'Maxixe refogado',categoria:'Vegetais',porcao_padrao:'100g',calorias:16,proteina:1.2,carboidrato:3.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pepino'},
+  {nome:'Alho-poró refogado',categoria:'Vegetais',porcao_padrao:'100g',calorias:29,proteina:1.3,carboidrato:6.5,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Cebola'},
+  {nome:'Aipim/Mandioca em cubos cozida',categoria:'Vegetais',porcao_padrao:'100g',calorias:125,proteina:0.6,carboidrato:30,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce'},
+  {nome:'Brotos de feijão (moyashi)',categoria:'Vegetais',porcao_padrao:'100g',calorias:30,proteina:3,carboidrato:6,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Repolho'},
+  {nome:'Broto de alfafa',categoria:'Vegetais',porcao_padrao:'30g',calorias:8,proteina:1,carboidrato:1,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Brotos de feijão'},
+  {nome:'Pepino japonês',categoria:'Vegetais',porcao_padrao:'100g',calorias:12,proteina:0.8,carboidrato:2.5,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pepino comum'},
+  {nome:'Ervilha torta (snap pea)',categoria:'Vegetais',porcao_padrao:'100g',calorias:42,proteina:3,carboidrato:7.5,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Vagem'},
+  {nome:'Milho baby (mini milho)',categoria:'Vegetais',porcao_padrao:'100g',calorias:26,proteina:2,carboidrato:5,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Milho verde'},
+  {nome:'HMB',categoria:'Suplementos',porcao_padrao:'1 dose (3g)',calorias:12,proteina:0,carboidrato:3,gordura:0,tags:['sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Arginina',categoria:'Suplementos',porcao_padrao:'1 dose (3g)',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Citrulina malato'},
+  {nome:'Taurina',categoria:'Suplementos',porcao_padrao:'1 dose (1g)',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'ZMA',categoria:'Suplementos',porcao_padrao:'1 dose',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['sem_gluten','sem_lactose'],substituicoes:'Zinco + magnésio separados'},
+  {nome:'Ashwagandha',categoria:'Suplementos',porcao_padrao:'1 cápsula',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Colágeno + vitamina C',categoria:'Suplementos',porcao_padrao:'1 dose (10g)',calorias:36,proteina:9,carboidrato:0.5,gordura:0,tags:['sem_gluten','sem_lactose'],substituicoes:'Colágeno hidrolisado'},
+  {nome:'Whey protein vegano (ervilha/arroz)',categoria:'Suplementos',porcao_padrao:'1 scoop (30g)',calorias:115,proteina:21,carboidrato:4,gordura:2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Whey tradicional'},
+  {nome:'Barrinha de proteína',categoria:'Suplementos',porcao_padrao:'1 unidade (40g)',calorias:160,proteina:15,carboidrato:14,gordura:6,tags:[],substituicoes:'Whey + aveia'},
+  {nome:'Gel de carboidrato (energel)',categoria:'Suplementos',porcao_padrao:'1 sachê (30g)',calorias:90,proteina:0,carboidrato:22,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Banana',observacoes:'Uso durante exercício prolongado'},
+  {nome:'Salsicha (hot dog)',categoria:'Proteinas',porcao_padrao:'1 unidade (50g)',calorias:145,proteina:5,carboidrato:2,gordura:13,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de frango'},
+  {nome:'Peito de peru defumado',categoria:'Proteinas',porcao_padrao:'30g',calorias:30,proteina:6,carboidrato:0.5,gordura:0.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Presunto magro'},
+  {nome:'Copa lombo',categoria:'Proteinas',porcao_padrao:'30g',calorias:95,proteina:7,carboidrato:0.5,gordura:7.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Presunto magro'},
+  {nome:'Blanquet de peru',categoria:'Proteinas',porcao_padrao:'30g',calorias:28,proteina:5.8,carboidrato:0.4,gordura:0.3,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de peru'},
+  {nome:'Apresuntado',categoria:'Proteinas',porcao_padrao:'30g',calorias:45,proteina:4.5,carboidrato:1.5,gordura:2.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Presunto magro'},
+  {nome:'Moqueca de peixe',categoria:'Outro',porcao_padrao:'200g',calorias:280,proteina:22,carboidrato:8,gordura:17,tags:['sem_gluten','sem_lactose'],substituicoes:'Peixe grelhado + legumes'},
+  {nome:'Vatapá',categoria:'Outro',porcao_padrao:'150g',calorias:320,proteina:10,carboidrato:20,gordura:22,tags:[],substituicoes:'Purê de batata doce'},
+  {nome:'Acarajé',categoria:'Outro',porcao_padrao:'1 unidade (100g)',calorias:290,proteina:8,carboidrato:25,gordura:18,tags:['vegetariano','vegano'],substituicoes:'Feijão fradinho cozido'},
+  {nome:'Baião de dois',categoria:'Outro',porcao_padrao:'200g',calorias:260,proteina:10,carboidrato:42,gordura:6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz + feijão simples'},
+  {nome:'Tutu de feijão',categoria:'Outro',porcao_padrao:'150g',calorias:210,proteina:8,carboidrato:30,gordura:6,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Feijão cozido'},
+  {nome:'Galinhada',categoria:'Outro',porcao_padrao:'200g',calorias:290,proteina:18,carboidrato:35,gordura:8,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango + arroz separados'},
+  {nome:'Buchada de bode',categoria:'Outro',porcao_padrao:'150g',calorias:270,proteina:20,carboidrato:10,gordura:17,tags:['sem_gluten','sem_lactose'],substituicoes:'Carne magra'},
+  {nome:'Carne de sol grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:195,proteina:30,carboidrato:0,gordura:7.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Carne bovina magra'},
+  {nome:'Charque cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:210,proteina:32,carboidrato:0,gordura:8,tags:['sem_gluten','sem_lactose'],substituicoes:'Carne seca'},
+  {nome:'Paçoca de carne',categoria:'Outro',porcao_padrao:'100g',calorias:320,proteina:25,carboidrato:15,gordura:18,tags:['sem_gluten','sem_lactose'],substituicoes:'Carne de sol desfiada'},
+  {nome:'Bobó de camarão',categoria:'Outro',porcao_padrao:'200g',calorias:310,proteina:15,carboidrato:25,gordura:17,tags:['sem_gluten','sem_lactose'],substituicoes:'Camarão cozido + mandioca'},
+  {nome:'Casquinha de siri',categoria:'Outro',porcao_padrao:'1 unidade (80g)',calorias:180,proteina:10,carboidrato:10,gordura:11,tags:[],substituicoes:'Siri cozido'},
+  {nome:'Peixada capixaba',categoria:'Outro',porcao_padrao:'200g',calorias:250,proteina:24,carboidrato:8,gordura:13,tags:['sem_gluten','sem_lactose'],substituicoes:'Peixe grelhado'},
+  {nome:'Maniçoba',categoria:'Outro',porcao_padrao:'200g',calorias:280,proteina:18,carboidrato:15,gordura:17,tags:['sem_gluten','sem_lactose'],substituicoes:'Carnes magras + folhas'},
+  {nome:'Tacacá',categoria:'Outro',porcao_padrao:'300ml',calorias:150,proteina:8,carboidrato:20,gordura:4,tags:['sem_gluten','sem_lactose'],substituicoes:'Caldo de legumes'},
+  {nome:'Cachorro quente completo',categoria:'Outro',porcao_padrao:'1 unidade (150g)',calorias:380,proteina:12,carboidrato:35,gordura:20,tags:[],substituicoes:'Sanduíche natural'},
+  {nome:'Misto quente',categoria:'Outro',porcao_padrao:'1 unidade (100g)',calorias:280,proteina:12,carboidrato:28,gordura:13,tags:['vegetariano'],substituicoes:'Sanduíche natural'},
+  {nome:'Sanduíche natural de frango',categoria:'Outro',porcao_padrao:'1 unidade (150g)',calorias:290,proteina:18,carboidrato:32,gordura:9,tags:[],substituicoes:'—'},
+  {nome:'Torta salgada (fatia)',categoria:'Outro',porcao_padrao:'100g',calorias:250,proteina:7,carboidrato:20,gordura:15,tags:['vegetariano'],substituicoes:'Quiche de legumes'},
+  {nome:'Quiche de legumes',categoria:'Outro',porcao_padrao:'100g',calorias:220,proteina:8,carboidrato:15,gordura:14,tags:['vegetariano'],substituicoes:'Torta salgada'},
+  {nome:'Risoto de frango',categoria:'Outro',porcao_padrao:'200g',calorias:320,proteina:18,carboidrato:38,gordura:10,tags:['sem_gluten'],substituicoes:'Arroz + frango grelhado'},
+  {nome:'Risoto de camarão',categoria:'Outro',porcao_padrao:'200g',calorias:330,proteina:16,carboidrato:35,gordura:13,tags:['sem_gluten'],substituicoes:'Arroz + camarão grelhado'},
+  {nome:'Yakisoba',categoria:'Outro',porcao_padrao:'250g',calorias:340,proteina:15,carboidrato:45,gordura:10,tags:[],substituicoes:'Legumes + frango grelhado'},
+  {nome:'Caldo verde',categoria:'Outro',porcao_padrao:'300ml',calorias:180,proteina:7,carboidrato:22,gordura:7,tags:['sem_gluten','sem_lactose'],substituicoes:'Sopa de legumes'},
+  {nome:'Canja de galinha',categoria:'Outro',porcao_padrao:'300ml',calorias:160,proteina:12,carboidrato:18,gordura:4,tags:['sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Sopa de legumes',categoria:'Outro',porcao_padrao:'300ml',calorias:120,proteina:4,carboidrato:20,gordura:2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Caldo verde'},
+  {nome:'Molho de tomate caseiro',categoria:'Outro',porcao_padrao:'100g',calorias:45,proteina:1.5,carboidrato:8,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tomate fresco'},
+  {nome:'Molho de tomate industrializado',categoria:'Outro',porcao_padrao:'100g',calorias:65,proteina:1.5,carboidrato:12,gordura:1.5,tags:['vegetariano','vegano'],substituicoes:'Molho caseiro'},
+  {nome:'Molho shoyu',categoria:'Outro',porcao_padrao:'1 colher sopa (15ml)',calorias:9,proteina:1,carboidrato:1.5,gordura:0,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'—'},
+  {nome:'Molho barbecue',categoria:'Outro',porcao_padrao:'1 colher sopa (15g)',calorias:30,proteina:0.3,carboidrato:7,gordura:0.1,tags:['vegetariano','vegano'],substituicoes:'—'},
+  {nome:'Molho inglês',categoria:'Outro',porcao_padrao:'1 colher sopa (15ml)',calorias:12,proteina:0.1,carboidrato:3,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Maionese tradicional',categoria:'Outro',porcao_padrao:'1 colher sopa (15g)',calorias:95,proteina:0.2,carboidrato:0.5,gordura:10.5,tags:['vegetariano'],substituicoes:'Maionese light'},
+  {nome:'Maionese light',categoria:'Outro',porcao_padrao:'1 colher sopa (15g)',calorias:45,proteina:0.3,carboidrato:1.5,gordura:4.3,tags:['vegetariano'],substituicoes:'Iogurte natural'},
+  {nome:'Ketchup',categoria:'Outro',porcao_padrao:'1 colher sopa (15g)',calorias:17,proteina:0.2,carboidrato:4,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Molho de tomate caseiro'},
+  {nome:'Mostarda',categoria:'Outro',porcao_padrao:'1 colher sopa (15g)',calorias:13,proteina:0.9,carboidrato:1.2,gordura:0.8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Vinagrete',categoria:'Outro',porcao_padrao:'2 colheres sopa (30g)',calorias:25,proteina:0.5,carboidrato:3,gordura:1.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Molho de pimenta',categoria:'Outro',porcao_padrao:'1 colher chá (5ml)',calorias:2,proteina:0.1,carboidrato:0.4,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
+  {nome:'Molho de soja light',categoria:'Outro',porcao_padrao:'1 colher sopa (15ml)',calorias:6,proteina:0.7,carboidrato:1,gordura:0,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Shoyu tradicional'},
+  {nome:'Guacamole',categoria:'Outro',porcao_padrao:'2 colheres sopa (40g)',calorias:65,proteina:0.8,carboidrato:4,gordura:5.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Abacate amassado'},
+  {nome:'Homus (grão de bico)',categoria:'Outro',porcao_padrao:'2 colheres sopa (40g)',calorias:75,proteina:3,carboidrato:7,gordura:4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pasta de grão de bico'},
+  {nome:'Patê de atum light',categoria:'Outro',porcao_padrao:'30g',calorias:55,proteina:7,carboidrato:1,gordura:2.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Atum em água'},
+  {nome:'Patê de frango',categoria:'Outro',porcao_padrao:'30g',calorias:70,proteina:6,carboidrato:1,gordura:4.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango desfiado'},
+  {nome:'Sucrilhos/Corn flakes',categoria:'Cereais',porcao_padrao:'30g',calorias:113,proteina:2,carboidrato:25,gordura:0.3,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Aveia em flocos'},
+  {nome:'Cereal matinal integral',categoria:'Cereais',porcao_padrao:'30g',calorias:108,proteina:2.5,carboidrato:23,gordura:1,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Aveia'},
+  {nome:'Mingau de aveia',categoria:'Cereais',porcao_padrao:'200ml',calorias:160,proteina:6,carboidrato:26,gordura:4,tags:['vegetariano','sem_lactose'],substituicoes:'Aveia em flocos'},
+  {nome:'Mingau de milho (canjiquinha)',categoria:'Cereais',porcao_padrao:'200ml',calorias:140,proteina:3,carboidrato:28,gordura:1.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mingau de aveia'},
+  {nome:'Papa de banana com aveia',categoria:'Cereais',porcao_padrao:'150g',calorias:180,proteina:4,carboidrato:35,gordura:3,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Vitamina de banana'},
+  {nome:'Vitamina de banana com leite',categoria:'Outro',porcao_padrao:'300ml',calorias:220,proteina:8,carboidrato:38,gordura:5,tags:['vegetariano'],substituicoes:'Banana pura'},
+  {nome:'Vitamina de abacate',categoria:'Outro',porcao_padrao:'300ml',calorias:280,proteina:4,carboidrato:30,gordura:16,tags:['vegetariano'],substituicoes:'Abacate puro'},
+  {nome:'Smoothie de frutas vermelhas',categoria:'Outro',porcao_padrao:'300ml',calorias:150,proteina:3,carboidrato:32,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Suco de frutas'},
+  {nome:'Fava cozida',categoria:'Proteinas',porcao_padrao:'100g',calorias:110,proteina:7.6,carboidrato:19.7,gordura:0.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Grão de bico'},
+  {nome:'Guandu cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:121,proteina:7,carboidrato:20.6,gordura:0.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Feijão carioca'},
+  {nome:'Amendoim cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:188,proteina:11,carboidrato:10,gordura:15,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amendoim torrado'},
+  {nome:'Missô (pasta de soja)',categoria:'Proteinas',porcao_padrao:'1 colher sopa (17g)',calorias:34,proteina:2,carboidrato:4,gordura:1,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Shoyu'},
+  {nome:'Natto',categoria:'Proteinas',porcao_padrao:'50g',calorias:100,proteina:9,carboidrato:6,gordura:5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tempeh'},
+  {nome:'Proteína vegana blend (ervilha+arroz)',categoria:'Suplementos',porcao_padrao:'1 scoop (30g)',calorias:112,proteina:22,carboidrato:3,gordura:1.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Whey tradicional'},
+  {nome:'Farinha de amêndoas',categoria:'Cereais',porcao_padrao:'30g',calorias:170,proteina:6,carboidrato:6,gordura:15,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Farinha de aveia'},
+  {nome:'Farinha de coco',categoria:'Cereais',porcao_padrao:'30g',calorias:140,proteina:5,carboidrato:18,gordura:5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Farinha de amêndoas'},
+  {nome:'Pão de fermentação natural (sourdough)',categoria:'Cereais',porcao_padrao:'2 fatias (60g)',calorias:150,proteina:5,carboidrato:29,gordura:1.5,tags:['vegetariano'],substituicoes:'Pão integral'},
+  {nome:'Massa de pizza integral',categoria:'Cereais',porcao_padrao:'100g',calorias:230,proteina:8,carboidrato:42,gordura:3,tags:['vegetariano'],substituicoes:'Massa de pizza tradicional'},
+  {nome:'Iogurte skyr',categoria:'Laticinios',porcao_padrao:'150g',calorias:95,proteina:16,carboidrato:6,gordura:0.3,tags:['vegetariano'],substituicoes:'Iogurte grego'},
+  {nome:'Kefir',categoria:'Laticinios',porcao_padrao:'200ml',calorias:100,proteina:6,carboidrato:8,gordura:4.5,tags:['vegetariano'],substituicoes:'Iogurte natural'},
+  {nome:'Queijo tofu (queijo vegano)',categoria:'Laticinios',porcao_padrao:'30g',calorias:60,proteina:4,carboidrato:1,gordura:4.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tofu'},
+  {nome:'Manteiga de amendoim sem açúcar',categoria:'Gorduras',porcao_padrao:'1 colher sopa (20g)',calorias:118,proteina:5,carboidrato:3.5,gordura:10,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pasta de amendoim integral'},
+  {nome:'Kiwi gold',categoria:'Frutas',porcao_padrao:'1 unidade (70g)',calorias:47,proteina:0.9,carboidrato:10,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Kiwi verde'},
 ];
 
 async function popularBancoAlimentosPadrao(){
@@ -5377,7 +5875,7 @@ async function carregarNutriPortalAba(c){
 
 // ── ROTINA ALIMENTAR ESTRUTURADA (refeições, alimentos, calorias, substituições) ──
 
-function gerarRotinaAlimentarBase(){
+async function gerarRotinaAlimentarBase(){
   const c = clienteAtual;
   if(!c){ notif('Selecione um cliente primeiro','#ef4444',true); return; }
   if(!c._questionario){
@@ -5387,7 +5885,6 @@ function gerarRotinaAlimentarBase(){
 
   let metas;
   try{
-    // calcNutri() usa os dados já carregados em MOTOR_D (peso, altura, idade, sexo, atividade, objetivo)
     metas = calcNutri();
   }catch(e){
     notif('Não foi possível calcular as metas calóricas. Confira se a aba Relatório já foi aberta uma vez para este cliente.','#ef4444',true);
@@ -5395,24 +5892,60 @@ function gerarRotinaAlimentarBase(){
     return;
   }
 
-  const distribuicao = [
-    {nome:'Café da Manhã', horario:'07:00', pct:0.25},
-    {nome:'Almoço', horario:'12:00', pct:0.30},
-    {nome:'Lanche da Tarde', horario:'16:00', pct:0.15},
-    {nome:'Jantar', horario:'19:30', pct:0.25},
-    {nome:'Ceia', horario:'21:30', pct:0.05},
+  if(!window._bancoAlimentos){ await carregarBancoAlimentos(); }
+  const banco = window._bancoAlimentos || [];
+
+  // Detecta restrições mencionadas na anamnese, pra já filtrar alimentos compatíveis
+  const restricaoTexto = ((MOTOR_D?.nutricao?.['nu-rest']||'') + ' ' + (MOTOR_D?.nutricao?.['nu-nao']||'')).toLowerCase();
+  const restricoes = [];
+  if(restricaoTexto.includes('vegan')) restricoes.push('vegano');
+  else if(restricaoTexto.includes('vegetarian')) restricoes.push('vegetariano');
+  if(restricaoTexto.includes('glúten')||restricaoTexto.includes('gluten')||restricaoTexto.includes('celíac')) restricoes.push('sem_gluten');
+  if(restricaoTexto.includes('lactose')||restricaoTexto.includes('leite')) restricoes.push('sem_lactose');
+
+  function poolCategoria(cat){
+    return banco.filter(a => a.categoria===cat && restricoes.every(r=>(a.tags||[]).includes(r)));
+  }
+  function sorteiaUm(cat){
+    const pool = poolCategoria(cat);
+    if(!pool.length) return null;
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+  function paraItem(alimento){
+    if(!alimento) return { item:'', quantidade:'', calorias:'', substituicao:'' };
+    return {
+      item: alimento.nome,
+      quantidade: alimento.porcao_padrao || '',
+      calorias: alimento.calorias || 0,
+      substituicao: alimento.substituicoes || ''
+    };
+  }
+
+  // Estrutura de cada refeição: quais categorias buscar no banco
+  const estrutura = [
+    {nome:'Café da Manhã', horario:'07:00', pct:0.25, categorias:['Cereais','Proteinas','Frutas']},
+    {nome:'Almoço', horario:'12:00', pct:0.30, categorias:['Cereais','Proteinas','Proteinas','Vegetais']},
+    {nome:'Lanche da Tarde', horario:'16:00', pct:0.15, categorias:['Frutas','Laticinios']},
+    {nome:'Jantar', horario:'19:30', pct:0.25, categorias:['Proteinas','Vegetais','Cereais']},
+    {nome:'Ceia', horario:'21:30', pct:0.05, categorias:['Laticinios']},
   ];
 
-  window._rotinaAlimentar = distribuicao.map(ref => ({
-    nome: ref.nome,
-    horario: ref.horario,
-    metaCalorias: Math.round(metas.meta * ref.pct),
-    alimentos: [
-      { item: '', quantidade: '', calorias: '', substituicao: '' }
-    ]
-  }));
+  window._rotinaAlimentar = estrutura.map(ref => {
+    const alimentosEscolhidos = ref.categorias
+      .map(cat => sorteiaUm(cat))
+      .filter(Boolean)
+      .map(paraItem);
+    if(!alimentosEscolhidos.length) alimentosEscolhidos.push({ item:'', quantidade:'', calorias:'', substituicao:'' });
+    return {
+      nome: ref.nome,
+      horario: ref.horario,
+      metaCalorias: Math.round(metas.meta * ref.pct),
+      alimentos: alimentosEscolhidos
+    };
+  });
 
-  notif(`✅ Rotina gerada com meta de ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura). Preencha os alimentos de cada refeição.`,'#10b981');
+  const avisoBanco = banco.length < 10 ? ' ⚠️ Seu Banco de Alimentos tem poucos itens ainda — considere clicar em "🌱 Popular com alimentos padrão" pra ter mais opções.' : '';
+  notif(`✅ Rotina gerada com alimentos do banco! Meta: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura).${avisoBanco} Revise e ajuste as quantidades.`,'#10b981');
   renderRotinaAlimentar();
 }
 
