@@ -3178,11 +3178,11 @@ async function salvarExercicioBanco(){
 
   notif('⏳ Salvando...','#3b82f6');
   try{
-    let error;
+    let error, data;
     if(id){
-      ({ error } = await SB.from('banco_exercicios').update({ nome, categoria, genero, midia }).eq('id', id));
+      ({ data, error } = await SB.from('banco_exercicios').update({ nome, categoria, genero, midia }).eq('id', id).select());
     } else {
-      ({ error } = await SB.from('banco_exercicios').insert({ nome, categoria, genero, midia, criado_em: new Date().toISOString() }));
+      ({ data, error } = await SB.from('banco_exercicios').insert({ nome, categoria, genero, midia, criado_em: new Date().toISOString() }).select());
     }
     if(error){
       console.error('salvarExercicioBanco — erro do Supabase:', error);
@@ -3195,7 +3195,21 @@ async function salvarExercicioBanco(){
       return;
     }
 
-    notif('✅ Exercício salvo no banco!','#10b981');
+    // Verificação de verdade: confirma que a linha voltou do banco e que a mídia não foi cortada/perdida
+    const linhaSalva = data?.[0];
+    console.log('[salvarExercicioBanco] linha confirmada pelo Supabase:', linhaSalva ? {id:linhaSalva.id, nome:linhaSalva.nome, temMidia:!!linhaSalva.midia, tamanhoMidiaSalvo: linhaSalva.midia?.length} : null);
+
+    if(!linhaSalva){
+      notif('⚠️ O Supabase não confirmou o salvamento (nenhuma linha retornada). Tente novamente — se persistir, o arquivo pode ser grande demais para o plano do seu Supabase.','#ef4444',true);
+      return;
+    }
+    if(midia && !linhaSalva.midia){
+      notif('⚠️ O exercício foi salvo, mas o vídeo/GIF NÃO foi — provavelmente é grande demais para o plano atual do Supabase. Tente um arquivo bem mais leve/curto.','#ef4444',true);
+      await carregarBancoExercicios();
+      return;
+    }
+
+    notif('✅ Exercício salvo e confirmado no banco!','#10b981');
     fecharModalBancoExercicio();
     await carregarBancoExercicios();
   }catch(e){
