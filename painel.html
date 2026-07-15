@@ -3051,7 +3051,15 @@ function renderGridBancoExercicios(lista){
   if(!grid) return;
 
   if(!lista.length){
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted);border:1px dashed var(--border);border-radius:12px">Nenhum exercício cadastrado ainda. Clique em "+ Novo Exercício" pra começar.</div>';
+    const bancoTotalmenteVazio = !(window._bancoExercicios && window._bancoExercicios.length);
+    if(bancoTotalmenteVazio){
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted);border:1px dashed var(--border);border-radius:12px">Nenhum exercício cadastrado ainda. Clique em "+ Novo Exercício" pra começar.</div>';
+    } else {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted);border:1px dashed var(--border);border-radius:12px">
+        Você tem ${window._bancoExercicios.length} exercício(s) cadastrado(s), mas nenhum bate com o filtro/busca atual.
+        <br><button onclick="limparFiltrosBancoExercicios()" style="margin-top:10px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;padding:7px 16px;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer">🧹 Limpar filtros</button>
+      </div>`;
+    }
     return;
   }
 
@@ -3074,6 +3082,16 @@ function renderGridBancoExercicios(lista){
       </div>
     </div>`;
   }).join('');
+}
+
+function limparFiltrosBancoExercicios(){
+  const busca = document.getElementById('banco-busca');
+  const filtroCategoria = document.getElementById('banco-filtro-categoria');
+  const filtroGenero = document.getElementById('banco-filtro-genero');
+  if(busca) busca.value = '';
+  if(filtroCategoria) filtroCategoria.value = '';
+  if(filtroGenero) filtroGenero.value = '';
+  filtrarBancoExercicios();
 }
 
 function filtrarBancoExercicios(){
@@ -3212,6 +3230,7 @@ async function salvarExercicioBanco(){
     notif('✅ Exercício salvo e confirmado no banco!','#10b981');
     fecharModalBancoExercicio();
     await carregarBancoExercicios();
+    limparFiltrosBancoExercicios();
   }catch(e){
     console.error('salvarExercicioBanco — erro inesperado:', e);
     notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
@@ -4121,8 +4140,15 @@ function cfg(){try{return JSON.parse(localStorage.getItem('wgf_cfg')||'{}');}cat
 // SB já declarado
 function initSB(){
   const c=cfg();
-  if(c.sbUrl&&c.sbKey&&window.supabase){
-    SB=window.supabase.createClient(c.sbUrl,c.sbKey);
+  // Usa a configuração salva manualmente se existir; senão, cai nas credenciais
+  // reais do projeto (as mesmas usadas no login) — evita o painel started
+  // "desconectado" só porque ninguém preencheu aquela configuração antiga.
+  const url = (c.sbUrl && c.sbKey) ? c.sbUrl : SB_URL;
+  const key = (c.sbUrl && c.sbKey) ? c.sbKey : SB_KEY;
+  if(url && key && window.supabase){
+    SB=window.supabase.createClient(url,key);
+  } else {
+    console.error('[initSB] Não foi possível conectar: url ou key ausentes, ou window.supabase não carregou.');
   }
 }
 
