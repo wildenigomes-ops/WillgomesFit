@@ -3167,8 +3167,14 @@ async function salvarExercicioBanco(){
   const genero = window._bancoExGeneroAtual || 'unissex';
   const midia = window._bancoExMidiaAtual || null;
 
+  console.log('[salvarExercicioBanco] nome:', nome, '| categoria:', categoria, '| genero:', genero, '| tem mídia:', !!midia, '| tamanho mídia (KB):', midia ? Math.round(midia.length/1024) : 0);
+
   if(!nome){ notif('Informe o nome do exercício','#ef4444',true); return; }
   if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
+  if(midia && midia.length > 25*1024*1024){
+    notif('O arquivo ficou grande demais depois de convertido. Tente um vídeo mais curto ou mais comprimido.','#ef4444',true);
+    return;
+  }
 
   notif('⏳ Salvando...','#3b82f6');
   try{
@@ -3178,7 +3184,16 @@ async function salvarExercicioBanco(){
     } else {
       ({ error } = await SB.from('banco_exercicios').insert({ nome, categoria, genero, midia, criado_em: new Date().toISOString() }));
     }
-    if(error){ notif('Erro ao salvar: '+error.message,'#ef4444',true); console.error('salvarExercicioBanco:', error); return; }
+    if(error){
+      console.error('salvarExercicioBanco — erro do Supabase:', error);
+      const msgAmigavel = /column .*genero.* does not exist/i.test(error.message)
+        ? 'O banco de dados ainda não tem o campo de gênero. Rode o arquivo sql_genero_banco_exercicios.sql no Supabase → SQL Editor e tente salvar de novo.'
+        : /payload|too large|413/i.test(error.message)
+        ? 'O arquivo de vídeo/GIF é grande demais para salvar assim. Tente um arquivo menor ou mais comprimido.'
+        : 'Erro ao salvar: '+error.message;
+      notif(msgAmigavel,'#ef4444',true);
+      return;
+    }
 
     notif('✅ Exercício salvo no banco!','#10b981');
     fecharModalBancoExercicio();
