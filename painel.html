@@ -257,7 +257,9 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
     <a class="nav-item" onclick="showPage('vencimentos',this)"><span class="nav-icon">⏰</span>Vencimentos</a>
     <a class="nav-item" onclick="showPage('degustacoes',this)"><span class="nav-icon">🎯</span>Degustações</a>
     <a class="nav-item" onclick="showPage('captacao',this)"><span class="nav-icon">📥</span>Captação<span class="tab-cnt" id="cnt-captacao-novos" style="display:none"></span></a>
+    <div class="sb-section">Conteúdo</div>
     <a class="nav-item" onclick="showPage('bancoex',this)"><span class="nav-icon">🎬</span>Banco de Exercícios</a>
+    <a class="nav-item" onclick="showPage('bancoalim',this)"><span class="nav-icon">🥗</span>Banco de Alimentos</a>
     <div class="sb-section">Ferramentas</div>
     <a class="nav-item" href="motor.html" target="_blank"><span class="nav-icon">⚙️</span>Motor de Fichas</a>
     <a class="nav-item" href="willgomesfit.html" target="_blank"><span class="nav-icon">🌐</span>Página de Vendas</a>
@@ -508,7 +510,15 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
           <option value="Glúteo">Glúteo</option>
           <option value="Abdômen">Abdômen</option>
           <option value="Cardio">Cardio</option>
+          <option value="Mobilidade">Mobilidade</option>
+          <option value="Fortalecimento">Fortalecimento</option>
           <option value="Outro">Outro</option>
+        </select>
+        <select id="banco-filtro-genero" onchange="filtrarBancoExercicios()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
+          <option value="">Todos os gêneros</option>
+          <option value="masculino">🚹 Masculino</option>
+          <option value="feminino">🚺 Feminino</option>
+          <option value="unissex">⚪ Unissex</option>
         </select>
       </div>
 
@@ -517,6 +527,126 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
       </div>
     </div>
 
+    <!-- PÁGINA BANCO DE ALIMENTOS -->
+    <div class="page" id="page-bancoalim">
+      <div class="topbar">
+        <div class="page-title">BANCO DE<span> ALIMENTOS</span></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="popularBancoAlimentosPadrao()" style="font-size:.8rem;padding:8px 16px;background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.3)">🌱 Popular com alimentos padrão</button>
+          <button class="btn btn-orange" onclick="abrirNovoAlimentoBanco()" style="font-size:.8rem;padding:8px 16px">+ Novo Alimento</button>
+        </div>
+      </div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px">Cadastre alimentos com valores nutricionais reais (baseados na Tabela TACO/UNICAMP) e marque as restrições que cada um respeita. Ao montar a rotina alimentar de um aluno, o sistema já filtra pelas restrições da anamnese dele.</p>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <input type="text" id="alim-busca" placeholder="🔎 Buscar alimento..." oninput="filtrarBancoAlimentos()" style="flex:1;min-width:200px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)"/>
+        <select id="alim-filtro-categoria" onchange="filtrarBancoAlimentos()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
+          <option value="">Todas as categorias</option>
+          <option value="Cereais">Cereais/Carboidratos</option>
+          <option value="Proteinas">Proteínas</option>
+          <option value="Laticinios">Laticínios</option>
+          <option value="Gorduras">Gorduras</option>
+          <option value="Frutas">Frutas</option>
+          <option value="Vegetais">Vegetais</option>
+          <option value="Suplementos">Suplementos</option>
+          <option value="Outro">Outro</option>
+        </select>
+        <select id="alim-filtro-tag" onchange="filtrarBancoAlimentos()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
+          <option value="">Todas as restrições</option>
+          <option value="vegetariano">🥬 Vegetariano</option>
+          <option value="vegano">🌱 Vegano</option>
+          <option value="sem_gluten">🌾 Sem Glúten</option>
+          <option value="sem_lactose">🥛 Sem Lactose</option>
+          <option value="baixo_sodio">🧂 Baixo Sódio</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Alimento</th>
+                <th>Porção</th>
+                <th>Kcal</th>
+                <th>Prot.</th>
+                <th>Carb.</th>
+                <th>Gord.</th>
+                <th>Restrições</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-banco-alimentos">
+              <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">⏳ Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL NOVO/EDITAR ALIMENTO -->
+<div class="modal-overlay" id="modal-banco-alimento">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header">
+        <div style="flex:1">
+          <div class="modal-title" id="alim-modal-titulo">Novo Alimento</div>
+        </div>
+        <button class="modal-close" onclick="fecharModalBancoAlimento()">✕</button>
+      </div>
+      <div style="padding:20px;max-height:75vh;overflow-y:auto">
+        <input type="hidden" id="alim-id"/>
+        <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Nome do alimento</label>
+        <input type="text" id="alim-nome" placeholder="Ex: Peito de frango grelhado" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem;font-family:var(--font-b);margin:6px 0 14px"/>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div>
+            <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Categoria</label>
+            <select id="alim-categoria" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:#fff;font-size:.85rem;font-family:var(--font-b);margin-top:6px">
+              <option value="Cereais">Cereais/Carboidratos</option>
+              <option value="Proteinas">Proteínas</option>
+              <option value="Laticinios">Laticínios</option>
+              <option value="Gorduras">Gorduras</option>
+              <option value="Frutas">Frutas</option>
+              <option value="Vegetais">Vegetais</option>
+              <option value="Suplementos">Suplementos</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Porção padrão</label>
+            <input type="text" id="alim-porcao" placeholder="Ex: 100g" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:#fff;font-size:.85rem;font-family:var(--font-b);margin-top:6px"/>
+          </div>
+        </div>
+
+        <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Valores na porção padrão</label>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 14px">
+          <div><span style="font-size:.62rem;color:#666">KCAL</span><input type="number" id="alim-calorias" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:7px;color:#fbbf24;font-size:.82rem;text-align:center"/></div>
+          <div><span style="font-size:.62rem;color:#666">PROT (g)</span><input type="number" id="alim-proteina" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:7px;color:#10b981;font-size:.82rem;text-align:center"/></div>
+          <div><span style="font-size:.62rem;color:#666">CARB (g)</span><input type="number" id="alim-carboidrato" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:7px;color:#f59e0b;font-size:.82rem;text-align:center"/></div>
+          <div><span style="font-size:.62rem;color:#666">GORD (g)</span><input type="number" id="alim-gordura" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:7px;color:#8b5cf6;font-size:.82rem;text-align:center"/></div>
+        </div>
+
+        <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Restrições que este alimento respeita</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px" id="alim-tags-opts">
+          <label style="cursor:pointer;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:.75rem;color:#ccc"><input type="checkbox" value="vegetariano" style="margin-right:4px">🥬 Vegetariano</label>
+          <label style="cursor:pointer;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:.75rem;color:#ccc"><input type="checkbox" value="vegano" style="margin-right:4px">🌱 Vegano</label>
+          <label style="cursor:pointer;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:.75rem;color:#ccc"><input type="checkbox" value="sem_gluten" style="margin-right:4px">🌾 Sem Glúten</label>
+          <label style="cursor:pointer;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:.75rem;color:#ccc"><input type="checkbox" value="sem_lactose" style="margin-right:4px">🥛 Sem Lactose</label>
+          <label style="cursor:pointer;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:.75rem;color:#ccc"><input type="checkbox" value="baixo_sodio" style="margin-right:4px">🧂 Baixo Sódio</label>
+        </div>
+
+        <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Substituições sugeridas</label>
+        <input type="text" id="alim-substituicoes" placeholder="Ex: Batata doce (120g) ou Mandioca (100g)" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#a78bfa;font-size:.85rem;font-family:var(--font-b);margin:6px 0 14px"/>
+
+        <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Observações (opcional)</label>
+        <input type="text" id="alim-observacoes" placeholder="Ex: evitar à noite, priorizar pós-treino..." style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#ccc;font-size:.85rem;font-family:var(--font-b);margin:6px 0 16px"/>
+
+        <button onclick="salvarAlimentoBanco()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:12px;border-radius:8px;font-weight:800;font-size:.88rem;cursor:pointer">💾 Salvar no Banco</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -545,8 +675,17 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
         <option value="Glúteo">Glúteo</option>
         <option value="Abdômen">Abdômen</option>
         <option value="Cardio">Cardio</option>
+        <option value="Mobilidade">Mobilidade</option>
+        <option value="Fortalecimento">Fortalecimento</option>
         <option value="Outro">Outro</option>
       </select>
+
+      <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Demonstração (gênero)</label>
+      <div style="display:flex;gap:8px;margin:6px 0 16px" id="banco-ex-genero-opts">
+        <label class="banco-genero-opt" data-val="masculino" onclick="selecionarGeneroBanco('masculino')" style="flex:1;text-align:center;padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);cursor:pointer;font-size:.78rem;font-weight:700;color:#ccc">🚹 Masculino</label>
+        <label class="banco-genero-opt" data-val="feminino" onclick="selecionarGeneroBanco('feminino')" style="flex:1;text-align:center;padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);cursor:pointer;font-size:.78rem;font-weight:700;color:#ccc">🚺 Feminino</label>
+        <label class="banco-genero-opt" data-val="unissex" onclick="selecionarGeneroBanco('unissex')" style="flex:1;text-align:center;padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);cursor:pointer;font-size:.78rem;font-weight:700;color:#ccc">⚪ Unissex</label>
+      </div>
 
       <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Vídeo (MP4) ou GIF</label>
       <div style="margin:6px 0 8px">
@@ -1791,6 +1930,7 @@ function showPage(id,el){
   if(id==='degustacoes'){ renderizarEditorDegustacao(); carregarStatusManutencaoDegustacao(); }
   if(id==='captacao'){ carregarCaptacao(); }
   if(id==='bancoex'){ carregarBancoExercicios(); }
+  if(id==='bancoalim'){ carregarBancoAlimentos(); }
 }
 function switchTab(id,el){
   document.querySelectorAll('#page-clientes .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -2867,11 +3007,14 @@ function renderGridBancoExercicios(lista){
     return;
   }
 
+  const generoBadge = { masculino:'🚹', feminino:'🚺', unissex:'⚪' };
+
   grid.innerHTML = lista.map(ex=>{
     const midia = ex.midia
       ? midiaTag(ex.midia, 'width:100%;height:130px;object-fit:cover;border-radius:10px 10px 0 0', '')
       : `<div style="width:100%;height:130px;background:rgba(255,255,255,.04);border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;color:#555;font-size:1.8rem">🎬</div>`;
-    return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+    return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative">
+      <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);border-radius:20px;padding:3px 8px;font-size:.68rem;backdrop-filter:blur(4px)">${generoBadge[ex.genero]||'⚪'}</div>
       ${midia}
       <div style="padding:10px 12px">
         <div style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:2px">${escHtml(ex.nome)}</div>
@@ -2888,12 +3031,24 @@ function renderGridBancoExercicios(lista){
 function filtrarBancoExercicios(){
   const termo = (document.getElementById('banco-busca')?.value||'').toLowerCase().trim();
   const categoria = document.getElementById('banco-filtro-categoria')?.value||'';
+  const genero = document.getElementById('banco-filtro-genero')?.value||'';
   const lista = (window._bancoExercicios||[]).filter(ex=>{
     const bateNome = !termo || (ex.nome||'').toLowerCase().includes(termo);
     const bateCategoria = !categoria || ex.categoria===categoria;
-    return bateNome && bateCategoria;
+    const bateGenero = !genero || ex.genero===genero;
+    return bateNome && bateCategoria && bateGenero;
   });
   renderGridBancoExercicios(lista);
+}
+
+function selecionarGeneroBanco(valor){
+  window._bancoExGeneroAtual = valor;
+  document.querySelectorAll('#banco-ex-genero-opts .banco-genero-opt').forEach(el=>{
+    const ativo = el.dataset.val === valor;
+    el.style.background = ativo ? 'rgba(240,89,10,.15)' : 'rgba(255,255,255,.04)';
+    el.style.borderColor = ativo ? 'var(--orange)' : 'var(--border)';
+    el.style.color = ativo ? '#fff' : '#ccc';
+  });
 }
 
 function abrirNovoExercicioBanco(){
@@ -2901,6 +3056,7 @@ function abrirNovoExercicioBanco(){
   document.getElementById('banco-ex-id').value = '';
   document.getElementById('banco-ex-nome').value = '';
   document.getElementById('banco-ex-categoria').value = 'Peito';
+  selecionarGeneroBanco('unissex');
   removerMidiaBancoExercicio();
   document.getElementById('modal-banco-exercicio').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -2913,6 +3069,7 @@ function editarExercicioBanco(id){
   document.getElementById('banco-ex-id').value = ex.id;
   document.getElementById('banco-ex-nome').value = ex.nome||'';
   document.getElementById('banco-ex-categoria').value = ex.categoria||'Peito';
+  selecionarGeneroBanco(ex.genero||'unissex');
   window._bancoExMidiaAtual = ex.midia || null;
   atualizarPreviewMidiaBanco();
   document.getElementById('modal-banco-exercicio').classList.add('open');
@@ -2959,6 +3116,7 @@ async function salvarExercicioBanco(){
   const id = document.getElementById('banco-ex-id').value;
   const nome = document.getElementById('banco-ex-nome').value.trim();
   const categoria = document.getElementById('banco-ex-categoria').value;
+  const genero = window._bancoExGeneroAtual || 'unissex';
   const midia = window._bancoExMidiaAtual || null;
 
   if(!nome){ notif('Informe o nome do exercício','#ef4444',true); return; }
@@ -2968,9 +3126,9 @@ async function salvarExercicioBanco(){
   try{
     let error;
     if(id){
-      ({ error } = await SB.from('banco_exercicios').update({ nome, categoria, midia }).eq('id', id));
+      ({ error } = await SB.from('banco_exercicios').update({ nome, categoria, genero, midia }).eq('id', id));
     } else {
-      ({ error } = await SB.from('banco_exercicios').insert({ nome, categoria, midia, criado_em: new Date().toISOString() }));
+      ({ error } = await SB.from('banco_exercicios').insert({ nome, categoria, genero, midia, criado_em: new Date().toISOString() }));
     }
     if(error){ notif('Erro ao salvar: '+error.message,'#ef4444',true); console.error('salvarExercicioBanco:', error); return; }
 
@@ -2996,10 +3154,247 @@ async function excluirExercicioBanco(id){
   }catch(e){ console.error('excluirExercicioBanco:', e); }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// BANCO DE ALIMENTOS — dados nutricionais reutilizáveis (Guia Nutricional)
+// ══════════════════════════════════════════════════════════════════════════
+
+const TAG_LABELS = { vegetariano:'🥬 Vegetariano', vegano:'🌱 Vegano', sem_gluten:'🌾 Sem Glúten', sem_lactose:'🥛 Sem Lactose', baixo_sodio:'🧂 Baixo Sódio' };
+
+async function carregarBancoAlimentos(){
+  const tbody = document.getElementById('tbody-banco-alimentos');
+  if(!SB){ if(tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">Supabase não conectado.</td></tr>'; return; }
+  try{
+    const { data, error } = await SB.from('banco_alimentos').select('*').order('nome',{ascending:true});
+    if(error){
+      if(tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">Ainda não disponível — rode o sql_banco_alimentos.sql no Supabase.</td></tr>';
+      console.error('carregarBancoAlimentos:', error);
+      return;
+    }
+    window._bancoAlimentos = data || [];
+    renderTabelaBancoAlimentos(window._bancoAlimentos);
+  }catch(e){
+    console.error('carregarBancoAlimentos — erro inesperado:', e);
+    if(tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">Erro ao carregar.</td></tr>';
+  }
+}
+
+function renderTabelaBancoAlimentos(lista){
+  const tbody = document.getElementById('tbody-banco-alimentos');
+  if(!tbody) return;
+  if(!lista.length){
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">Nenhum alimento cadastrado. Clique em "🌱 Popular com alimentos padrão" pra começar rápido, ou "+ Novo Alimento" pra cadastrar um específico.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = lista.map(a=>{
+    const tagsHtml = (a.tags||[]).map(t=>`<span style="background:rgba(255,255,255,.06);border-radius:10px;padding:2px 7px;font-size:.62rem;color:#aaa;white-space:nowrap">${(TAG_LABELS[t]||t)}</span>`).join(' ');
+    return `<tr>
+      <td style="padding:9px 12px;font-weight:600">${escHtml(a.nome)}</td>
+      <td style="padding:9px 12px;font-size:.78rem;color:#999">${escHtml(a.porcao_padrao)||'—'}</td>
+      <td style="padding:9px 12px;font-size:.78rem;color:#fbbf24">${a.calorias??'—'}</td>
+      <td style="padding:9px 12px;font-size:.78rem;color:#10b981">${a.proteina??'—'}g</td>
+      <td style="padding:9px 12px;font-size:.78rem;color:#f59e0b">${a.carboidrato??'—'}g</td>
+      <td style="padding:9px 12px;font-size:.78rem;color:#8b5cf6">${a.gordura??'—'}g</td>
+      <td style="padding:9px 12px"><div style="display:flex;gap:4px;flex-wrap:wrap;max-width:220px">${tagsHtml||'—'}</div></td>
+      <td style="padding:9px 12px">
+        <div style="display:flex;gap:5px">
+          <button onclick="editarAlimentoBanco('${a.id}')" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#60a5fa;padding:5px 9px;border-radius:6px;font-size:.7rem;cursor:pointer">✏️</button>
+          <button onclick="excluirAlimentoBanco('${a.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:5px 9px;border-radius:6px;font-size:.7rem;cursor:pointer">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filtrarBancoAlimentos(){
+  const termo = (document.getElementById('alim-busca')?.value||'').toLowerCase().trim();
+  const categoria = document.getElementById('alim-filtro-categoria')?.value||'';
+  const tag = document.getElementById('alim-filtro-tag')?.value||'';
+  const lista = (window._bancoAlimentos||[]).filter(a=>{
+    const bateNome = !termo || (a.nome||'').toLowerCase().includes(termo);
+    const bateCategoria = !categoria || a.categoria===categoria;
+    const bateTag = !tag || (a.tags||[]).includes(tag);
+    return bateNome && bateCategoria && bateTag;
+  });
+  renderTabelaBancoAlimentos(lista);
+}
+
+function abrirNovoAlimentoBanco(){
+  document.getElementById('alim-modal-titulo').textContent = 'Novo Alimento';
+  document.getElementById('alim-id').value = '';
+  document.getElementById('alim-nome').value = '';
+  document.getElementById('alim-categoria').value = 'Cereais';
+  document.getElementById('alim-porcao').value = '100g';
+  document.getElementById('alim-calorias').value = '';
+  document.getElementById('alim-proteina').value = '';
+  document.getElementById('alim-carboidrato').value = '';
+  document.getElementById('alim-gordura').value = '';
+  document.getElementById('alim-substituicoes').value = '';
+  document.getElementById('alim-observacoes').value = '';
+  document.querySelectorAll('#alim-tags-opts input[type=checkbox]').forEach(cb=>cb.checked=false);
+  document.getElementById('modal-banco-alimento').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function editarAlimentoBanco(id){
+  const a = (window._bancoAlimentos||[]).find(x=>x.id===id);
+  if(!a) return;
+  document.getElementById('alim-modal-titulo').textContent = 'Editar Alimento';
+  document.getElementById('alim-id').value = a.id;
+  document.getElementById('alim-nome').value = a.nome||'';
+  document.getElementById('alim-categoria').value = a.categoria||'Cereais';
+  document.getElementById('alim-porcao').value = a.porcao_padrao||'';
+  document.getElementById('alim-calorias').value = a.calorias??'';
+  document.getElementById('alim-proteina').value = a.proteina??'';
+  document.getElementById('alim-carboidrato').value = a.carboidrato??'';
+  document.getElementById('alim-gordura').value = a.gordura??'';
+  document.getElementById('alim-substituicoes').value = a.substituicoes||'';
+  document.getElementById('alim-observacoes').value = a.observacoes||'';
+  const tags = a.tags||[];
+  document.querySelectorAll('#alim-tags-opts input[type=checkbox]').forEach(cb=>{ cb.checked = tags.includes(cb.value); });
+  document.getElementById('modal-banco-alimento').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function fecharModalBancoAlimento(){
+  document.getElementById('modal-banco-alimento').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function salvarAlimentoBanco(){
+  const id = document.getElementById('alim-id').value;
+  const nome = document.getElementById('alim-nome').value.trim();
+  const categoria = document.getElementById('alim-categoria').value;
+  const porcao_padrao = document.getElementById('alim-porcao').value.trim();
+  const calorias = parseFloat(document.getElementById('alim-calorias').value)||0;
+  const proteina = parseFloat(document.getElementById('alim-proteina').value)||0;
+  const carboidrato = parseFloat(document.getElementById('alim-carboidrato').value)||0;
+  const gordura = parseFloat(document.getElementById('alim-gordura').value)||0;
+  const substituicoes = document.getElementById('alim-substituicoes').value.trim();
+  const observacoes = document.getElementById('alim-observacoes').value.trim();
+  const tags = [...document.querySelectorAll('#alim-tags-opts input[type=checkbox]:checked')].map(cb=>cb.value);
+
+  if(!nome){ notif('Informe o nome do alimento','#ef4444',true); return; }
+  if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
+
+  notif('⏳ Salvando...','#3b82f6');
+  try{
+    const payload = { nome, categoria, porcao_padrao, calorias, proteina, carboidrato, gordura, tags, substituicoes, observacoes };
+    let error;
+    if(id){
+      ({ error } = await SB.from('banco_alimentos').update(payload).eq('id', id));
+    } else {
+      ({ error } = await SB.from('banco_alimentos').insert({ ...payload, criado_em: new Date().toISOString() }));
+    }
+    if(error){ notif('Erro ao salvar: '+error.message,'#ef4444',true); console.error('salvarAlimentoBanco:', error); return; }
+    notif('✅ Alimento salvo no banco!','#10b981');
+    fecharModalBancoAlimento();
+    await carregarBancoAlimentos();
+  }catch(e){
+    console.error('salvarAlimentoBanco — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+  }
+}
+
+async function excluirAlimentoBanco(id){
+  const a = (window._bancoAlimentos||[]).find(x=>x.id===id);
+  if(!a) return;
+  if(!confirm(`Excluir "${a.nome}" do banco de alimentos?`)) return;
+  if(!SB) return;
+  try{
+    const { error } = await SB.from('banco_alimentos').delete().eq('id', id);
+    if(error){ notif('Erro ao excluir: '+error.message,'#ef4444',true); return; }
+    notif('Alimento removido do banco.','#f59e0b');
+    await carregarBancoAlimentos();
+  }catch(e){ console.error('excluirAlimentoBanco:', e); }
+}
+
+// Lista curada com base na Tabela TACO (UNICAMP) — valores aproximados por porção padrão
+const ALIMENTOS_PADRAO = [
+  {nome:'Arroz branco cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:128,proteina:2.5,carboidrato:28,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz integral, quinoa ou macarrão'},
+  {nome:'Arroz integral cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:124,proteina:2.6,carboidrato:25.8,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz branco ou quinoa'},
+  {nome:'Batata doce cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:77,proteina:0.6,carboidrato:18.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mandioca, batata inglesa ou inhame'},
+  {nome:'Batata inglesa cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:52,proteina:1.2,carboidrato:11.9,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce ou mandioca'},
+  {nome:'Aveia em flocos',categoria:'Cereais',porcao_padrao:'30g',calorias:117,proteina:4.2,carboidrato:20,gordura:2.1,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Granola sem açúcar ou quinoa em flocos'},
+  {nome:'Pão integral',categoria:'Cereais',porcao_padrao:'2 fatias (50g)',calorias:130,proteina:5,carboidrato:24,gordura:2,tags:['vegetariano','sem_lactose'],substituicoes:'Tapioca ou pão francês'},
+  {nome:'Pão francês',categoria:'Cereais',porcao_padrao:'1 unidade (50g)',calorias:150,proteina:4,carboidrato:28,gordura:1.5,tags:['vegetariano'],substituicoes:'Pão integral ou tapioca'},
+  {nome:'Tapioca (goma)',categoria:'Cereais',porcao_padrao:'30g',calorias:105,proteina:0.1,carboidrato:26,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pão integral ou cuscuz'},
+  {nome:'Macarrão cozido',categoria:'Cereais',porcao_padrao:'100g',calorias:158,proteina:5.8,carboidrato:30.9,gordura:0.9,tags:['vegetariano'],substituicoes:'Arroz ou quinoa'},
+  {nome:'Quinoa cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:120,proteina:4.4,carboidrato:21.3,gordura:1.9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Arroz integral'},
+  {nome:'Mandioca cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:125,proteina:0.6,carboidrato:30,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce ou inhame'},
+  {nome:'Peito de frango grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:159,proteina:32,carboidrato:0,gordura:2.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia, carne magra ou tofu'},
+  {nome:'Coxa de frango assada',categoria:'Proteinas',porcao_padrao:'100g',calorias:195,proteina:26,carboidrato:0,gordura:9.7,tags:['sem_gluten','sem_lactose'],substituicoes:'Peito de frango'},
+  {nome:'Carne bovina magra (patinho)',categoria:'Proteinas',porcao_padrao:'100g',calorias:163,proteina:27,carboidrato:0,gordura:5.5,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango ou peixe'},
+  {nome:'Ovo cozido',categoria:'Proteinas',porcao_padrao:'1 unidade (50g)',calorias:78,proteina:6.3,carboidrato:0.6,gordura:5.3,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Clara de ovo ou tofu'},
+  {nome:'Clara de ovo',categoria:'Proteinas',porcao_padrao:'100g',calorias:52,proteina:11,carboidrato:0.7,gordura:0.2,tags:['vegetariano','sem_gluten','sem_lactose'],substituicoes:'Whey protein'},
+  {nome:'Tilápia grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:128,proteina:26,carboidrato:0,gordura:2.7,tags:['sem_gluten','sem_lactose'],substituicoes:'Frango ou atum'},
+  {nome:'Salmão grelhado',categoria:'Proteinas',porcao_padrao:'100g',calorias:208,proteina:20,carboidrato:0,gordura:13,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia ou atum'},
+  {nome:'Atum em água',categoria:'Proteinas',porcao_padrao:'100g',calorias:116,proteina:26,carboidrato:0,gordura:0.8,tags:['sem_gluten','sem_lactose'],substituicoes:'Tilápia ou frango'},
+  {nome:'Whey protein',categoria:'Suplementos',porcao_padrao:'1 scoop (30g)',calorias:120,proteina:24,carboidrato:3,gordura:1.5,tags:['sem_gluten'],substituicoes:'Albumina ou clara de ovo (conferir lactose no rótulo)'},
+  {nome:'Feijão carioca cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:76,proteina:4.8,carboidrato:13.6,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Lentilha ou grão de bico'},
+  {nome:'Lentilha cozida',categoria:'Proteinas',porcao_padrao:'100g',calorias:93,proteina:6.3,carboidrato:16.3,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Feijão ou grão de bico'},
+  {nome:'Grão de bico cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:121,proteina:7,carboidrato:20,gordura:1.9,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Lentilha ou feijão'},
+  {nome:'Tofu',categoria:'Proteinas',porcao_padrao:'100g',calorias:76,proteina:8,carboidrato:1.9,gordura:4.8,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Proteína de soja texturizada'},
+  {nome:'Proteína de soja texturizada',categoria:'Proteinas',porcao_padrao:'100g (hidratada)',calorias:89,proteina:13,carboidrato:6,gordura:1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tofu ou grão de bico'},
+  {nome:'Leite integral',categoria:'Laticinios',porcao_padrao:'200ml',calorias:122,proteina:6.4,carboidrato:9.4,gordura:6.6,tags:['vegetariano'],substituicoes:'Leite desnatado ou leite vegetal'},
+  {nome:'Leite desnatado',categoria:'Laticinios',porcao_padrao:'200ml',calorias:70,proteina:6.8,carboidrato:9.8,gordura:0.4,tags:['vegetariano'],substituicoes:'Leite vegetal'},
+  {nome:'Iogurte natural integral',categoria:'Laticinios',porcao_padrao:'170g',calorias:105,proteina:6.1,carboidrato:7.8,gordura:5.4,tags:['vegetariano'],substituicoes:'Iogurte grego ou iogurte vegetal'},
+  {nome:'Iogurte grego natural',categoria:'Laticinios',porcao_padrao:'100g',calorias:97,proteina:9,carboidrato:3.6,gordura:5,tags:['vegetariano'],substituicoes:'Iogurte natural integral'},
+  {nome:'Queijo minas frescal',categoria:'Laticinios',porcao_padrao:'30g',calorias:71,proteina:5.1,carboidrato:1,gordura:5.2,tags:['vegetariano'],substituicoes:'Cottage ou ricota'},
+  {nome:'Queijo cottage',categoria:'Laticinios',porcao_padrao:'100g',calorias:98,proteina:11,carboidrato:3.4,gordura:4.3,tags:['vegetariano'],substituicoes:'Queijo minas frescal'},
+  {nome:'Leite vegetal (aveia/amêndoa)',categoria:'Laticinios',porcao_padrao:'200ml',calorias:60,proteina:1,carboidrato:8,gordura:2.5,tags:['vegetariano','vegano','sem_lactose'],substituicoes:'Leite desnatado'},
+  {nome:'Abacate',categoria:'Gorduras',porcao_padrao:'100g',calorias:96,proteina:1.2,carboidrato:6,gordura:8.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Castanhas ou azeite'},
+  {nome:'Azeite de oliva',categoria:'Gorduras',porcao_padrao:'1 colher sopa (13g)',calorias:115,proteina:0,carboidrato:0,gordura:13,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Óleo de coco'},
+  {nome:'Castanha do Pará',categoria:'Gorduras',porcao_padrao:'2 unidades (8g)',calorias:55,proteina:1.2,carboidrato:1,gordura:5.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amêndoas ou castanha de caju'},
+  {nome:'Amendoim',categoria:'Gorduras',porcao_padrao:'30g',calorias:170,proteina:7.7,carboidrato:5.9,gordura:14.4,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Castanhas variadas'},
+  {nome:'Pasta de amendoim integral',categoria:'Gorduras',porcao_padrao:'1 colher sopa (20g)',calorias:120,proteina:5,carboidrato:4,gordura:10,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amendoim in natura'},
+  {nome:'Chia',categoria:'Gorduras',porcao_padrao:'1 colher sopa (12g)',calorias:58,proteina:2,carboidrato:5,gordura:3.6,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Linhaça'},
+  {nome:'Linhaça',categoria:'Gorduras',porcao_padrao:'1 colher sopa (10g)',calorias:53,proteina:1.8,carboidrato:2.9,gordura:4.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Chia'},
+  {nome:'Banana',categoria:'Frutas',porcao_padrao:'1 unidade (100g)',calorias:89,proteina:1.1,carboidrato:22.8,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maçã ou mamão'},
+  {nome:'Maçã',categoria:'Frutas',porcao_padrao:'1 unidade (130g)',calorias:68,proteina:0.3,carboidrato:18,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pera ou banana'},
+  {nome:'Morango',categoria:'Frutas',porcao_padrao:'100g',calorias:32,proteina:0.7,carboidrato:7.7,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mamão ou abacaxi'},
+  {nome:'Mamão',categoria:'Frutas',porcao_padrao:'100g',calorias:40,proteina:0.5,carboidrato:10.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Melão ou abacaxi'},
+  {nome:'Abacaxi',categoria:'Frutas',porcao_padrao:'100g',calorias:50,proteina:0.5,carboidrato:13,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mamão ou morango'},
+  {nome:'Laranja',categoria:'Frutas',porcao_padrao:'1 unidade (130g)',calorias:61,proteina:1.3,carboidrato:15.4,gordura:0.1,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Mexerica ou limão'},
+  {nome:'Uva',categoria:'Frutas',porcao_padrao:'100g',calorias:69,proteina:0.7,carboidrato:18.1,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Maçã ou morango'},
+  {nome:'Brócolis cozido',categoria:'Vegetais',porcao_padrao:'100g',calorias:25,proteina:3,carboidrato:4,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Couve-flor ou espinafre'},
+  {nome:'Espinafre cozido',categoria:'Vegetais',porcao_padrao:'100g',calorias:23,proteina:3,carboidrato:3.6,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Couve ou rúcula'},
+  {nome:'Alface',categoria:'Vegetais',porcao_padrao:'100g',calorias:15,proteina:1.4,carboidrato:2.4,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Rúcula ou agrião'},
+  {nome:'Tomate',categoria:'Vegetais',porcao_padrao:'100g',calorias:15,proteina:1.1,carboidrato:3.1,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Pepino'},
+  {nome:'Cenoura',categoria:'Vegetais',porcao_padrao:'100g',calorias:34,proteina:1.3,carboidrato:7.7,gordura:0.2,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Beterraba'},
+  {nome:'Creatina',categoria:'Suplementos',porcao_padrao:'1 dose (3-5g)',calorias:0,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—',observacoes:'Tomar todos os dias, horário não importa'},
+  {nome:'BCAA',categoria:'Suplementos',porcao_padrao:'1 dose (5g)',calorias:20,proteina:5,carboidrato:0,gordura:0,tags:['sem_gluten'],substituicoes:'—'},
+  {nome:'Albumina',categoria:'Suplementos',porcao_padrao:'1 colher sopa (15g)',calorias:55,proteina:12,carboidrato:1,gordura:0,tags:['sem_gluten','sem_lactose'],substituicoes:'Whey protein ou clara de ovo'},
+  {nome:'Maltodextrina',categoria:'Suplementos',porcao_padrao:'1 dose (30g)',calorias:114,proteina:0,carboidrato:28,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Banana ou mel',observacoes:'Ideal no pré ou intra-treino'},
+];
+
+async function popularBancoAlimentosPadrao(){
+  if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
+  if(!confirm(`Isso vai adicionar ${ALIMENTOS_PADRAO.length} alimentos comuns (com base na Tabela TACO/UNICAMP) ao seu banco. Alimentos que você já tiver cadastrado não serão duplicados. Continuar?`)) return;
+
+  notif('⏳ Populando banco de alimentos...','#3b82f6');
+  try{
+    const existentes = new Set((window._bancoAlimentos||[]).map(a=>(a.nome||'').toLowerCase().trim()));
+    const novos = ALIMENTOS_PADRAO.filter(a => !existentes.has(a.nome.toLowerCase().trim()))
+      .map(a => ({ ...a, criado_em: new Date().toISOString() }));
+
+    if(!novos.length){ notif('Todos os alimentos padrão já estão no seu banco!','#f59e0b'); return; }
+
+    const { error } = await SB.from('banco_alimentos').insert(novos);
+    if(error){ notif('Erro ao popular: '+error.message,'#ef4444',true); console.error('popularBancoAlimentosPadrao:', error); return; }
+
+    notif(`✅ ${novos.length} alimentos adicionados ao banco!`,'#10b981');
+    await carregarBancoAlimentos();
+  }catch(e){
+    console.error('popularBancoAlimentosPadrao — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+  }
+}
+
 // ── SELETOR "LANÇAR DO BANCO" DENTRO DO EDITOR DE FICHA ─────────────────────
 
 async function abrirSeletorBancoParaFicha(dIdx){
   window._bancoDiaAlvo = dIdx;
+  window._seletorBancoGenero = '';
   if(!window._bancoExercicios){ await carregarBancoExercicios(); }
 
   const overlay = document.createElement('div');
@@ -3011,9 +3406,15 @@ async function abrirSeletorBancoParaFicha(dIdx){
         <div style="font-size:.95rem;font-weight:800;color:#fff">📚 Lançar do Banco de Exercícios</div>
         <button onclick="document.getElementById('seletor-banco-overlay').remove()" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button>
       </div>
-      <div style="padding:12px 18px">
+      <div style="padding:12px 18px 0">
         <input type="text" id="seletor-banco-busca" placeholder="🔎 Buscar exercício..." oninput="filtrarSeletorBanco()"
-          style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.85rem;font-family:var(--font-b)"/>
+          style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.85rem;font-family:var(--font-b);margin-bottom:10px"/>
+        <div style="display:flex;gap:6px;margin-bottom:12px" id="seletor-banco-genero-tabs">
+          <button data-val="" onclick="filtrarSeletorBancoGenero('')" style="flex:1;background:rgba(240,89,10,.15);border:1px solid var(--orange);color:#fff;padding:6px;border-radius:6px;font-size:.72rem;cursor:pointer">Todos</button>
+          <button data-val="masculino" onclick="filtrarSeletorBancoGenero('masculino')" style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);color:#ccc;padding:6px;border-radius:6px;font-size:.72rem;cursor:pointer">🚹 Masc.</button>
+          <button data-val="feminino" onclick="filtrarSeletorBancoGenero('feminino')" style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);color:#ccc;padding:6px;border-radius:6px;font-size:.72rem;cursor:pointer">🚺 Fem.</button>
+          <button data-val="unissex" onclick="filtrarSeletorBancoGenero('unissex')" style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);color:#ccc;padding:6px;border-radius:6px;font-size:.72rem;cursor:pointer">⚪ Unissex</button>
+        </div>
       </div>
       <div id="seletor-banco-lista" style="overflow-y:auto;padding:0 18px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px"></div>
     </div>`;
@@ -3028,11 +3429,13 @@ function renderSeletorBancoLista(lista){
     el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted);font-size:.82rem">Nenhum exercício encontrado. Cadastre no menu 🎬 Banco de Exercícios.</div>';
     return;
   }
+  const generoBadge = { masculino:'🚹', feminino:'🚺', unissex:'⚪' };
   el.innerHTML = lista.map(ex=>{
     const midia = ex.midia
       ? midiaTag(ex.midia, 'width:100%;height:80px;object-fit:cover;border-radius:8px 8px 0 0', '')
       : `<div style="width:100%;height:80px;background:rgba(255,255,255,.04);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#555;font-size:1.3rem">🎬</div>`;
-    return `<div onclick="lancarExercicioDoBanco('${ex.id}')" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
+    return `<div onclick="lancarExercicioDoBanco('${ex.id}')" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s;position:relative" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);border-radius:20px;padding:2px 6px;font-size:.62rem">${generoBadge[ex.genero]||'⚪'}</div>
       ${midia}
       <div style="padding:7px 8px;font-size:.72rem;color:#fff;font-weight:600;line-height:1.3">${escHtml(ex.nome)}</div>
     </div>`;
@@ -3041,8 +3444,23 @@ function renderSeletorBancoLista(lista){
 
 function filtrarSeletorBanco(){
   const termo = (document.getElementById('seletor-banco-busca')?.value||'').toLowerCase().trim();
-  const lista = (window._bancoExercicios||[]).filter(ex=> !termo || (ex.nome||'').toLowerCase().includes(termo));
+  const genero = window._seletorBancoGenero||'';
+  const lista = (window._bancoExercicios||[]).filter(ex=>
+    (!termo || (ex.nome||'').toLowerCase().includes(termo)) &&
+    (!genero || ex.genero===genero)
+  );
   renderSeletorBancoLista(lista);
+}
+
+function filtrarSeletorBancoGenero(valor){
+  window._seletorBancoGenero = valor;
+  document.querySelectorAll('#seletor-banco-genero-tabs button').forEach(b=>{
+    const ativo = b.dataset.val === valor;
+    b.style.background = ativo ? 'rgba(240,89,10,.15)' : 'rgba(255,255,255,.04)';
+    b.style.borderColor = ativo ? 'var(--orange)' : 'var(--border)';
+    b.style.color = ativo ? '#fff' : '#ccc';
+  });
+  filtrarSeletorBanco();
 }
 
 function lancarExercicioDoBanco(exId){
@@ -5038,7 +5456,7 @@ function renderRotinaAlimentar(){
       <div style="padding:10px 14px">`;
 
     (ref.alimentos||[]).forEach((al, aIdx)=>{
-      html += `<div style="display:grid;grid-template-columns:2fr 1fr 0.8fr 2fr auto;gap:6px;margin-bottom:8px;align-items:center">
+      html += `<div style="display:grid;grid-template-columns:2fr 1fr 0.8fr 2fr auto auto;gap:6px;margin-bottom:8px;align-items:center">
         <input type="text" value="${escHtml(al.item)}" placeholder="Alimento (ex: Arroz integral)"
           onchange="atualizarAlimentoCampo(${rIdx},${aIdx},'item',this.value)"
           style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:#fff;font-size:.78rem;font-family:var(--font-b)"/>
@@ -5051,6 +5469,7 @@ function renderRotinaAlimentar(){
         <input type="text" value="${escHtml(al.substituicao)}" placeholder="Substituições (ex: Batata doce 120g)"
           onchange="atualizarAlimentoCampo(${rIdx},${aIdx},'substituicao',this.value)"
           style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:#a78bfa;font-size:.76rem;font-family:var(--font-b)"/>
+        <button onclick="abrirSeletorBancoAlimentoParaRotina(${rIdx},${aIdx})" title="Preencher do Banco de Alimentos" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#60a5fa;padding:5px 8px;border-radius:6px;font-size:.7rem;cursor:pointer">📖</button>
         <button onclick="removerAlimento(${rIdx},${aIdx})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:5px 8px;border-radius:6px;font-size:.7rem;cursor:pointer">✕</button>
       </div>`;
     });
@@ -5107,6 +5526,87 @@ function adicionarAlimento(rIdx){
 function removerAlimento(rIdx, aIdx){
   if(!window._rotinaAlimentar?.[rIdx]) return;
   window._rotinaAlimentar[rIdx].alimentos.splice(aIdx,1);
+  renderRotinaAlimentar();
+}
+
+// ── SELETOR "DO BANCO" DENTRO DA ROTINA ALIMENTAR ────────────────────────────
+
+async function abrirSeletorBancoAlimentoParaRotina(rIdx, aIdx){
+  window._alimentoAlvo = {rIdx, aIdx};
+  if(!window._bancoAlimentos){ await carregarBancoAlimentos(); }
+
+  // Tenta identificar restrições do cliente pra destacar alimentos compatíveis (não bloqueia, só avisa)
+  const restricaoTexto = (MOTOR_D?.nutricao?.['nu-rest']||'') + ' ' + (MOTOR_D?.nutricao?.['nu-nao']||'');
+  const restricaoLower = restricaoTexto.toLowerCase();
+  const restricoesDetectadas = [];
+  if(restricaoLower.includes('vegan')) restricoesDetectadas.push('vegano');
+  else if(restricaoLower.includes('vegetarian')) restricoesDetectadas.push('vegetariano');
+  if(restricaoLower.includes('glúten')||restricaoLower.includes('gluten')||restricaoLower.includes('celíac')) restricoesDetectadas.push('sem_gluten');
+  if(restricaoLower.includes('lactose')||restricaoLower.includes('leite')) restricoesDetectadas.push('sem_lactose');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'seletor-alim-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.95rem;font-weight:800;color:#fff">🥗 Escolher do Banco de Alimentos</div>
+        <button onclick="document.getElementById('seletor-alim-overlay').remove()" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button>
+      </div>
+      ${restricoesDetectadas.length ? `<div style="padding:10px 18px;background:rgba(234,179,8,.08);border-bottom:1px solid rgba(234,179,8,.2);font-size:.72rem;color:#eab308">⚠️ A anamnese deste cliente menciona restrição relacionada a: <strong>${restricoesDetectadas.map(r=>TAG_LABELS[r]).join(', ')}</strong>. Alimentos compatíveis estão marcados abaixo.</div>` : ''}
+      <div style="padding:12px 18px 0">
+        <input type="text" id="seletor-alim-busca" placeholder="🔎 Buscar alimento..." oninput="filtrarSeletorAlimento()"
+          style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.85rem;font-family:var(--font-b);margin-bottom:10px"/>
+      </div>
+      <div id="seletor-alim-lista" style="overflow-y:auto;padding:0 18px 18px"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  window._restricoesDetectadasAtual = restricoesDetectadas;
+  renderSeletorAlimentoLista(window._bancoAlimentos||[]);
+}
+
+function renderSeletorAlimentoLista(lista){
+  const el = document.getElementById('seletor-alim-lista');
+  if(!el) return;
+  if(!lista.length){
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem">Nenhum alimento encontrado. Cadastre no menu 🥗 Banco de Alimentos, ou clique em "🌱 Popular com alimentos padrão" lá.</div>';
+    return;
+  }
+  const restricoes = window._restricoesDetectadasAtual||[];
+  el.innerHTML = lista.map(a=>{
+    const compativel = !restricoes.length || restricoes.every(r=>(a.tags||[]).includes(r));
+    const tagsHtml = (a.tags||[]).map(t=>`<span style="background:rgba(255,255,255,.06);border-radius:8px;padding:1px 6px;font-size:.6rem;color:#999">${(TAG_LABELS[t]||t)}</span>`).join(' ');
+    return `<div onclick="selecionarAlimentoDoBanco('${a.id}')" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid ${compativel?'var(--border)':'rgba(239,68,68,.2)'};border-radius:8px;padding:10px 12px;margin-bottom:8px;${!compativel?'opacity:.55':''}" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='${compativel?'var(--border)':'rgba(239,68,68,.2)'}'">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <span style="font-size:.85rem;font-weight:700;color:#fff">${escHtml(a.nome)}</span>
+        <span style="font-size:.72rem;color:#fbbf24;white-space:nowrap">${a.calorias} kcal / ${escHtml(a.porcao_padrao)}</span>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">${tagsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarSeletorAlimento(){
+  const termo = (document.getElementById('seletor-alim-busca')?.value||'').toLowerCase().trim();
+  const lista = (window._bancoAlimentos||[]).filter(a => !termo || (a.nome||'').toLowerCase().includes(termo));
+  renderSeletorAlimentoLista(lista);
+}
+
+function selecionarAlimentoDoBanco(alimId){
+  const a = (window._bancoAlimentos||[]).find(x=>x.id===alimId);
+  const alvo = window._alimentoAlvo;
+  if(!a || !alvo || !window._rotinaAlimentar?.[alvo.rIdx]?.alimentos?.[alvo.aIdx]) return;
+
+  window._rotinaAlimentar[alvo.rIdx].alimentos[alvo.aIdx] = {
+    item: a.nome,
+    quantidade: a.porcao_padrao || '',
+    calorias: a.calorias || 0,
+    substituicao: a.substituicoes || ''
+  };
+
+  const overlay = document.getElementById('seletor-alim-overlay');
+  if(overlay) overlay.remove();
+  notif(`✅ "${a.nome}" preenchido!`,'#10b981');
   renderRotinaAlimentar();
 }
 
