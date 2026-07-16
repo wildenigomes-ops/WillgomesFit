@@ -1845,9 +1845,8 @@ async function entrarNoApp(){
     setTimeout(()=> notif('🔑 Você ainda usa a senha temporária. Recomendamos trocá-la!','#f59e0b'), 1500);
   }
   await carregarDados();
+  configurarSincronizacaoAutomatica();
 }
-
-// ── LOGOUT ────────────────────────────────────────────────────────────────────
 async function fazerLogout(){
   usuario = null; dadosCliente = null; modoDemo = false;
   if(demoTimer) clearInterval(demoTimer);
@@ -1882,6 +1881,56 @@ async function carregarDados(){
   montarGrafico(progressos||[]);
   carregarConquistas();
   montarNutricao(fichas||[]);
+}
+
+// ── SINCRONIZAÇÃO AUTOMÁTICA ──────────────────────────────────────────────────
+// Mantém o portal atualizado sozinho, sem o aluno precisar puxar pra atualizar
+// manualmente — importante principalmente pra quem usa pelo atalho instalado
+// na tela inicial, onde o app pode ficar aberto em segundo plano por horas.
+let _syncEmAndamento = false;
+
+function emTreinoAtivo(){
+  const el = document.getElementById('modo-treino');
+  return !!(el && el.classList.contains('ativo'));
+}
+
+async function sincronizarSilenciosamente(origem){
+  if(modoDemo) return;                 // demo usa dados locais, nada pra sincronizar
+  if(!usuario || !SB) return;          // ainda não logado
+  if(emTreinoAtivo()) return;          // nunca interrompe um treino em andamento
+  if(_syncEmAndamento) return;         // evita chamadas simultâneas
+  _syncEmAndamento = true;
+  try{
+    console.log('[sync] Atualizando dados automaticamente —', origem);
+    await carregarDados();
+  }catch(e){
+    console.warn('[sync] Falha na sincronização automática:', e);
+  }finally{
+    _syncEmAndamento = false;
+  }
+}
+
+function configurarSincronizacaoAutomatica(){
+  if(window._syncConfigurado) return; // evita registrar os listeners mais de uma vez
+  window._syncConfigurado = true;
+
+  // 1) Sempre que o app volta a ficar visível (usuário trocou de app e voltou,
+  //    ou destravou o celular com o atalho já aberto em segundo plano)
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible'){
+      sincronizarSilenciosamente('app voltou a ficar visível');
+    }
+  });
+
+  // 2) Enquanto o app fica aberto e visível sem trocar de tela, revalida a cada 2 minutos
+  setInterval(() => {
+    if(document.visibilityState === 'visible'){
+      sincronizarSilenciosamente('intervalo periódico (2min)');
+    }
+  }, 2*60*1000);
+
+  // 3) Ao reconectar depois de ficar sem internet
+  window.addEventListener('online', () => sincronizarSilenciosamente('conexão restabelecida'));
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
