@@ -500,6 +500,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
         <input type="text" id="banco-busca" placeholder="🔎 Buscar exercício..." oninput="filtrarBancoExercicios()" style="flex:1;min-width:200px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)"/>
         <select id="banco-filtro-categoria" onchange="filtrarBancoExercicios()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
+          <option value="" selected>Escolha a categoria...</option>
           <option value="Membros Inferiores">Membros Inferiores</option>
           <option value="Membros Superiores">Membros Superiores</option>
           <option value="Peito">Peito</option>
@@ -508,13 +509,14 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
           <option value="Cardio">Cardio</option>
         </select>
         <select id="banco-filtro-genero" onchange="filtrarBancoExercicios()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
+          <option value="" selected>Escolha o gênero...</option>
           <option value="masculino">🚹 Masculino</option>
           <option value="feminino">🚺 Feminino</option>
         </select>
       </div>
 
       <div id="banco-exercicios-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
-        <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">⏳ Carregando banco de exercícios...</div>
+        <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted);border:1px dashed var(--border);border-radius:12px">👆 Escolha uma categoria e um gênero acima pra ver os exercícios.</div>
       </div>
     </div>
 
@@ -3092,7 +3094,7 @@ async function carregarBancoExercicios(){
     }
     console.log('[carregarBancoExercicios] linhas retornadas pelo Supabase:', data?.length);
     window._bancoExercicios = data || [];
-    renderGridBancoExercicios(window._bancoExercicios);
+    filtrarBancoExercicios(); // aplica os filtros atuais (começa vazio até categoria+gênero serem escolhidos)
   }catch(e){
     console.error('carregarBancoExercicios — erro inesperado:', e);
     if(grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">Erro inesperado: ${e.message||e}</div>`;
@@ -3189,10 +3191,17 @@ function filtrarBancoExercicios(){
   const termo = (document.getElementById('banco-busca')?.value||'').toLowerCase().trim();
   const categoria = document.getElementById('banco-filtro-categoria')?.value||'';
   const genero = document.getElementById('banco-filtro-genero')?.value||'';
+
+  const grid = document.getElementById('banco-exercicios-grid');
+  if((!categoria || !genero) && grid){
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted);border:1px dashed var(--border);border-radius:12px">👆 Escolha uma categoria e um gênero acima pra ver os exercícios.</div>';
+    return;
+  }
+
   const lista = (window._bancoExercicios||[]).filter(ex=>{
     const bateNome = !termo || (ex.nome||'').toLowerCase().includes(termo);
-    const bateCategoria = !categoria || ex.categoria===categoria;
-    const bateGenero = !genero || ex.genero===genero;
+    const bateCategoria = ex.categoria===categoria;
+    const bateGenero = ex.genero===genero;
     return bateNome && bateCategoria && bateGenero;
   });
   renderGridBancoExercicios(lista);
