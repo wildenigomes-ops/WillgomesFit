@@ -2951,6 +2951,7 @@ function renderCombinadoExercicio(ex, dIdx, eIdx){
              </label>`
         }
       </div>
+      <button onclick="abrirSeletorBancoParaCombinado(${dIdx},${eIdx})" title="Escolher do Banco de Exercícios" style="flex-shrink:0;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.35);color:#60a5fa;padding:0 10px;height:44px;border-radius:6px;font-size:.85rem;cursor:pointer">📚</button>
       <input type="text" value="${escHtml(ex.nome2)}" placeholder="Nome do 2º exercício"
         onchange="atualizarExercicio(${dIdx},${eIdx},'nome2',this.value)"
         style="flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:#fff;font-size:.82rem;font-family:var(--font-b)"/>
@@ -4212,8 +4213,23 @@ async function popularBancoAlimentosPadrao(){
 
 async function abrirSeletorBancoParaFicha(dIdx){
   window._bancoDiaAlvo = dIdx;
+  window._bancoModoSelecao = 'novo';
   window._seletorBancoGenero = '';
   if(!window._bancoExercicios){ await carregarBancoExercicios(); }
+  abrirOverlaySeletorBanco();
+}
+
+async function abrirSeletorBancoParaCombinado(dIdx, eIdx){
+  window._bancoAlvoCombinado = { dIdx, eIdx };
+  window._bancoModoSelecao = 'combinado';
+  window._seletorBancoGenero = '';
+  if(!window._bancoExercicios){ await carregarBancoExercicios(); }
+  abrirOverlaySeletorBanco();
+}
+
+function abrirOverlaySeletorBanco(){
+  const existente = document.getElementById('seletor-banco-overlay');
+  if(existente) existente.remove();
 
   const overlay = document.createElement('div');
   overlay.id = 'seletor-banco-overlay';
@@ -4221,7 +4237,7 @@ async function abrirSeletorBancoParaFicha(dIdx){
   overlay.innerHTML = `
     <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:520px;width:100%;max-height:80vh;display:flex;flex-direction:column">
       <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:.95rem;font-weight:800;color:#fff">📚 Lançar do Banco de Exercícios</div>
+        <div style="font-size:.95rem;font-weight:800;color:#fff">📚 ${window._bancoModoSelecao==='combinado' ? 'Escolher o 2º exercício (combo)' : 'Lançar do Banco de Exercícios'}</div>
         <button onclick="document.getElementById('seletor-banco-overlay').remove()" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button>
       </div>
       <div style="padding:12px 18px 0">
@@ -4231,7 +4247,6 @@ async function abrirSeletorBancoParaFicha(dIdx){
           <button data-val="" onclick="filtrarSeletorBancoGenero('')" style="flex:1;background:rgba(240,89,10,.15);border:1px solid var(--orange);color:#fff;padding:6px;border-radius:6px;font-size:.72rem;cursor:pointer">Todos</button>
           <button data-val="masculino" onclick="filtrarSeletorBancoGenero('masculino')" style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);color:#ccc;padding:6px;border-radius:6px;font-size:.72rem;cursor:pointer">🚹 Masc.</button>
           <button data-val="feminino" onclick="filtrarSeletorBancoGenero('feminino')" style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);color:#ccc;padding:6px;border-radius:6px;font-size:.72rem;cursor:pointer">🚺 Fem.</button>
-          <button data-val="unissex" onclick="filtrarSeletorBancoGenero('unissex')" style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);color:#ccc;padding:6px;border-radius:6px;font-size:.72rem;cursor:pointer">⚪ Unissex</button>
         </div>
       </div>
       <div id="seletor-banco-lista" style="overflow-y:auto;padding:0 18px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px"></div>
@@ -4248,11 +4263,13 @@ function renderSeletorBancoLista(lista){
     return;
   }
   const generoBadge = { masculino:'🚹', feminino:'🚺', unissex:'⚪' };
+  const handler = window._bancoModoSelecao==='combinado' ? 'selecionarExercicioBancoParaCombinado' : 'lancarExercicioDoBanco';
   el.innerHTML = lista.map(ex=>{
-    const midia = ex.midia
-      ? midiaTag(ex.midia, 'width:100%;height:80px;object-fit:cover;border-radius:8px 8px 0 0', '')
+    const midiaCarregada = window._bancoExMidiaPreview?.[ex.id];
+    const midia = midiaCarregada
+      ? midiaTag(midiaCarregada, 'width:100%;height:80px;object-fit:cover;border-radius:8px 8px 0 0', '')
       : `<div style="width:100%;height:80px;background:rgba(255,255,255,.04);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#555;font-size:1.3rem">🎬</div>`;
-    return `<div onclick="lancarExercicioDoBanco('${ex.id}')" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s;position:relative" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
+    return `<div onclick="${handler}('${ex.id}')" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s;position:relative" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
       <div style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);border-radius:20px;padding:2px 6px;font-size:.62rem">${generoBadge[ex.genero]||'⚪'}</div>
       ${midia}
       <div style="padding:7px 8px;font-size:.72rem;color:#fff;font-weight:600;line-height:1.3">${escHtml(ex.nome)}</div>
@@ -4317,6 +4334,41 @@ async function lancarExercicioDoBanco(exId){
       renderizarEditorPortalAba();
     }
   }catch(e){ console.warn('lancarExercicioDoBanco — erro ao buscar mídia:', e); }
+}
+
+async function selecionarExercicioBancoParaCombinado(exId){
+  const ex = (window._bancoExercicios||[]).find(e=>e.id===exId);
+  const alvo = window._bancoAlvoCombinado;
+  if(!ex || !alvo || !window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  const exAlvo = window._fichaEditavel[dias[alvo.dIdx]]?.[alvo.eIdx];
+  if(!exAlvo) return;
+
+  exAlvo.nome2 = ex.nome;
+
+  const overlay = document.getElementById('seletor-banco-overlay');
+  if(overlay) overlay.remove();
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  notif(`✅ "${ex.nome}" combinado! Buscando o vídeo...`,'#10b981');
+  renderizarEditorPortalAba();
+
+  const midiaJaEmCache = window._bancoExMidiaPreview?.[exId];
+  const gifKey2 = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
+  if(midiaJaEmCache){
+    gifCache[gifKey2] = midiaJaEmCache;
+    renderizarEditorPortalAba();
+    return;
+  }
+  if(!SB) return;
+  try{
+    const { data, error } = await SB.from('banco_exercicios').select('midia').eq('id', exId).single();
+    if(!error && data?.midia){
+      gifCache[gifKey2] = data.midia;
+      if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
+      window._bancoExMidiaPreview[exId] = data.midia;
+      renderizarEditorPortalAba();
+    }
+  }catch(e){ console.warn('selecionarExercicioBancoParaCombinado — erro ao buscar mídia:', e); }
 }
 
 function escHtml(v){
