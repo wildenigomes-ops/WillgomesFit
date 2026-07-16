@@ -1350,6 +1350,7 @@ async function abrirCliente(id){
   if(!clienteAtual) return;
   gifCache = {}; // Limpa GIFs ao trocar de cliente
   window._fichaEditavel = null; // Força buscar a ficha do cliente novo (não usar a do cliente anterior)
+  window._fichaTemAlteracoesNaoPublicadas = false;
   const c = clienteAtual;
   const l = LS.get(id);
 
@@ -2752,9 +2753,13 @@ async function renderizarEditorPortalAba(){
     }
 
     // 3. Renderizar editor com campos editáveis
-    let html = `<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:#34d399;margin-bottom:14px">
-      ✏️ Edite diretamente os campos abaixo. Após editar, clique em <strong>"🚀 Publicar ficha atual"</strong> acima para salvar no portal do aluno.
-    </div>`;
+    let html = window._fichaTemAlteracoesNaoPublicadas
+      ? `<div style="background:rgba(239,68,68,.12);border:2px solid rgba(239,68,68,.4);border-radius:8px;padding:12px 14px;font-size:.82rem;color:#fca5a5;margin-bottom:14px;font-weight:700">
+          ⚠️ Você tem alterações NÃO PUBLICADAS nesta ficha. Se sair sem clicar em "🚀 Publicar ficha atual" (acima), elas serão perdidas e a versão antiga continuará valendo pro aluno.
+        </div>`
+      : `<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:#34d399;margin-bottom:14px">
+          ✏️ Edite diretamente os campos abaixo. Após editar, clique em <strong>"🚀 Publicar ficha atual"</strong> acima para salvar no portal do aluno.
+        </div>`;
 
     Object.entries(exerciciosPorDia).forEach(([diaNome, exercicios], dIdx)=>{
       html += `<div style="margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="dia-block-${dIdx}">
@@ -2801,6 +2806,7 @@ function adicionarDiaTreino(){
   const n = Object.keys(window._fichaEditavel).length;
   const nomeNovo = 'TREINO ' + (letras[n] || (n+1));
   window._fichaEditavel[nomeNovo] = [];
+  window._fichaTemAlteracoesNaoPublicadas = true;
   renderizarEditorPortalAba();
 }
 
@@ -2810,6 +2816,7 @@ function removerDiaTreino(dIdx){
   if(!dias[dIdx]) return;
   if(!confirm(`Remover "${dias[dIdx]}" inteiro, com todos os exercícios dele?`)) return;
   delete window._fichaEditavel[dias[dIdx]];
+  window._fichaTemAlteracoesNaoPublicadas = true;
   renderizarEditorPortalAba();
 }
 
@@ -2877,6 +2884,7 @@ function atualizarExercicio(dIdx, eIdx, campo, valor){
   const dias = Object.keys(window._fichaEditavel);
   if(dias[dIdx] && window._fichaEditavel[dias[dIdx]][eIdx]){
     window._fichaEditavel[dias[dIdx]][eIdx][campo] = valor;
+    window._fichaTemAlteracoesNaoPublicadas = true;
   }
 }
 
@@ -2892,6 +2900,7 @@ function atualizarNomeDia(input){
     novaFicha[chave] = window._fichaEditavel[k];
   });
   window._fichaEditavel = novaFicha;
+  window._fichaTemAlteracoesNaoPublicadas = true;
 }
 
 function adicionarExercicio(dIdx){
@@ -2899,6 +2908,7 @@ function adicionarExercicio(dIdx){
   const dias = Object.keys(window._fichaEditavel);
   if(!dias[dIdx]) return;
   window._fichaEditavel[dias[dIdx]].push({nome:'Novo Exercício',series:'3',reps:'10–12',descanso:'90s',rir:'2',obs:''});
+  window._fichaTemAlteracoesNaoPublicadas = true;
   renderizarEditorPortalAba();
 }
 
@@ -2907,6 +2917,7 @@ function removerExercicio(dIdx, eIdx){
   const dias = Object.keys(window._fichaEditavel);
   if(!dias[dIdx]) return;
   window._fichaEditavel[dias[dIdx]].splice(eIdx, 1);
+  window._fichaTemAlteracoesNaoPublicadas = true;
   renderizarEditorPortalAba();
 }
 
@@ -2918,6 +2929,7 @@ function anexarGifEx(input, gifKey, dIdx, eIdx){
   const reader = new FileReader();
   reader.onload = e => {
     gifCache[gifKey] = e.target.result;
+    window._fichaTemAlteracoesNaoPublicadas = true;
     notif('✅ Arquivo anexado!','#10b981');
     renderizarEditorPortalAba();
   };
@@ -2926,7 +2938,8 @@ function anexarGifEx(input, gifKey, dIdx, eIdx){
 
 function removerGifEx(gifKey, dIdx, eIdx){
   delete gifCache[gifKey];
-  notif('GIF removido','#f59e0b');
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  notif('🗑 Vídeo/GIF removido da edição. ⚠️ Clique em "🚀 Publicar ficha atual" pra confirmar — se você sair sem publicar, a versão antiga continua salva e vai voltar a aparecer.','#f59e0b',true);
   renderizarEditorPortalAba();
 }
 
@@ -2985,6 +2998,7 @@ async function publicarNoPortal(){
     if(statusEl){
       statusEl.style.display = 'block';
     }
+    window._fichaTemAlteracoesNaoPublicadas = false;
     notif(`✅ Ficha publicada no portal do aluno! ${nGifs} GIF(s) incluídos.`,'#8b5cf6');
     carregarAbaPortal(c);
   }catch(e){
@@ -3029,20 +3043,31 @@ function ehVideo(dataUrl){
 
 async function carregarBancoExercicios(){
   const grid = document.getElementById('banco-exercicios-grid');
-  if(!SB){ if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">Supabase não conectado.</div>'; return; }
+  if(!SB){
+    if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">Supabase não conectado. <button onclick="initSB();carregarBancoExercicios()" style="display:block;margin:10px auto 0;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;padding:7px 16px;border-radius:8px;font-size:.78rem;cursor:pointer">🔄 Tentar reconectar</button></div>';
+    return;
+  }
 
   try{
     const { data, error } = await SB.from('banco_exercicios').select('*').order('nome',{ascending:true});
     if(error){
-      if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">Ainda não disponível — rode o sql_banco_exercicios.sql no Supabase.</div>';
-      console.error('carregarBancoExercicios:', error);
+      console.error('[carregarBancoExercicios] erro completo do Supabase:', JSON.stringify(error));
+      const ehTabelaFaltando = /relation .*banco_exercicios.* does not exist/i.test(error.message||'');
+      const msg = ehTabelaFaltando
+        ? 'A tabela ainda não existe — rode o sql_banco_exercicios.sql no Supabase.'
+        : `Erro ao carregar: ${error.message || JSON.stringify(error)}`;
+      if(grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">
+        ${msg}
+        <button onclick="carregarBancoExercicios()" style="display:block;margin:10px auto 0;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;padding:7px 16px;border-radius:8px;font-size:.78rem;cursor:pointer">🔄 Tentar de novo</button>
+      </div>`;
       return;
     }
+    console.log('[carregarBancoExercicios] linhas retornadas pelo Supabase:', data?.length);
     window._bancoExercicios = data || [];
     renderGridBancoExercicios(window._bancoExercicios);
   }catch(e){
     console.error('carregarBancoExercicios — erro inesperado:', e);
-    if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">Erro ao carregar.</div>';
+    if(grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted)">Erro inesperado: ${e.message||e}</div>`;
   }
 }
 
@@ -4028,6 +4053,7 @@ function lancarExercicioDoBanco(exId){
 
   const overlay = document.getElementById('seletor-banco-overlay');
   if(overlay) overlay.remove();
+  window._fichaTemAlteracoesNaoPublicadas = true;
   notif(`✅ "${ex.nome}" lançado! Ajuste séries, reps e descanso.`,'#10b981');
   renderizarEditorPortalAba();
 }
