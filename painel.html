@@ -2739,6 +2739,9 @@ async function renderizarEditorPortalAba(){
           if(comEx.length){
             exerciciosPorDia = {};
             comEx.forEach(t=>{ exerciciosPorDia[t.nome] = t.exercicios||t.ex||[]; });
+            // Busca em lote os vídeos dos exercícios que vieram do Banco (não vêm mais
+            // junto na consulta principal, então completa aqui, de uma vez só)
+            buscarMidiasEmLotePosGeracao(exerciciosPorDia);
           }
         }catch(e){ console.warn('[renderizarEditorPortalAba] prescreverTreino falhou (normal se não tem questionário):', e.message); }
       }
@@ -2797,6 +2800,43 @@ async function renderizarEditorPortalAba(){
       <strong>Detalhe técnico:</strong> ${(e.message||e).toString().replace(/</g,'&lt;')}<br><br>
       Tire um print desta mensagem e envie pro suporte técnico.
     </div>`;
+  }
+}
+
+async function buscarMidiasEmLotePosGeracao(exerciciosPorDia){
+  if(!SB) return;
+  const nomesUsados = new Set();
+  Object.values(exerciciosPorDia).forEach(lista=>{
+    (lista||[]).forEach(ex=>{ if(ex?.nome) nomesUsados.add(ex.nome); });
+  });
+  if(nomesUsados.size===0) return;
+
+  // Cruza com o banco carregado (só nome/categoria) pra saber quais IDs buscar mídia
+  const idsParaBuscar = (window._bancoExercicios||[])
+    .filter(be => nomesUsados.has(be.nome))
+    .map(be => be.id);
+  if(!idsParaBuscar.length) return;
+
+  try{
+    const { data, error } = await SB.from('banco_exercicios').select('id,nome,midia').in('id', idsParaBuscar);
+    if(error){ console.warn('[buscarMidiasEmLotePosGeracao] erro:', error); return; }
+    let algumaMidiaNova = false;
+    (data||[]).forEach(row=>{
+      if(!row.midia) return;
+      const gifKey = 'gif__'+encodeURIComponent((row.nome||'').toLowerCase().trim());
+      if(!gifCache[gifKey]){
+        gifCache[gifKey] = row.midia;
+        algumaMidiaNova = true;
+      }
+      if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
+      window._bancoExMidiaPreview[row.id] = row.midia;
+    });
+    if(algumaMidiaNova){
+      console.log('[buscarMidiasEmLotePosGeracao] vídeos do banco completados na ficha gerada.');
+      renderizarEditorPortalAba();
+    }
+  }catch(e){
+    console.warn('[buscarMidiasEmLotePosGeracao] erro inesperado:', e);
   }
 }
 
@@ -3049,7 +3089,11 @@ async function carregarBancoExercicios(){
   }
 
   try{
-    const { data, error } = await SB.from('banco_exercicios').select('*').order('nome',{ascending:true});
+    // IMPORTANTE: não busca a coluna "midia" aqui — cada vídeo é grande (texto em base64),
+    // e trazer todos de uma vez faz a consulta ficar enorme e falhar sem aviso claro depois
+    // de acumular vários exercícios. A lista carrega só o essencial; o vídeo de cada um é
+    // buscado individualmente, só quando você pedir pra ver ou editar aquele exercício.
+    const { data, error } = await SB.from('banco_exercicios').select('id,nome,categoria,genero,criado_em').order('nome',{ascending:true});
     if(error){
       console.error('[carregarBancoExercicios] erro completo do Supabase:', JSON.stringify(error));
       const ehTabelaFaltando = /relation .*banco_exercicios.* does not exist/i.test(error.message||'');
@@ -3091,9 +3135,12 @@ function renderGridBancoExercicios(lista){
   const generoBadge = { masculino:'🚹', feminino:'🚺', unissex:'⚪' };
 
   grid.innerHTML = lista.map(ex=>{
-    const midia = ex.midia
-      ? midiaTag(ex.midia, 'width:100%;height:130px;object-fit:cover;border-radius:10px 10px 0 0', '')
-      : `<div style="width:100%;height:130px;background:rgba(255,255,255,.04);border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;color:#555;font-size:1.8rem">🎬</div>`;
+    const midiaCarregada = window._bancoExMidiaPreview?.[ex.id];
+    const midia = midiaCarregada
+      ? midiaTag(midiaCarregada, 'width:100%;height:130px;object-fit:cover;border-radius:10px 10px 0 0', '')
+      : `<div onclick="carregarPreviewMidiaExercicio('${ex.id}')" style="cursor:pointer;width:100%;height:130px;background:rgba(255,255,255,.04);border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;color:#555;font-size:1.8rem" id="preview-loader-${ex.id}">
+          🎬<span style="font-size:.62rem;color:#777">👁 Toque pra ver o vídeo</span>
+        </div>`;
     return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative">
       <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);border-radius:20px;padding:3px 8px;font-size:.68rem;backdrop-filter:blur(4px)">${generoBadge[ex.genero]||'⚪'}</div>
       ${midia}
@@ -3107,6 +3154,23 @@ function renderGridBancoExercicios(lista){
       </div>
     </div>`;
   }).join('');
+}
+
+async function carregarPreviewMidiaExercicio(id){
+  const loaderEl = document.getElementById('preview-loader-'+id);
+  if(loaderEl) loaderEl.innerHTML = '<span style="font-size:.9rem">⏳</span>';
+  if(!SB) return;
+  try{
+    const { data, error } = await SB.from('banco_exercicios').select('midia').eq('id', id).single();
+    if(error){ notif('Erro ao carregar vídeo: '+error.message,'#ef4444',true); return; }
+    if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
+    window._bancoExMidiaPreview[id] = data?.midia || null;
+    if(!data?.midia){ notif('Este exercício não tem vídeo/GIF salvo.','#f59e0b'); return; }
+    filtrarBancoExercicios(); // re-renderiza a lista já com essa mídia em cache
+  }catch(e){
+    console.error('carregarPreviewMidiaExercicio:', e);
+    notif('Erro inesperado ao carregar vídeo.','#ef4444',true);
+  }
 }
 
 function limparFiltrosBancoExercicios(){
@@ -3153,7 +3217,7 @@ function abrirNovoExercicioBanco(){
   document.body.style.overflow = 'hidden';
 }
 
-function editarExercicioBanco(id){
+async function editarExercicioBanco(id){
   const ex = (window._bancoExercicios||[]).find(e=>e.id===id);
   if(!ex) return;
   document.getElementById('banco-modal-titulo').textContent = 'Editar Exercício';
@@ -3161,10 +3225,24 @@ function editarExercicioBanco(id){
   document.getElementById('banco-ex-nome').value = ex.nome||'';
   document.getElementById('banco-ex-categoria').value = ex.categoria||'Peito';
   selecionarGeneroBanco(ex.genero||'unissex');
-  window._bancoExMidiaAtual = ex.midia || null;
+
+  // Usa a mídia já em cache (se o admin já clicou pra ver o vídeo na grade), senão busca agora
+  window._bancoExMidiaAtual = window._bancoExMidiaPreview?.[id] || null;
   atualizarPreviewMidiaBanco();
   document.getElementById('modal-banco-exercicio').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  if(!window._bancoExMidiaAtual && SB){
+    try{
+      const { data, error } = await SB.from('banco_exercicios').select('midia').eq('id', id).single();
+      if(!error && data?.midia){
+        window._bancoExMidiaAtual = data.midia;
+        if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
+        window._bancoExMidiaPreview[id] = data.midia;
+        atualizarPreviewMidiaBanco();
+      }
+    }catch(e){ console.warn('editarExercicioBanco — erro ao buscar mídia:', e); }
+  }
 }
 
 function fecharModalBancoExercicio(){
@@ -4034,7 +4112,7 @@ function filtrarSeletorBancoGenero(valor){
   filtrarSeletorBanco();
 }
 
-function lancarExercicioDoBanco(exId){
+async function lancarExercicioDoBanco(exId){
   const ex = (window._bancoExercicios||[]).find(e=>e.id===exId);
   const dIdx = window._bancoDiaAlvo;
   if(!ex || dIdx===undefined || !window._fichaEditavel) return;
@@ -4045,17 +4123,31 @@ function lancarExercicioDoBanco(exId){
     nome: ex.nome, series:'3', reps:'10-12', descanso:'90s', rir:'2', obs:''
   });
 
-  // Copia a mídia do banco pro cache de GIFs da ficha, usando a mesma chave que o editor espera
-  if(ex.midia){
-    const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
-    gifCache[gifKey] = ex.midia;
-  }
-
   const overlay = document.getElementById('seletor-banco-overlay');
   if(overlay) overlay.remove();
   window._fichaTemAlteracoesNaoPublicadas = true;
-  notif(`✅ "${ex.nome}" lançado! Ajuste séries, reps e descanso.`,'#10b981');
+  notif(`✅ "${ex.nome}" lançado! Buscando o vídeo...`,'#10b981');
   renderizarEditorPortalAba();
+
+  // Busca o vídeo desse exercício específico agora (não vem mais junto na lista)
+  const midiaJaEmCache = window._bancoExMidiaPreview?.[exId];
+  if(midiaJaEmCache){
+    const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
+    gifCache[gifKey] = midiaJaEmCache;
+    renderizarEditorPortalAba();
+    return;
+  }
+  if(!SB) return;
+  try{
+    const { data, error } = await SB.from('banco_exercicios').select('midia').eq('id', exId).single();
+    if(!error && data?.midia){
+      const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
+      gifCache[gifKey] = data.midia;
+      if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
+      window._bancoExMidiaPreview[exId] = data.midia;
+      renderizarEditorPortalAba();
+    }
+  }catch(e){ console.warn('lancarExercicioDoBanco — erro ao buscar mídia:', e); }
 }
 
 function escHtml(v){
