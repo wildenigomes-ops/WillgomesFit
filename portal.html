@@ -1483,6 +1483,23 @@ function renderizarExercicioAtivo(){
         : `<div class="mt-gif-wrap"><img src="${gifData}" alt="${ex.nome}" draggable="false" oncontextmenu="return false"/></div>`)
     : `<div class="mt-gif-wrap"><div class="mt-gif-placeholder">🎬 <span>Execução: ${ex.obs||ex.nome}</span></div></div>`;
 
+  // Exercício combinado (bi-set) — 2º movimento, se existir
+  let combinadoHtml = '';
+  if(ex.nome2){
+    const gifKey2 = 'gif__'+encodeURIComponent((ex.nome2||'').toLowerCase().trim());
+    const gifData2 = gifs[gifKey2] || null;
+    const gif2Html = gifData2
+      ? (ehVideo(gifData2)
+          ? `<div class="mt-gif-wrap" style="max-height:160px"><video src="${gifData2}" autoplay loop muted playsinline controlsList="nodownload noremoteplayback nofullscreen" disablePictureInPicture oncontextmenu="return false"></video></div>`
+          : `<div class="mt-gif-wrap" style="max-height:160px"><img src="${gifData2}" alt="${ex.nome2}" draggable="false" oncontextmenu="return false"/></div>`)
+      : '';
+    combinadoHtml = `<div style="margin:10px 16px;padding:12px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);border-radius:10px">
+      <div style="font-size:.62rem;color:#a78bfa;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">🔗 Combinado com</div>
+      <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:8px">${ex.nome2}</div>
+      ${gif2Html}
+    </div>`;
+  }
+
   // Séries
   const numSeries = parseInt(ex.series)||3;
   const seriesFeitas = treinoAtivo.seriesFeitas||0;
@@ -1508,6 +1525,7 @@ function renderizarExercicioAtivo(){
         <div class="mt-tag"><div class="mt-tag-val">RIR ${ex.rir||'2'}</div><div class="mt-tag-label">Esforço</div></div>
       </div>
       ${gifHtml}
+      ${combinadoHtml}
       <div class="mt-series-wrap">
         <div class="mt-series-title">Séries concluídas</div>
         <div class="mt-series-dots">${dotsHtml}</div>
@@ -2043,7 +2061,22 @@ function montarFicha(fichas){
                   ? `<video src="${gifData}" class="ex-gif" autoplay loop muted playsinline controlsList="nodownload noremoteplayback nofullscreen" disablePictureInPicture oncontextmenu="return false" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"></video>`
                   : `<img src="${gifData}" class="ex-gif" draggable="false" oncontextmenu="return false" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"/>`)
               : ''}
-          </div>`;
+          </div>
+          ${ex.nome2 ? (()=>{
+            const gifKey2 = 'gif__'+encodeURIComponent((ex.nome2||'').toLowerCase().trim());
+            const gifData2 = (f.gifs||{})[gifKey2] || null;
+            return `<div style="margin:-6px 0 12px 40px;padding:10px 12px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:10px;display:flex;align-items:center;gap:10px">
+              <div style="flex:1">
+                <div style="font-size:.62rem;color:#a78bfa;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px">🔗 Combinado com</div>
+                <div style="font-size:.85rem;font-weight:700;color:#fff">${ex.nome2}</div>
+              </div>
+              ${gifData2
+                ? (ehVideo(gifData2)
+                    ? `<video src="${gifData2}" class="ex-gif" autoplay loop muted playsinline controlsList="nodownload noremoteplayback nofullscreen" disablePictureInPicture oncontextmenu="return false" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"></video>`
+                    : `<img src="${gifData2}" class="ex-gif" draggable="false" oncontextmenu="return false" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"/>`)
+                : ''}
+            </div>`;
+          })() : ''}`;
         });
       }
       html += `</div>`;

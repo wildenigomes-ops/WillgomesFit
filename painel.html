@@ -685,6 +685,29 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
         </label>
       </div>
 
+      <div style="margin:14px 0 16px;border-top:1px solid var(--border);padding-top:14px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.8rem;color:#ccc">
+          <input type="checkbox" id="banco-ex-combinado-check" onchange="toggleExercicioCombinadoBanco(this.checked)"/>
+          🔗 Este é um exercício combinado (bi-set) — tem um 2º movimento com vídeo próprio
+        </label>
+        <div id="banco-ex-combinado-campos" style="display:none;margin-top:12px">
+          <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Nome do 2º exercício</label>
+          <input type="text" id="banco-ex-nome-combinado" placeholder="Ex: Elevação Lateral" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.85rem;font-family:var(--font-b);margin:6px 0 12px"/>
+
+          <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Vídeo do 2º exercício</label>
+          <div style="margin:6px 0 8px">
+            <div id="banco-ex-preview2-wrap" style="display:none;position:relative;width:120px;margin-bottom:10px">
+              <div id="banco-ex-preview2"></div>
+              <button onclick="removerMidia2BancoExercicio()" style="position:absolute;top:-6px;right:-6px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer">✕</button>
+            </div>
+            <label style="cursor:pointer;display:inline-block;background:rgba(255,255,255,.05);border:1px dashed var(--border);border-radius:8px;padding:10px 16px;font-size:.8rem;color:#999">
+              📎 Escolher arquivo (GIF ou MP4)
+              <input type="file" id="banco-ex-midia2-input" accept=".gif,image/gif,.mp4,video/mp4" style="display:none" onchange="preverMidia2BancoExercicio(this)"/>
+            </label>
+          </div>
+        </div>
+      </div>
+
       <button onclick="salvarExercicioBanco()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:12px;border-radius:8px;font-weight:800;font-size:.88rem;cursor:pointer;margin-top:12px">💾 Salvar no Banco</button>
     </div>
   </div>
@@ -2896,10 +2919,41 @@ function renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData){
         <input type="text" value="${escHtml(ex.obs)}" placeholder="Observações (opcional)"
           onchange="atualizarExercicio(${dIdx},${eIdx},'obs',this.value)"
           style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:5px;padding:6px 10px;color:#aaa;font-size:.78rem;font-family:var(--font-b)"/>
+        ${renderCombinadoExercicio(ex, dIdx, eIdx)}
       </div>
       <!-- BOTÃO REMOVER -->
       <button onclick="removerExercicio(${dIdx},${eIdx})" title="Remover exercício"
         style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:5px 9px;border-radius:6px;font-size:.75rem;cursor:pointer;flex-shrink:0">✕</button>
+    </div>
+  </div>`;
+}
+
+function renderCombinadoExercicio(ex, dIdx, eIdx){
+  if(!ex.nome2){
+    return `<button onclick="ativarCombinadoExercicio(${dIdx},${eIdx})" style="background:none;border:none;color:#8b5cf6;font-size:.72rem;cursor:pointer;padding:4px 0;text-align:left">🔗 + Combinar com outro exercício (bi-set)</button>`;
+  }
+  const gifKey2 = 'gif__'+encodeURIComponent((ex.nome2||'').toLowerCase().trim());
+  const gifData2 = gifCache[gifKey2]||null;
+  return `<div style="margin-top:6px;padding:10px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:8px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:.68rem;color:#a78bfa;font-weight:700">🔗 COMBINADO COM:</span>
+      <button onclick="removerCombinadoExercicio(${dIdx},${eIdx})" style="margin-left:auto;background:none;border:none;color:#f87171;font-size:.68rem;cursor:pointer">✕ remover combo</button>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:8px">
+      <div style="flex-shrink:0">
+        ${gifData2
+          ? `<div style="position:relative">
+               ${midiaTag(gifData2, 'width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid #8b5cf6;cursor:pointer', `verGifGrande('${gifKey2}')`)}
+               <button onclick="removerGifCombinado('${gifKey2}',${dIdx},${eIdx})" style="position:absolute;top:-4px;right:-4px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:14px;height:14px;font-size:8px;cursor:pointer;padding:0">✕</button>
+             </div>`
+          : `<label style="cursor:pointer;width:44px;height:44px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#555">
+               📎<input type="file" accept=".gif,image/gif,.mp4,video/mp4" style="display:none" onchange="anexarGifCombinado(this,'${gifKey2}',${dIdx},${eIdx})"/>
+             </label>`
+        }
+      </div>
+      <input type="text" value="${escHtml(ex.nome2)}" placeholder="Nome do 2º exercício"
+        onchange="atualizarExercicio(${dIdx},${eIdx},'nome2',this.value)"
+        style="flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:#fff;font-size:.82rem;font-family:var(--font-b)"/>
     </div>
   </div>`;
 }
@@ -2912,6 +2966,49 @@ function atualizarExercicio(dIdx, eIdx, campo, valor){
     window._fichaEditavel[dias[dIdx]][eIdx][campo] = valor;
     window._fichaTemAlteracoesNaoPublicadas = true;
   }
+}
+
+function ativarCombinadoExercicio(dIdx, eIdx){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  const ex = window._fichaEditavel[dias[dIdx]]?.[eIdx];
+  if(!ex) return;
+  ex.nome2 = 'Novo exercício';
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  renderizarEditorPortalAba();
+}
+
+function removerCombinadoExercicio(dIdx, eIdx){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  const ex = window._fichaEditavel[dias[dIdx]]?.[eIdx];
+  if(!ex) return;
+  if(!confirm('Remover o exercício combinado (2º movimento)?')) return;
+  delete ex.nome2;
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  renderizarEditorPortalAba();
+}
+
+function anexarGifCombinado(input, gifKey, dIdx, eIdx){
+  const file = input.files[0];
+  if(!file) return;
+  const limiteMB = file.type.startsWith('video/') ? 20 : 8;
+  if(file.size > limiteMB*1024*1024){ notif(`Arquivo muito grande (máx. ${limiteMB}MB)`,'#ef4444'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    gifCache[gifKey] = e.target.result;
+    window._fichaTemAlteracoesNaoPublicadas = true;
+    notif('✅ Vídeo do exercício combinado anexado!','#10b981');
+    renderizarEditorPortalAba();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerGifCombinado(gifKey, dIdx, eIdx){
+  delete gifCache[gifKey];
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  notif('Vídeo do exercício combinado removido. ⚠️ Lembre de publicar pra confirmar.','#f59e0b',true);
+  renderizarEditorPortalAba();
 }
 
 function atualizarNomeDia(input){
@@ -3224,6 +3321,9 @@ function abrirNovoExercicioBanco(){
   document.getElementById('banco-ex-categoria').value = 'Peito';
   selecionarGeneroBanco('masculino');
   removerMidiaBancoExercicio();
+  document.getElementById('banco-ex-combinado-check').checked = false;
+  document.getElementById('banco-ex-nome-combinado').value = '';
+  toggleExercicioCombinadoBanco(false);
   document.getElementById('modal-banco-exercicio').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -3240,17 +3340,30 @@ async function editarExercicioBanco(id){
   // Usa a mídia já em cache (se o admin já clicou pra ver o vídeo na grade), senão busca agora
   window._bancoExMidiaAtual = window._bancoExMidiaPreview?.[id] || null;
   atualizarPreviewMidiaBanco();
+  window._bancoExMidia2Atual = null;
+  document.getElementById('banco-ex-combinado-check').checked = false;
+  document.getElementById('banco-ex-nome-combinado').value = '';
+  toggleExercicioCombinadoBanco(false);
   document.getElementById('modal-banco-exercicio').classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  if(!window._bancoExMidiaAtual && SB){
+  if(SB){
     try{
-      const { data, error } = await SB.from('banco_exercicios').select('midia').eq('id', id).single();
-      if(!error && data?.midia){
-        window._bancoExMidiaAtual = data.midia;
-        if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
-        window._bancoExMidiaPreview[id] = data.midia;
-        atualizarPreviewMidiaBanco();
+      const { data, error } = await SB.from('banco_exercicios').select('midia,midia2,nome_combinado').eq('id', id).single();
+      if(!error && data){
+        if(data.midia){
+          window._bancoExMidiaAtual = data.midia;
+          if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
+          window._bancoExMidiaPreview[id] = data.midia;
+          atualizarPreviewMidiaBanco();
+        }
+        if(data.nome_combinado || data.midia2){
+          document.getElementById('banco-ex-combinado-check').checked = true;
+          document.getElementById('banco-ex-nome-combinado').value = data.nome_combinado||'';
+          window._bancoExMidia2Atual = data.midia2||null;
+          toggleExercicioCombinadoBanco(true);
+          atualizarPreviewMidia2Banco();
+        }
       }
     }catch(e){ console.warn('editarExercicioBanco — erro ao buscar mídia:', e); }
   }
@@ -3292,14 +3405,57 @@ function atualizarPreviewMidiaBanco(){
   }
 }
 
+function toggleExercicioCombinadoBanco(ativo){
+  const campos = document.getElementById('banco-ex-combinado-campos');
+  if(campos) campos.style.display = ativo ? 'block' : 'none';
+  if(!ativo){
+    document.getElementById('banco-ex-nome-combinado').value = '';
+    removerMidia2BancoExercicio();
+  }
+}
+
+function preverMidia2BancoExercicio(input){
+  const file = input.files[0];
+  if(!file) return;
+  const limiteMB = file.type.startsWith('video/') ? 20 : 8;
+  if(file.size > limiteMB*1024*1024){ notif(`Arquivo muito grande (máx. ${limiteMB}MB)`,'#ef4444',true); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._bancoExMidia2Atual = e.target.result;
+    atualizarPreviewMidia2Banco();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerMidia2BancoExercicio(){
+  window._bancoExMidia2Atual = null;
+  atualizarPreviewMidia2Banco();
+}
+
+function atualizarPreviewMidia2Banco(){
+  const wrap = document.getElementById('banco-ex-preview2-wrap');
+  const prev = document.getElementById('banco-ex-preview2');
+  if(!wrap || !prev) return;
+  if(window._bancoExMidia2Atual){
+    wrap.style.display = 'block';
+    prev.innerHTML = midiaTag(window._bancoExMidia2Atual, 'width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--border)', '');
+  } else {
+    wrap.style.display = 'none';
+    prev.innerHTML = '';
+  }
+}
+
 async function salvarExercicioBanco(){
   const id = document.getElementById('banco-ex-id').value;
   const nome = document.getElementById('banco-ex-nome').value.trim();
   const categoria = document.getElementById('banco-ex-categoria').value;
   const genero = window._bancoExGeneroAtual || 'unissex';
   const midia = window._bancoExMidiaAtual || null;
+  const ehCombinado = document.getElementById('banco-ex-combinado-check').checked;
+  const nome_combinado = ehCombinado ? document.getElementById('banco-ex-nome-combinado').value.trim() : null;
+  const midia2 = ehCombinado ? (window._bancoExMidia2Atual || null) : null;
 
-  console.log('[salvarExercicioBanco] nome:', nome, '| categoria:', categoria, '| genero:', genero, '| tem mídia:', !!midia, '| tamanho mídia (KB):', midia ? Math.round(midia.length/1024) : 0);
+  console.log('[salvarExercicioBanco] nome:', nome, '| categoria:', categoria, '| genero:', genero, '| tem mídia:', !!midia, '| tamanho mídia (KB):', midia ? Math.round(midia.length/1024) : 0, '| combinado:', ehCombinado, nome_combinado);
 
   if(!nome){ notif('Informe o nome do exercício','#ef4444',true); return; }
   if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
@@ -3312,14 +3468,16 @@ async function salvarExercicioBanco(){
   try{
     let error, data;
     if(id){
-      ({ data, error } = await SB.from('banco_exercicios').update({ nome, categoria, genero, midia }).eq('id', id).select());
+      ({ data, error } = await SB.from('banco_exercicios').update({ nome, categoria, genero, midia, nome_combinado, midia2 }).eq('id', id).select());
     } else {
-      ({ data, error } = await SB.from('banco_exercicios').insert({ nome, categoria, genero, midia, criado_em: new Date().toISOString() }).select());
+      ({ data, error } = await SB.from('banco_exercicios').insert({ nome, categoria, genero, midia, nome_combinado, midia2, criado_em: new Date().toISOString() }).select());
     }
     if(error){
       console.error('salvarExercicioBanco — erro do Supabase:', error);
       const msgAmigavel = /column .*genero.* does not exist/i.test(error.message)
         ? 'O banco de dados ainda não tem o campo de gênero. Rode o arquivo sql_genero_banco_exercicios.sql no Supabase → SQL Editor e tente salvar de novo.'
+        : /column .*(midia2|nome_combinado).* does not exist/i.test(error.message)
+        ? 'O banco de dados ainda não tem o campo de exercício combinado. Rode o arquivo sql_exercicio_combinado.sql no Supabase → SQL Editor e tente salvar de novo.'
         : /payload|too large|413/i.test(error.message)
         ? 'O arquivo de vídeo/GIF é grande demais para salvar assim. Tente um arquivo menor ou mais comprimido.'
         : 'Erro ao salvar: '+error.message;
