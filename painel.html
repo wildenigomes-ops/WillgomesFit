@@ -3137,7 +3137,7 @@ function renderGridBancoExercicios(lista){
   grid.innerHTML = lista.map(ex=>{
     const midiaCarregada = window._bancoExMidiaPreview?.[ex.id];
     const midia = midiaCarregada
-      ? midiaTag(midiaCarregada, 'width:100%;height:130px;object-fit:cover;border-radius:10px 10px 0 0', '')
+      ? midiaTagPreviewComAutoOcultar(midiaCarregada, ex.id)
       : `<div onclick="carregarPreviewMidiaExercicio('${ex.id}')" style="cursor:pointer;width:100%;height:130px;background:rgba(255,255,255,.04);border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;color:#555;font-size:1.8rem" id="preview-loader-${ex.id}">
           🎬<span style="font-size:.62rem;color:#777">👁 Toque pra ver o vídeo</span>
         </div>`;
@@ -3154,6 +3154,24 @@ function renderGridBancoExercicios(lista){
       </div>
     </div>`;
   }).join('');
+}
+
+// Mostra a mídia da prévia tocando UMA vez (sem repetir), e esconde ela sozinha ao
+// terminar — mantém a tela mais leve, sem vários vídeos rodando em loop ao mesmo tempo.
+function midiaTagPreviewComAutoOcultar(dataUrl, exId){
+  const estilo = 'width:100%;height:130px;object-fit:cover;border-radius:10px 10px 0 0';
+  if(ehVideo(dataUrl)){
+    // Sem "loop": o evento onended dispara quando o vídeo termina de tocar uma vez
+    return `<video src="${dataUrl}" style="${estilo}" autoplay muted playsinline onended="ocultarPreviewMidiaExercicio('${exId}')"></video>`;
+  }
+  // GIF não tem evento de "terminou" no navegador — usa um tempo fixo razoável
+  setTimeout(()=>ocultarPreviewMidiaExercicio(exId), 5000);
+  return `<img src="${dataUrl}" style="${estilo}"/>`;
+}
+
+function ocultarPreviewMidiaExercicio(exId){
+  if(window._bancoExMidiaPreview) delete window._bancoExMidiaPreview[exId];
+  filtrarBancoExercicios();
 }
 
 async function carregarPreviewMidiaExercicio(id){
