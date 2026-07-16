@@ -500,25 +500,16 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
         <input type="text" id="banco-busca" placeholder="🔎 Buscar exercício..." oninput="filtrarBancoExercicios()" style="flex:1;min-width:200px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)"/>
         <select id="banco-filtro-categoria" onchange="filtrarBancoExercicios()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
-          <option value="">Todas as categorias</option>
+          <option value="Membros Inferiores">Membros Inferiores</option>
+          <option value="Membros Superiores">Membros Superiores</option>
           <option value="Peito">Peito</option>
           <option value="Costas">Costas</option>
-          <option value="Ombro">Ombro</option>
-          <option value="Bíceps">Bíceps</option>
-          <option value="Tríceps">Tríceps</option>
-          <option value="Perna">Perna</option>
-          <option value="Glúteo">Glúteo</option>
-          <option value="Abdômen">Abdômen</option>
-          <option value="Cardio">Cardio</option>
-          <option value="Mobilidade">Mobilidade</option>
           <option value="Fortalecimento">Fortalecimento</option>
-          <option value="Outro">Outro</option>
+          <option value="Cardio">Cardio</option>
         </select>
         <select id="banco-filtro-genero" onchange="filtrarBancoExercicios()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
-          <option value="">Todos os gêneros</option>
           <option value="masculino">🚹 Masculino</option>
           <option value="feminino">🚺 Feminino</option>
-          <option value="unissex">⚪ Unissex</option>
         </select>
       </div>
 
@@ -666,25 +657,18 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
 
       <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Categoria</label>
       <select id="banco-ex-categoria" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem;font-family:var(--font-b);margin:6px 0 16px">
+        <option value="Membros Inferiores">Membros Inferiores</option>
+        <option value="Membros Superiores">Membros Superiores</option>
         <option value="Peito">Peito</option>
         <option value="Costas">Costas</option>
-        <option value="Ombro">Ombro</option>
-        <option value="Bíceps">Bíceps</option>
-        <option value="Tríceps">Tríceps</option>
-        <option value="Perna">Perna</option>
-        <option value="Glúteo">Glúteo</option>
-        <option value="Abdômen">Abdômen</option>
-        <option value="Cardio">Cardio</option>
-        <option value="Mobilidade">Mobilidade</option>
         <option value="Fortalecimento">Fortalecimento</option>
-        <option value="Outro">Outro</option>
+        <option value="Cardio">Cardio</option>
       </select>
 
       <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Demonstração (gênero)</label>
       <div style="display:flex;gap:8px;margin:6px 0 16px" id="banco-ex-genero-opts">
         <label class="banco-genero-opt" data-val="masculino" onclick="selecionarGeneroBanco('masculino')" style="flex:1;text-align:center;padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);cursor:pointer;font-size:.78rem;font-weight:700;color:#ccc">🚹 Masculino</label>
         <label class="banco-genero-opt" data-val="feminino" onclick="selecionarGeneroBanco('feminino')" style="flex:1;text-align:center;padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);cursor:pointer;font-size:.78rem;font-weight:700;color:#ccc">🚺 Feminino</label>
-        <label class="banco-genero-opt" data-val="unissex" onclick="selecionarGeneroBanco('unissex')" style="flex:1;text-align:center;padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);cursor:pointer;font-size:.78rem;font-weight:700;color:#ccc">⚪ Unissex</label>
       </div>
 
       <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Vídeo (MP4) ou GIF</label>
@@ -2100,8 +2084,8 @@ function prescreverTreino(){
   // ── BUSCA DE EXERCÍCIOS ───────────────────────────────────────────────────
   // Mapeia os grupos musculares do motor pras categorias usadas no Banco de Exercícios
   const MAPA_GRUPO_BANCO = {
-    'abdômen':'Abdômen', 'bíceps':'Bíceps', 'costas':'Costas', 'glúteos':'Glúteo',
-    'ombro':'Ombro', 'panturrilha':'Perna', 'peitoral':'Peito', 'quadríceps':'Perna', 'tríceps':'Tríceps',
+    'abdômen':'Fortalecimento', 'bíceps':'Membros Superiores', 'costas':'Costas', 'glúteos':'Membros Inferiores',
+    'ombro':'Membros Superiores', 'panturrilha':'Membros Inferiores', 'peitoral':'Peito', 'quadríceps':'Membros Inferiores', 'tríceps':'Membros Superiores',
   };
 
   function buscarEx(grupo, n){
@@ -3229,7 +3213,7 @@ function abrirNovoExercicioBanco(){
   document.getElementById('banco-ex-id').value = '';
   document.getElementById('banco-ex-nome').value = '';
   document.getElementById('banco-ex-categoria').value = 'Peito';
-  selecionarGeneroBanco('unissex');
+  selecionarGeneroBanco('masculino');
   removerMidiaBancoExercicio();
   document.getElementById('modal-banco-exercicio').classList.add('open');
   document.body.style.overflow = 'hidden';
