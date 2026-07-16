@@ -503,6 +503,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
           <option value="" selected>Escolha a categoria...</option>
           <option value="Membros Inferiores">Membros Inferiores</option>
           <option value="Membros Superiores">Membros Superiores</option>
+          <option value="Ombro">Ombro</option>
           <option value="Peito">Peito</option>
           <option value="Costas">Costas</option>
           <option value="Fortalecimento">Fortalecimento</option>
@@ -661,6 +662,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
       <select id="banco-ex-categoria" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem;font-family:var(--font-b);margin:6px 0 16px">
         <option value="Membros Inferiores">Membros Inferiores</option>
         <option value="Membros Superiores">Membros Superiores</option>
+        <option value="Ombro">Ombro</option>
         <option value="Peito">Peito</option>
         <option value="Costas">Costas</option>
         <option value="Fortalecimento">Fortalecimento</option>
@@ -2110,7 +2112,7 @@ function prescreverTreino(){
   // Mapeia os grupos musculares do motor pras categorias usadas no Banco de Exercícios
   const MAPA_GRUPO_BANCO = {
     'abdômen':'Fortalecimento', 'bíceps':'Membros Superiores', 'costas':'Costas', 'glúteos':'Membros Inferiores',
-    'ombro':'Membros Superiores', 'panturrilha':'Membros Inferiores', 'peitoral':'Peito', 'quadríceps':'Membros Inferiores', 'tríceps':'Membros Superiores',
+    'ombro':'Ombro', 'panturrilha':'Membros Inferiores', 'peitoral':'Peito', 'quadríceps':'Membros Inferiores', 'tríceps':'Membros Superiores',
   };
 
   function buscarEx(grupo, n){
