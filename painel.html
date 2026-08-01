@@ -6787,28 +6787,9 @@ async function resetarSenhaPortal(){
   const novaSenha = gerarSenhaAleatoria();
   await SB.from('portal_alunos').update({ senha_temp: novaSenha, senha_redefinida: false }).eq('email', c.email);
 
-  const wpp = (c.whatsapp||c.telefone||'').replace(/\D/g,'');
-  const msg = encodeURIComponent(
-    `Olá ${(c.nome||'').split(' ')[0]}! 🔑\n\nSua senha do portal WillgomesFit foi redefinida:\n\n`+
-    `🔗 Link: https://wildenigomes-ops.github.io/WillgomesFit/portal.html\n`+
-    `📧 E-mail: ${c.email}\n`+
-    `🔑 Nova senha: ${novaSenha}\n\n`+
-    `Após entrar, você pode trocar por uma senha de sua preferência. 💪`
-  );
-
   notif(`🔑 Nova senha: ${novaSenha}`, '#f59e0b', true);
   await carregarStatusPortal();
   await carregarAbaPortal(c);
-
-  if(wpp.length >= 10){
-    setTimeout(()=>{
-      if(confirm(`Nova senha gerada: ${novaSenha}\n\nAbrir WhatsApp para enviar ao aluno?`)){
-        window.open(`https://wa.me/55${wpp}?text=${msg}`, '_blank');
-      }
-    }, 300);
-  } else {
-    alert(`Nova senha: ${novaSenha}\n\nEnvie ao aluno pelo WhatsApp ou e-mail.`);
-  }
 }
 
 async function revogarAcessoPortal(){
