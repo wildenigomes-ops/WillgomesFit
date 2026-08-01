@@ -3023,8 +3023,11 @@ async function renderizarEditorPortalAba(){
         </div>`;
 
     Object.entries(exerciciosPorDia).forEach(([diaNome, exercicios], dIdx)=>{
-      html += `<div style="margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="dia-block-${dIdx}">
+      html += `<div style="margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden" id="dia-block-${dIdx}"
+          draggable="true" ondragstart="iniciarArrastoDia(event,${dIdx})" ondragover="permitirArrasto(event)"
+          ondrop="soltarDia(event,${dIdx})" ondragend="finalizarArrasto(event)" ondragenter="marcarAlvoArrasto(event,this)" ondragleave="desmarcarAlvoArrasto(event,this)">
         <div style="background:rgba(139,92,246,.1);border-bottom:2px solid #8b5cf6;padding:10px 14px;display:flex;align-items:center;gap:8px">
+          <span style="cursor:grab;color:#8b5cf6;font-size:1rem;user-select:none" title="Arraste pra reordenar os dias">⠿</span>
           <input type="text" value="${escHtml(diaNome)}" data-dia="${dIdx}" onchange="atualizarNomeDia(this)"
             style="flex:1;background:transparent;border:none;color:#a78bfa;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-b);outline:none"/>
           <button onclick="abrirSeletorBancoParaFicha(${dIdx})" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">📚 Do Banco</button>
@@ -3098,6 +3101,53 @@ async function buscarMidiasEmLotePosGeracao(exerciciosPorDia){
   }
 }
 
+// ── ARRASTAR E SOLTAR — reordenar dias de treino ──────────────────────────────
+window._arrastoDiaOrigem = null;
+
+function iniciarArrastoDia(event, dIdx){
+  window._arrastoDiaOrigem = dIdx;
+  event.dataTransfer.effectAllowed = 'move';
+  try{ event.dataTransfer.setData('text/plain', String(dIdx)); }catch(e){}
+  event.currentTarget.style.opacity = '.4';
+}
+
+function permitirArrasto(event){
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+}
+
+function marcarAlvoArrasto(event, el){
+  event.preventDefault();
+  el.style.borderColor = 'var(--orange)';
+}
+
+function desmarcarAlvoArrasto(event, el){
+  el.style.borderColor = 'var(--border)';
+}
+
+function finalizarArrasto(event){
+  event.currentTarget.style.opacity = '1';
+  document.querySelectorAll('[id^="dia-block-"]').forEach(el=>el.style.borderColor='var(--border)');
+}
+
+function soltarDia(event, dIdxDestino){
+  event.preventDefault();
+  const origem = window._arrastoDiaOrigem;
+  if(origem===null || origem===undefined || origem===dIdxDestino || !window._fichaEditavel) return;
+
+  const chaves = Object.keys(window._fichaEditavel);
+  const chaveMovida = chaves[origem];
+  chaves.splice(origem, 1);
+  chaves.splice(dIdxDestino, 0, chaveMovida);
+
+  const novaFicha = {};
+  chaves.forEach(k=>{ novaFicha[k] = window._fichaEditavel[k]; });
+  window._fichaEditavel = novaFicha;
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  window._arrastoDiaOrigem = null;
+  renderizarEditorPortalAba();
+}
+
 function adicionarDiaTreino(){
   if(!window._fichaEditavel) return;
   const letras = ['A','B','C','D','E','F','G'];
@@ -3119,8 +3169,11 @@ function removerDiaTreino(dIdx){
 }
 
 function renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData){
-  return `<div id="ex-row-${dIdx}-${eIdx}" style="border-bottom:1px solid var(--border);padding:12px 14px;background:${eIdx%2===0?'transparent':'rgba(255,255,255,.02)'}">
+  return `<div id="ex-row-${dIdx}-${eIdx}" style="border-bottom:1px solid var(--border);padding:12px 14px;background:${eIdx%2===0?'transparent':'rgba(255,255,255,.02)'}"
+      draggable="true" ondragstart="iniciarArrastoExercicio(event,${dIdx},${eIdx})" ondragover="permitirArrasto(event)"
+      ondrop="soltarExercicio(event,${dIdx},${eIdx})" ondragend="finalizarArrasto(event)" ondragenter="marcarAlvoArrastoEx(event,this)" ondragleave="desmarcarAlvoArrastoEx(event,this)">
     <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <span style="cursor:grab;color:#666;font-size:1rem;user-select:none;padding-top:16px;flex-shrink:0" title="Arraste pra reordenar">⠿</span>
       <!-- GIF -->
       <div style="flex-shrink:0">
         ${gifData
@@ -3209,6 +3262,48 @@ function renderCombinadoExercicio(ex, dIdx, eIdx){
 }
 
 // Funções de edição da ficha
+// ── ARRASTAR E SOLTAR — reordenar exercícios dentro do dia ───────────────────
+window._arrastoExercicioOrigem = null; // {dIdx, eIdx}
+
+function iniciarArrastoExercicio(event, dIdx, eIdx){
+  event.stopPropagation(); // não deixa o drag "vazar" pro dia inteiro
+  window._arrastoExercicioOrigem = { dIdx, eIdx };
+  event.dataTransfer.effectAllowed = 'move';
+  try{ event.dataTransfer.setData('text/plain', `${dIdx}-${eIdx}`); }catch(e){}
+  event.currentTarget.style.opacity = '.4';
+}
+
+function marcarAlvoArrastoEx(event, el){
+  event.preventDefault();
+  event.stopPropagation();
+  el.style.background = 'rgba(139,92,246,.08)';
+}
+
+function desmarcarAlvoArrastoEx(event, el){
+  el.style.background = '';
+}
+
+function soltarExercicio(event, dIdxDestino, eIdxDestino){
+  event.preventDefault();
+  event.stopPropagation();
+  const origem = window._arrastoExercicioOrigem;
+  if(!origem || !window._fichaEditavel) return;
+  if(origem.dIdx !== dIdxDestino){
+    notif('Só é possível reordenar exercícios dentro do mesmo dia. Pra mover pra outro dia, use excluir e adicionar de novo.','#f59e0b',true);
+    return;
+  }
+  if(origem.eIdx === eIdxDestino) return;
+
+  const dias = Object.keys(window._fichaEditavel);
+  const lista = window._fichaEditavel[dias[dIdxDestino]];
+  const [movido] = lista.splice(origem.eIdx, 1);
+  lista.splice(eIdxDestino, 0, movido);
+
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  window._arrastoExercicioOrigem = null;
+  renderizarEditorPortalAba();
+}
+
 function atualizarExercicio(dIdx, eIdx, campo, valor){
   if(!window._fichaEditavel) return;
   const dias = Object.keys(window._fichaEditavel);

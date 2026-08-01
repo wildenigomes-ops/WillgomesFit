@@ -319,6 +319,10 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
     <form id="form-login" autocomplete="on" onsubmit="event.preventDefault(); fazerLogin();">
       <input class="inp" type="email" id="login-email" name="email" autocomplete="username" placeholder="Seu e-mail"/>
       <input class="inp" type="password" id="login-pass" name="password" autocomplete="current-password" placeholder="Senha enviada pelo Prof. Will"/>
+      <label style="display:flex;align-items:center;gap:8px;margin:2px 2px 14px;cursor:pointer">
+        <input type="checkbox" id="login-manter-conectado" checked style="width:16px;height:16px;accent-color:var(--orange)"/>
+        <span style="font-size:.78rem;color:#999">Manter conectado neste aparelho</span>
+      </label>
       <button class="btn-auth" type="submit">Entrar no portal</button>
       <div style="text-align:center;margin-top:12px">
         <span style="font-size:.75rem;color:#555">Não tem acesso? </span>
@@ -1239,7 +1243,12 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   SB = window.supabase?.createClient(SB_URL, SB_KEY);
   if(!SB){ notif('Erro de conexão','#ef4444'); return; }
   const { data:{ session } } = await SB.auth.getSession();
-  if(session){ usuario = session.user; entrarNoApp(); }
+  if(session){ usuario = session.user; entrarNoApp(); return; }
+
+  // Tenta entrar sozinho com o token de "manter conectado", se existir e ainda for válido
+  if(params.get('demo') !== '1'){
+    await tentarAutoLogin();
+  }
 });
 
 // Registra o service worker (permite "Adicionar à tela inicial" como app)
@@ -1737,7 +1746,60 @@ async function fazerLogin(){
 
   usuario = { email, id: aluno.id, nome: aluno.nome };
   dadosCliente = aluno;
+
+  const manterConectado = document.getElementById('login-manter-conectado')?.checked;
+  if(manterConectado){
+    await salvarSessaoLembrada(email);
+  } else {
+    limparSessaoLembrada();
+  }
+
   entrarNoApp();
+}
+
+// ── MANTER CONECTADO (token de sessão, sem guardar a senha real) ─────────────
+function gerarTokenSessao(){
+  if(window.crypto?.randomUUID) return crypto.randomUUID();
+  return 'tok-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+}
+
+async function salvarSessaoLembrada(email){
+  try{
+    const token = gerarTokenSessao();
+    const { error } = await SB.from('portal_alunos').update({ sessao_token: token }).eq('email', email);
+    if(error){ console.warn('Não foi possível salvar a sessão lembrada:', error); return; }
+    localStorage.setItem('wgf_sessao_email', email);
+    localStorage.setItem('wgf_sessao_token', token);
+  }catch(e){ console.warn('salvarSessaoLembrada:', e); }
+}
+
+function limparSessaoLembrada(){
+  localStorage.removeItem('wgf_sessao_email');
+  localStorage.removeItem('wgf_sessao_token');
+}
+
+async function tentarAutoLogin(){
+  const email = localStorage.getItem('wgf_sessao_email');
+  const token = localStorage.getItem('wgf_sessao_token');
+  if(!email || !token || !SB) return false;
+
+  try{
+    const { data, error } = await SB.from('portal_alunos').select('*').eq('email', email).limit(1);
+    if(error || !data || !data.length) return false;
+    const aluno = data[0];
+    if(aluno.sessao_token !== token) return false;   // token não bate (login em outro lugar, ou revogado)
+    if(!aluno.ativo) return false;
+    if(aluno.acesso_expira && new Date(aluno.acesso_expira) < new Date()) return false;
+
+    await SB.from('portal_alunos').update({ ultimo_acesso: new Date().toISOString() }).eq('email', email);
+    usuario = { email, id: aluno.id, nome: aluno.nome };
+    dadosCliente = aluno;
+    entrarNoApp();
+    return true;
+  }catch(e){
+    console.warn('tentarAutoLogin:', e);
+    return false;
+  }
 }
 
 // ── CADASTRO ──────────────────────────────────────────────────────────────────
@@ -2443,6 +2505,10 @@ async function entrarNoApp(){
   inicializarLembreteAguaSeAtivo();
 }
 async function fazerLogout(){
+  if(usuario?.email && SB){
+    try{ await SB.from('portal_alunos').update({ sessao_token: null }).eq('email', usuario.email); }catch(e){}
+  }
+  limparSessaoLembrada();
   usuario = null; dadosCliente = null; modoDemo = false;
   if(demoTimer) clearInterval(demoTimer);
   location.reload();
