@@ -6752,6 +6752,7 @@ async function criarAcessoPortal(dias){
 
   notif(`✅ Acesso criado por ${dias} dias!`, '#10b981');
   await carregarStatusPortal();
+  await carregarAbaPortal(c);
 
   // Abrir WhatsApp automaticamente se tiver número
   if(wpp.length >= 10){
@@ -6777,6 +6778,7 @@ async function renovarAcessoPortal(dias){
   await SB.from('portal_alunos').update({ acesso_expira: novaExpira.toISOString(), ativo: true }).eq('email', c.email);
   notif(`✅ Acesso renovado por mais ${dias} dias!`, '#10b981');
   await carregarStatusPortal();
+  await carregarAbaPortal(c);
 }
 
 async function resetarSenhaPortal(){
@@ -6794,8 +6796,9 @@ async function resetarSenhaPortal(){
     `Após entrar, você pode trocar por uma senha de sua preferência. 💪`
   );
 
-  notif(`🔑 Nova senha: ${novaSenha}`, '#f59e0b');
+  notif(`🔑 Nova senha: ${novaSenha}`, '#f59e0b', true);
   await carregarStatusPortal();
+  await carregarAbaPortal(c);
 
   if(wpp.length >= 10){
     setTimeout(()=>{
@@ -6814,6 +6817,7 @@ async function revogarAcessoPortal(){
   await SB.from('portal_alunos').update({ ativo: false, acesso_expira: new Date().toISOString() }).eq('email', clienteAtual.email);
   notif('🚫 Acesso revogado', '#ef4444');
   await carregarStatusPortal();
+  await carregarAbaPortal(clienteAtual);
 }
 
 
