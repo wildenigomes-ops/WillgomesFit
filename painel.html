@@ -260,6 +260,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
     <div class="sb-section">Conteúdo</div>
     <a class="nav-item" onclick="showPage('bancoex',this)"><span class="nav-icon">🎬</span>Banco de Exercícios</a>
     <a class="nav-item" onclick="showPage('bancoalim',this)"><span class="nav-icon">🥗</span>Banco de Alimentos</a>
+    <a class="nav-item" onclick="showPage('videosaval',this)"><span class="nav-icon">📹</span>Vídeos dos Alunos<span class="tab-cnt" id="cnt-videos-pendentes" style="display:none"></span></a>
     <div class="sb-section">Ferramentas</div>
     <a class="nav-item" href="motor.html" target="_blank"><span class="nav-icon">⚙️</span>Motor de Fichas</a>
     <a class="nav-item" href="willgomesfit.html" target="_blank"><span class="nav-icon">🌐</span>Página de Vendas</a>
@@ -493,7 +494,10 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
     <div class="page" id="page-bancoex">
       <div class="topbar">
         <div class="page-title">BANCO DE<span> EXERCÍCIOS</span></div>
-        <button class="btn btn-orange" onclick="abrirNovoExercicioBanco()" style="font-size:.8rem;padding:8px 16px">+ Novo Exercício</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="corrigirCategoriasAntigasBanco()" style="font-size:.8rem;padding:8px 16px;background:rgba(234,179,8,.1);color:#eab308;border-color:rgba(234,179,8,.3)">🔧 Corrigir categorias antigas</button>
+          <button class="btn btn-orange" onclick="abrirNovoExercicioBanco()" style="font-size:.8rem;padding:8px 16px">+ Novo Exercício</button>
+        </div>
       </div>
       <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px">Cadastre o exercício uma vez com nome e vídeo/GIF. Depois, ao montar a ficha de qualquer aluno, é só escolher aqui — o nome e o vídeo já vêm prontos, você só ajusta séries, reps, descanso e observações.</p>
 
@@ -502,6 +506,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
         <select id="banco-filtro-categoria" onchange="filtrarBancoExercicios()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
           <option value="" selected>Escolha a categoria...</option>
           <option value="Membros Inferiores">Membros Inferiores</option>
+          <option value="Glúteo">Glúteo</option>
           <option value="Membros Superiores">Membros Superiores</option>
           <option value="Ombro">Ombro</option>
           <option value="Peito">Peito</option>
@@ -578,6 +583,49 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
       </div>
     </div>
 
+    <!-- PÁGINA VÍDEOS DOS ALUNOS -->
+    <div class="page" id="page-videosaval">
+      <div class="topbar">
+        <div class="page-title">VÍDEOS DOS<span> ALUNOS</span></div>
+        <button class="btn btn-green" onclick="carregarVideosAvaliacao()" style="font-size:.8rem;padding:8px 16px">🔄 Atualizar</button>
+      </div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px">Vídeos que os alunos gravaram fazendo os exercícios, pra você avaliar a execução e deixar um retorno.</p>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button onclick="filtrarVideosPorStatus('pendente')" id="filtro-video-pendente" class="btn" style="font-size:.8rem;padding:8px 16px;background:rgba(234,179,8,.15);border-color:rgba(234,179,8,.3);color:#eab308">⏳ Pendentes</button>
+        <button onclick="filtrarVideosPorStatus('avaliado')" id="filtro-video-avaliado" class="btn" style="font-size:.8rem;padding:8px 16px;background:rgba(255,255,255,.04);border-color:var(--border);color:#999">✅ Avaliados</button>
+      </div>
+
+      <div id="lista-videos-avaliacao">
+        <div style="text-align:center;padding:32px;color:var(--muted)">⏳ Carregando...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL AVALIAR VÍDEO -->
+<div class="modal-overlay" id="modal-avaliar-video">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <div style="flex:1">
+          <div class="modal-title">Avaliar Vídeo</div>
+          <div style="font-size:.78rem;color:var(--muted)" id="avaliar-video-aluno"></div>
+        </div>
+        <button class="modal-close" onclick="fecharModalAvaliarVideo()">✕</button>
+      </div>
+      <div style="padding:20px">
+        <div id="avaliar-video-player-wrap" style="margin-bottom:14px;text-align:center">
+          <div style="padding:40px;color:var(--muted)">⏳ Carregando vídeo...</div>
+        </div>
+        <div id="avaliar-video-info" style="font-size:.82rem;color:#ccc;margin-bottom:14px"></div>
+
+        <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Seu retorno pro aluno</label>
+        <textarea id="avaliar-video-feedback" rows="4" placeholder="Ex: Ótima execução! Só cuide de não deixar o joelho passar da linha do pé..." style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.85rem;font-family:var(--font-b);resize:vertical;margin:6px 0 16px"></textarea>
+
+        <button onclick="salvarAvaliacaoVideo()" style="width:100%;background:var(--green);color:#000;border:none;padding:12px;border-radius:8px;font-weight:800;font-size:.88rem;cursor:pointer">✅ Enviar avaliação pro aluno</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -661,6 +709,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
       <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Categoria</label>
       <select id="banco-ex-categoria" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem;font-family:var(--font-b);margin:6px 0 16px">
         <option value="Membros Inferiores">Membros Inferiores</option>
+        <option value="Glúteo">Glúteo</option>
         <option value="Membros Superiores">Membros Superiores</option>
         <option value="Ombro">Ombro</option>
         <option value="Peito">Peito</option>
@@ -1049,6 +1098,17 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
               <span id="rel-feedback-count" style="font-size:.68rem;color:#666"></span>
             </div>
             <div style="padding:14px 16px" id="rel-feedbacks">
+              <div style="color:var(--muted);font-size:.82rem">Carregando...</div>
+            </div>
+          </div>
+
+          <!-- Diário Alimentar do aluno -->
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#34d399">📝 Diário Alimentar (últimos 7 dias)</span>
+              <button onclick="carregarDiarioAlimentarCliente(clienteAtual)" style="background:none;border:none;color:#60a5fa;font-size:.68rem;cursor:pointer">🔄 Atualizar</button>
+            </div>
+            <div style="padding:14px 16px" id="rel-diario-alimentar">
               <div style="color:var(--muted);font-size:.82rem">Carregando...</div>
             </div>
           </div>
@@ -1943,6 +2003,7 @@ function showPage(id,el){
   if(id==='captacao'){ carregarCaptacao(); }
   if(id==='bancoex'){ carregarBancoExercicios(); }
   if(id==='bancoalim'){ carregarBancoAlimentos(); }
+  if(id==='videosaval'){ carregarVideosAvaliacao(); }
 }
 function switchTab(id,el){
   document.querySelectorAll('#page-clientes .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -2111,7 +2172,7 @@ function prescreverTreino(){
   // ── BUSCA DE EXERCÍCIOS ───────────────────────────────────────────────────
   // Mapeia os grupos musculares do motor pras categorias usadas no Banco de Exercícios
   const MAPA_GRUPO_BANCO = {
-    'abdômen':'Fortalecimento', 'bíceps':'Membros Superiores', 'costas':'Costas', 'glúteos':'Membros Inferiores',
+    'abdômen':'Fortalecimento', 'bíceps':'Membros Superiores', 'costas':'Costas', 'glúteos':'Glúteo',
     'ombro':'Ombro', 'panturrilha':'Membros Inferiores', 'peitoral':'Peito', 'quadríceps':'Membros Inferiores', 'tríceps':'Membros Superiores',
   };
 
@@ -3277,6 +3338,68 @@ async function carregarPreviewMidiaExercicio(id){
   }
 }
 
+// Mapeia nomes de categoria antigos (de versões anteriores do sistema) pros atuais.
+// Categorias que já são válidas hoje (Peito, Costas, Ombro, Cardio, Fortalecimento,
+// Membros Inferiores, Membros Superiores) não entram aqui — não precisam de correção.
+const MAPA_CATEGORIAS_ANTIGAS = {
+  'perna':'Membros Inferiores', 'pernas':'Membros Inferiores',
+  'quadríceps':'Membros Inferiores', 'posterior':'Membros Inferiores',
+  'panturrilha':'Membros Inferiores', 'bíceps':'Membros Superiores', 'tríceps':'Membros Superiores',
+  'braço':'Membros Superiores', 'braços':'Membros Superiores', 'antebraço':'Membros Superiores',
+  'abdômen':'Fortalecimento', 'abdominal':'Fortalecimento', 'core':'Fortalecimento',
+  'mobilidade':'Fortalecimento', 'outro':'Fortalecimento',
+};
+
+async function corrigirCategoriasAntigasBanco(){
+  if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
+  if(!window._bancoExercicios){ await carregarBancoExercicios(); }
+
+  // Como a listagem não traz "categoria" filtrada por nada, precisa buscar TODAS
+  // as categorias existentes direto do banco (não só as do filtro atual em tela)
+  notif('⏳ Verificando categorias antigas...','#3b82f6');
+  let todos;
+  try{
+    const { data, error } = await SB.from('banco_exercicios').select('id,nome,categoria');
+    if(error){ notif('Erro ao verificar: '+error.message,'#ef4444',true); return; }
+    todos = data || [];
+  }catch(e){ notif('Erro inesperado: '+(e.message||e),'#ef4444',true); return; }
+
+  const categoriasValidas = new Set(['Peito','Costas','Ombro','Glúteo','Cardio','Fortalecimento','Membros Inferiores','Membros Superiores']);
+  const paraCorrigir = todos.filter(ex => ex.categoria && !categoriasValidas.has(ex.categoria));
+
+  if(!paraCorrigir.length){
+    notif('✅ Nenhuma categoria antiga encontrada — está tudo atualizado!','#10b981');
+    return;
+  }
+
+  // Monta um resumo do que vai mudar, pra confirmar antes de aplicar
+  const resumo = {};
+  paraCorrigir.forEach(ex=>{
+    const chave = ex.categoria.toLowerCase().trim();
+    const novaCategoria = MAPA_CATEGORIAS_ANTIGAS[chave] || 'Fortalecimento';
+    resumo[ex.categoria] = resumo[ex.categoria] || { destino: novaCategoria, qtd: 0 };
+    resumo[ex.categoria].qtd++;
+  });
+  const linhasResumo = Object.entries(resumo).map(([antiga,{destino,qtd}])=> `• "${antiga}" → "${destino}" (${qtd} exercício${qtd>1?'s':''})`).join('\n');
+
+  if(!confirm(`Encontrei ${paraCorrigir.length} exercício(s) com categoria antiga. Vou atualizar assim:\n\n${linhasResumo}\n\nConfirmar a correção?`)) return;
+
+  notif('⏳ Corrigindo categorias...','#3b82f6');
+  let sucesso = 0, falhas = 0;
+  for(const ex of paraCorrigir){
+    const chave = ex.categoria.toLowerCase().trim();
+    const novaCategoria = MAPA_CATEGORIAS_ANTIGAS[chave] || 'Fortalecimento';
+    try{
+      const { error } = await SB.from('banco_exercicios').update({ categoria: novaCategoria }).eq('id', ex.id);
+      if(error){ falhas++; console.error('corrigirCategoriasAntigasBanco — falha em', ex.nome, error); }
+      else sucesso++;
+    }catch(e){ falhas++; console.error('corrigirCategoriasAntigasBanco — erro em', ex.nome, e); }
+  }
+
+  notif(`✅ ${sucesso} exercício(s) corrigido(s)${falhas?` · ⚠️ ${falhas} falharam`:''}. Escolha uma categoria acima pra ver.`, falhas ? '#f59e0b' : '#10b981', true);
+  await carregarBancoExercicios();
+}
+
 function limparFiltrosBancoExercicios(){
   const busca = document.getElementById('banco-busca');
   const filtroCategoria = document.getElementById('banco-filtro-categoria');
@@ -3677,6 +3800,139 @@ async function excluirAlimentoBanco(id){
     notif('Alimento removido do banco.','#f59e0b');
     await carregarBancoAlimentos();
   }catch(e){ console.error('excluirAlimentoBanco:', e); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// VÍDEOS DOS ALUNOS — avaliação de execução enviada pelo portal
+// ══════════════════════════════════════════════════════════════════════════
+
+window._filtroStatusVideo = 'pendente';
+
+async function carregarVideosAvaliacao(){
+  const el = document.getElementById('lista-videos-avaliacao');
+  if(!SB){ if(el) el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted)">Supabase não conectado.</div>'; return; }
+  try{
+    // Não busca a coluna "video" aqui (arquivo grande) — só o essencial pra listar.
+    const { data, error } = await SB.from('videos_avaliacao')
+      .select('id,email,nome,exercicio,mensagem_aluno,status,feedback_professor,criado_em,avaliado_em')
+      .order('criado_em',{ascending:false});
+    if(error){
+      console.error('[carregarVideosAvaliacao] erro:', error);
+      const ehTabelaFaltando = /relation .*videos_avaliacao.* does not exist/i.test(error.message||'');
+      if(el) el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted)">
+        ${ehTabelaFaltando ? 'A tabela ainda não existe — rode o sql_videos_avaliacao.sql no Supabase.' : 'Erro ao carregar: '+error.message}
+        <button onclick="carregarVideosAvaliacao()" style="display:block;margin:10px auto 0;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;padding:7px 16px;border-radius:8px;font-size:.78rem;cursor:pointer">🔄 Tentar de novo</button>
+      </div>`;
+      return;
+    }
+    window._videosAvaliacao = data || [];
+
+    const pendentes = window._videosAvaliacao.filter(v=>v.status!=='avaliado').length;
+    const badge = document.getElementById('cnt-videos-pendentes');
+    if(badge){
+      if(pendentes>0){ badge.textContent = pendentes; badge.style.display='inline-block'; }
+      else{ badge.style.display='none'; }
+    }
+
+    renderListaVideosAvaliacao();
+  }catch(e){
+    console.error('carregarVideosAvaliacao — erro inesperado:', e);
+    if(el) el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted)">Erro inesperado.</div>';
+  }
+}
+
+function filtrarVideosPorStatus(status){
+  window._filtroStatusVideo = status;
+  document.getElementById('filtro-video-pendente').style.background = status==='pendente' ? 'rgba(234,179,8,.15)' : 'rgba(255,255,255,.04)';
+  document.getElementById('filtro-video-pendente').style.color = status==='pendente' ? '#eab308' : '#999';
+  document.getElementById('filtro-video-avaliado').style.background = status==='avaliado' ? 'rgba(16,185,129,.15)' : 'rgba(255,255,255,.04)';
+  document.getElementById('filtro-video-avaliado').style.color = status==='avaliado' ? '#34d399' : '#999';
+  renderListaVideosAvaliacao();
+}
+
+function renderListaVideosAvaliacao(){
+  const el = document.getElementById('lista-videos-avaliacao');
+  if(!el) return;
+  const status = window._filtroStatusVideo;
+  const lista = (window._videosAvaliacao||[]).filter(v => status==='avaliado' ? v.status==='avaliado' : v.status!=='avaliado');
+
+  if(!lista.length){
+    el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);border:1px dashed var(--border);border-radius:12px">
+      ${status==='pendente' ? '🎉 Nenhum vídeo pendente — tudo avaliado!' : 'Nenhum vídeo avaliado ainda.'}
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = lista.map(v=>`
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;border-left:3px solid ${v.status==='avaliado'?'#10b981':'#eab308'}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+        <span style="font-size:.9rem;font-weight:700;color:#fff">${escHtml(v.nome||v.email)}</span>
+        <span style="font-size:.68rem;color:var(--muted)">${new Date(v.criado_em).toLocaleString('pt-BR')}</span>
+      </div>
+      ${v.exercicio ? `<div style="font-size:.8rem;color:#a78bfa;margin-bottom:4px">🏋️ ${escHtml(v.exercicio)}</div>` : ''}
+      ${v.mensagem_aluno ? `<div style="font-size:.8rem;color:#ccc;margin-bottom:8px">"${escHtml(v.mensagem_aluno)}"</div>` : ''}
+      ${v.status==='avaliado' && v.feedback_professor ? `<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:8px 10px;font-size:.78rem;color:#a7f3d0;margin-bottom:8px"><strong>Seu retorno:</strong> ${escHtml(v.feedback_professor)}</div>` : ''}
+      <button onclick="abrirModalAvaliarVideo('${v.id}')" style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:#60a5fa;padding:7px 16px;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer">${v.status==='avaliado' ? '✏️ Editar avaliação' : '▶ Ver e avaliar'}</button>
+    </div>
+  `).join('');
+}
+
+async function abrirModalAvaliarVideo(id){
+  const v = (window._videosAvaliacao||[]).find(x=>x.id===id);
+  if(!v) return;
+  window._videoAvaliandoId = id;
+
+  document.getElementById('avaliar-video-aluno').textContent = `${v.nome||v.email} · ${new Date(v.criado_em).toLocaleString('pt-BR')}`;
+  document.getElementById('avaliar-video-info').innerHTML = `
+    ${v.exercicio ? `<div>🏋️ <strong>${escHtml(v.exercicio)}</strong></div>` : ''}
+    ${v.mensagem_aluno ? `<div style="margin-top:4px;color:#aaa">"${escHtml(v.mensagem_aluno)}"</div>` : ''}
+  `;
+  document.getElementById('avaliar-video-feedback').value = v.feedback_professor || '';
+  document.getElementById('avaliar-video-player-wrap').innerHTML = '<div style="padding:40px;color:var(--muted)">⏳ Carregando vídeo...</div>';
+  document.getElementById('modal-avaliar-video').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  if(!SB) return;
+  try{
+    const { data, error } = await SB.from('videos_avaliacao').select('video').eq('id', id).single();
+    const playerWrap = document.getElementById('avaliar-video-player-wrap');
+    if(error || !data?.video){
+      if(playerWrap) playerWrap.innerHTML = '<div style="padding:20px;color:#f87171">Erro ao carregar o vídeo.</div>';
+      return;
+    }
+    if(playerWrap) playerWrap.innerHTML = `<video src="${data.video}" controls style="width:100%;max-height:320px;border-radius:10px;background:#000"></video>`;
+  }catch(e){
+    console.error('abrirModalAvaliarVideo — erro ao buscar vídeo:', e);
+  }
+}
+
+function fecharModalAvaliarVideo(){
+  document.getElementById('modal-avaliar-video').classList.remove('open');
+  document.body.style.overflow = '';
+  document.getElementById('avaliar-video-player-wrap').innerHTML = '';
+}
+
+async function salvarAvaliacaoVideo(){
+  const id = window._videoAvaliandoId;
+  if(!id || !SB) return;
+  const feedback = document.getElementById('avaliar-video-feedback').value.trim();
+  if(!feedback){ notif('Escreva um retorno antes de enviar pro aluno','#ef4444',true); return; }
+
+  notif('⏳ Salvando...','#3b82f6');
+  try{
+    const { error } = await SB.from('videos_avaliacao').update({
+      status: 'avaliado',
+      feedback_professor: feedback,
+      avaliado_em: new Date().toISOString()
+    }).eq('id', id);
+    if(error){ notif('Erro ao salvar: '+error.message,'#ef4444',true); return; }
+    notif('✅ Avaliação enviada! O aluno já pode ver no portal dele.','#10b981');
+    fecharModalAvaliarVideo();
+    await carregarVideosAvaliacao();
+  }catch(e){
+    console.error('salvarAvaliacaoVideo — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+  }
 }
 
 // Lista curada com base na Tabela TACO (UNICAMP) — valores aproximados por porção padrão
@@ -4916,6 +5172,9 @@ async function gerarRelatorioCliente(c){
 
   // Feedbacks enviados pelo aluno (elogios, problemas, pedidos de alteração)
   await carregarFeedbacksCliente(c);
+
+  // Diário alimentar (o que o aluno realmente registrou comendo)
+  await carregarDiarioAlimentarCliente(c);
 }
 
 async function carregarFeedbacksCliente(c){
@@ -4967,6 +5226,97 @@ async function marcarFeedbackLido(id){
     await SB.from('portal_feedbacks').update({lida:true}).eq('id', id);
     if(clienteAtual) await carregarFeedbacksCliente(clienteAtual);
   }catch(e){ console.warn('marcarFeedbackLido:', e); }
+}
+
+async function carregarDiarioAlimentarCliente(c){
+  const el = document.getElementById('rel-diario-alimentar');
+  if(!el) return;
+  if(!SB || !c?.email){ el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Cliente sem e-mail cadastrado.</div>'; return; }
+
+  try{
+    const seteDiasAtras = new Date();
+    seteDiasAtras.setDate(seteDiasAtras.getDate()-6);
+    const dataLimite = seteDiasAtras.toISOString().split('T')[0];
+
+    const { data: itens, error } = await SB.from('portal_diario_alimentar')
+      .select('*')
+      .eq('email', c.email)
+      .gte('data', dataLimite)
+      .order('data', {ascending:false});
+
+    if(error){
+      const ehTabelaFaltando = /relation .*portal_diario_alimentar.* does not exist/i.test(error.message||'');
+      el.innerHTML = `<div style="color:var(--muted);font-size:.82rem">${ehTabelaFaltando ? 'Ainda não disponível — rode o sql_diario_alimentar.sql no Supabase.' : 'Erro ao carregar: '+error.message}</div>`;
+      console.error('carregarDiarioAlimentarCliente:', error);
+      return;
+    }
+
+    if(!itens || !itens.length){
+      el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">O aluno ainda não registrou nada no diário alimentar nos últimos 7 dias.</div>';
+      return;
+    }
+
+    // Busca a meta calórica da ficha atual pra comparar
+    let metaCalorias = 0;
+    try{
+      const { data: fichaData } = await SB.from('portal_fichas').select('refeicoes_json').eq('email', c.email).order('criado_em',{ascending:false}).limit(1);
+      metaCalorias = (fichaData?.[0]?.refeicoes_json||[]).reduce((s,r)=>s+(Number(r.metaCalorias)||0),0);
+    }catch(e){ console.warn('carregarDiarioAlimentarCliente — erro ao buscar meta:', e); }
+
+    // Agrupa por dia
+    const porDia = {};
+    itens.forEach(it=>{
+      if(!porDia[it.data]) porDia[it.data] = [];
+      porDia[it.data].push(it);
+    });
+    const dias = Object.keys(porDia).sort((a,b)=>b.localeCompare(a));
+
+    let html = '';
+    if(metaCalorias){
+      html += `<div style="font-size:.72rem;color:#888;margin-bottom:12px">Meta da ficha atual: <strong style="color:#fbbf24">${metaCalorias} kcal/dia</strong></div>`;
+    }
+
+    html += dias.map(data=>{
+      const itensDia = porDia[data];
+      const totalKcal = itensDia.reduce((s,it)=>s+(Number(it.calorias)||0),0);
+      const totalProt = itensDia.reduce((s,it)=>s+(Number(it.proteina)||0),0);
+      const totalCarb = itensDia.reduce((s,it)=>s+(Number(it.carboidrato)||0),0);
+      const totalGord = itensDia.reduce((s,it)=>s+(Number(it.gordura)||0),0);
+      const dataFormatada = new Date(data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short', day:'2-digit', month:'2-digit'});
+
+      let corDiff = '#888';
+      let labelDiff = '';
+      if(metaCalorias){
+        const diff = Math.round(totalKcal - metaCalorias);
+        const percDiff = Math.abs(diff)/metaCalorias;
+        corDiff = percDiff <= 0.1 ? '#34d399' : percDiff <= 0.25 ? '#fbbf24' : '#f87171';
+        labelDiff = ` <span style="color:${corDiff}">(${diff>0?'+':''}${diff} kcal)</span>`;
+      }
+
+      const porRefeicao = {};
+      itensDia.forEach(it=>{ (porRefeicao[it.refeicao] = porRefeicao[it.refeicao]||[]).push(it); });
+
+      return `<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden">
+        <div style="background:rgba(255,255,255,.03);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+          <span style="font-size:.78rem;font-weight:700;color:#fff;text-transform:capitalize">${dataFormatada}</span>
+          <span style="font-size:.75rem;color:#fbbf24">${Math.round(totalKcal)} kcal${labelDiff} · ${Math.round(totalProt)}p/${Math.round(totalCarb)}c/${Math.round(totalGord)}g</span>
+        </div>
+        <div style="padding:10px 12px;display:none">
+          ${Object.entries(porRefeicao).map(([ref,its])=>`
+            <div style="margin-bottom:8px">
+              <div style="font-size:.65rem;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">${ref}</div>
+              ${its.map(it=>`<div style="font-size:.78rem;color:#ccc;padding:2px 0">• ${escHtml(it.alimento_nome)} ${it.quantidade?`<span style="color:#666">(${escHtml(it.quantidade)})</span>`:''} <span style="color:#fbbf24;float:right">${Math.round(it.calorias||0)} kcal</span></div>`).join('')}
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = html;
+  }catch(e){
+    console.error('carregarDiarioAlimentarCliente — erro inesperado:', e);
+    el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Erro ao carregar diário alimentar.</div>';
+  }
 }
 
 
@@ -7079,6 +7429,7 @@ async function init(){
   await initSB();
   await loadClientes();
   carregarCaptacao().catch(e=>console.warn('carregarCaptacao (init):', e));
+  carregarVideosAvaliacao().catch(e=>console.warn('carregarVideosAvaliacao (init):', e));
 }
 
 init();
