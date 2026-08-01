@@ -3447,7 +3447,9 @@ async function publicarNoPortal(){
     const portalAluno = await SB.from('portal_alunos').select('user_id').eq('email', c.email).limit(1);
     const userId = portalAluno.data?.[0]?.user_id || null;
 
-    const { error } = await SB.from('portal_fichas').upsert({
+    console.log('[publicarNoPortal] publicando pra', c.email, '| dias:', Object.keys(treinoJson).filter(k=>k!=='_notas'), '| gifs:', Object.keys(gifCache).length);
+
+    const { data: dataSalva, error } = await SB.from('portal_fichas').upsert({
       email: c.email,
       user_id: userId,
       titulo: `Ficha de Treino — ${nomeCliente}`,
@@ -3457,9 +3459,24 @@ async function publicarNoPortal(){
       total_gifs: Object.keys(gifCache).length,
       criado_em: new Date().toISOString(),
       publicado_por: 'Prof. Will Gomes'
-    }, { onConflict: 'email' });
+    }, { onConflict: 'email' }).select();
 
     if(error){ notif('Erro ao publicar: '+error.message,'#ef4444',true); console.error('publicarNoPortal:', error); return; }
+
+    // Verificação de verdade: confirma que a ficha realmente voltou do banco com o
+    // conteúdo esperado, em vez de só confiar que "sem erro" significa "salvou".
+    console.log('[publicarNoPortal] resposta do Supabase após upsert:', dataSalva);
+    if(!dataSalva || !dataSalva.length){
+      notif('⚠️ O Supabase não confirmou o salvamento (nenhuma linha retornada). A ficha pode NÃO ter sido publicada de verdade — tente de novo e, se persistir, verifique se a tabela portal_fichas tem uma restrição UNIQUE na coluna email.','#ef4444',true);
+      return;
+    }
+    const diasSalvos = Object.keys(dataSalva[0].treino_json||{}).filter(k=>k!=='_notas');
+    const diasEsperados = Object.keys(treinoJson).filter(k=>k!=='_notas');
+    if(diasSalvos.length !== diasEsperados.length){
+      notif('⚠️ A ficha foi salva, mas o conteúdo confirmado no banco é diferente do que você editou. Tente publicar de novo — se persistir, avise o suporte técnico com print desta mensagem.','#ef4444',true);
+      console.error('[publicarNoPortal] divergência: esperado', diasEsperados, 'salvo', diasSalvos);
+      return;
+    }
 
     const nGifs = Object.keys(gifCache).length;
     const statusEl = document.getElementById('portal-status-aba');
@@ -3467,7 +3484,7 @@ async function publicarNoPortal(){
       statusEl.style.display = 'block';
     }
     window._fichaTemAlteracoesNaoPublicadas = false;
-    notif(`✅ Ficha publicada no portal do aluno! ${nGifs} GIF(s) incluídos.`,'#8b5cf6');
+    notif(`✅ Ficha publicada e confirmada no portal do aluno! ${nGifs} GIF(s) incluídos.`,'#8b5cf6');
     carregarAbaPortal(c);
   }catch(e){
     console.error('publicarNoPortal — erro inesperado:', e);
