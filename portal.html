@@ -276,10 +276,10 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
 }
 
 /* BOTTOM NAV MOBILE */
-.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#0d0d0d;border-top:1px solid var(--border);z-index:100}
-.bn-items{display:flex}
-.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;color:#666;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:color .2s;border:none;background:none}
-.bn-item.active{color:var(--orange)}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#0d0d0d;border-top:1px solid var(--border);z-index:100;padding:8px 6px}
+.bn-items{display:flex;gap:4px}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;color:#666;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .25s;border:none;background:none;border-radius:16px}
+.bn-item.active{color:#fff;background:linear-gradient(135deg,var(--orange),#ff6b00);box-shadow:0 3px 10px rgba(232,93,4,.4)}
 .bn-icon{font-size:1.3rem}
 @media(max-width:768px){
   .bottom-nav{display:block}
@@ -444,8 +444,24 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
       <div class="sb-item" onclick="showPage('nutri')" id="sb-nutri">
         <span class="sb-icon">🍎</span> Guia Alimentar
       </div>
+      <div class="sb-item" onclick="showPage('diario')" id="sb-diario">
+        <span class="sb-icon">📝</span> Diário Alimentar
+      </div>
       <div class="sb-item" onclick="showPage('progresso')" id="sb-progresso">
         <span class="sb-icon">📈</span> Progresso
+      </div>
+      <div class="sb-item" onclick="showPage('videos')" id="sb-videos">
+        <span class="sb-icon">📹</span> Enviar Vídeo
+      </div>
+      <div class="sb-item" onclick="showPage('chat')" id="sb-chat">
+        <span class="sb-icon">💬</span> Mensagens
+        <span id="chat-badge-sidebar" style="display:none;background:var(--orange);color:#fff;font-size:.6rem;font-weight:800;padding:2px 6px;border-radius:10px;margin-left:auto"></span>
+      </div>
+      <div class="sb-item" onclick="showPage('agua')" id="sb-agua">
+        <span class="sb-icon">💧</span> Água
+      </div>
+      <div class="sb-item" onclick="showPage('avaliacao')" id="sb-avaliacao">
+        <span class="sb-icon">📏</span> Avaliação Física
       </div>
       <div class="sb-item" onclick="showPage('historico')" id="sb-historico">
         <span class="sb-icon">📂</span> Histórico
@@ -460,9 +476,50 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
 
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
-        <div class="pg-header">
-          <div class="pg-title" id="dash-titulo">Olá, Aluno!</div>
-          <div class="pg-sub" id="dash-plano">Carregando seu plano...</div>
+        <div class="pg-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div>
+            <div class="pg-title" id="dash-titulo">Olá, Aluno!</div>
+            <div class="pg-sub" id="dash-plano">Carregando seu plano...</div>
+          </div>
+          <div id="dash-sequencia-wrap" style="display:none;flex-shrink:0;align-items:center;gap:6px;background:linear-gradient(135deg,#f59e0b,#ea580c);border-radius:14px;padding:8px 14px">
+            <span style="font-size:1.2rem">🔥</span>
+            <div>
+              <div id="dash-sequencia-num" style="font-size:1.1rem;font-weight:800;color:#fff;line-height:1">0</div>
+              <div style="font-size:.55rem;color:rgba(255,255,255,.85);font-weight:700;text-transform:uppercase">dias</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACESSO RÁPIDO -->
+        <div style="margin-bottom:22px">
+          <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#666;margin-bottom:10px">Acesso Rápido</div>
+          <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch">
+            <button onclick="showPage('ficha')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <span style="font-size:1.5rem">📋</span>
+              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Meu Treino</span>
+            </button>
+            <button onclick="showPage('diario')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <span style="font-size:1.5rem">📝</span>
+              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Diário</span>
+            </button>
+            <button onclick="showPage('nutri')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <span style="font-size:1.5rem">🍎</span>
+              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Alimentação</span>
+            </button>
+            <button onclick="showPage('progresso')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <span style="font-size:1.5rem">📈</span>
+              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Progresso</span>
+            </button>
+            <button onclick="showPage('videos')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <span style="font-size:1.5rem">📹</span>
+              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Vídeo</span>
+            </button>
+            <button onclick="showPage('chat')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;position:relative">
+              <span id="chat-badge-quickaccess" style="display:none;position:absolute;top:6px;right:6px;background:var(--orange);color:#fff;font-size:.58rem;font-weight:800;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center"></span>
+              <span style="font-size:1.5rem">💬</span>
+              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Mensagens</span>
+            </button>
+          </div>
         </div>
 
         <!-- INSTALAR COMO APP — some sozinho se já estiver instalado -->
@@ -483,6 +540,41 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
             <span style="display:block;color:#888;font-size:.72rem">Usando pelo atalho da tela inicial? Toque aqui se algo parecer desatualizado.</span>
           </span>
           <span style="color:#a78bfa;font-size:.75rem;flex-shrink:0">Atualizar</span>
+        </button>
+
+        <!-- ÁGUA -->
+        <button onclick="showPage('agua')" style="display:block;width:100%;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:12px;padding:14px 16px;margin-bottom:20px;cursor:pointer;text-align:left">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <span style="font-size:1.3rem;flex-shrink:0">💧</span>
+            <span style="flex:1">
+              <span style="display:block;color:#fff;font-size:.82rem;font-weight:700">Água de hoje</span>
+              <span id="dash-agua-label" style="display:block;color:#888;font-size:.72rem">Carregando...</span>
+            </span>
+            <span style="color:#60a5fa;font-size:.75rem;flex-shrink:0">Registrar</span>
+          </div>
+          <div style="background:rgba(255,255,255,.08);border-radius:20px;height:8px;overflow:hidden">
+            <div id="dash-agua-barra" style="background:linear-gradient(90deg,#3b82f6,#60a5fa);height:100%;width:0%;border-radius:20px;transition:width .3s"></div>
+          </div>
+        </button>
+
+        <!-- DIÁRIO ALIMENTAR -->
+        <button onclick="showPage('diario')" style="display:flex;align-items:center;gap:12px;width:100%;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:12px;padding:12px 16px;margin-bottom:20px;cursor:pointer;text-align:left">
+          <span style="font-size:1.3rem;flex-shrink:0">📝</span>
+          <span style="flex:1">
+            <span style="display:block;color:#fff;font-size:.82rem;font-weight:700">Registrar o que comi hoje</span>
+            <span style="display:block;color:#888;font-size:.72rem">Anote suas refeições e acompanhe calorias e macros do dia.</span>
+          </span>
+          <span style="color:#34d399;font-size:.75rem;flex-shrink:0">Abrir</span>
+        </button>
+
+        <!-- ENVIAR VÍDEO PRA AVALIAÇÃO -->
+        <button onclick="showPage('videos')" style="display:flex;align-items:center;gap:12px;width:100%;background:rgba(232,93,4,.08);border:1px solid rgba(232,93,4,.25);border-radius:12px;padding:12px 16px;margin-bottom:20px;cursor:pointer;text-align:left">
+          <span style="font-size:1.3rem;flex-shrink:0">📹</span>
+          <span style="flex:1">
+            <span style="display:block;color:#fff;font-size:.82rem;font-weight:700">Enviar vídeo da execução</span>
+            <span style="display:block;color:#888;font-size:.72rem">Grave fazendo o exercício e mande pro Prof. Will avaliar sua postura.</span>
+          </span>
+          <span style="color:var(--orange);font-size:.75rem;flex-shrink:0">Enviar</span>
         </button>
 
         <!-- FEEDBACK DO ALUNO -->
@@ -615,6 +707,11 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
             <div class="empty-title">Guia alimentar em preparação</div>
             <div class="empty-sub">O Prof. Will está preparando suas orientações de alimentação. Em breve aparecerá aqui!</div>
           </div>
+          <button id="btn-lista-compras" onclick="gerarListaCompras()" style="display:none;align-items:center;gap:10px;width:100%;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:12px;padding:13px 16px;margin-bottom:16px;cursor:pointer;text-align:left">
+            <span style="font-size:1.2rem">🛒</span>
+            <span style="flex:1;font-size:.85rem;color:#fff;font-weight:700">Gerar lista de compras da semana</span>
+            <span style="color:#34d399;font-size:.75rem">Gerar</span>
+          </button>
           <div id="nutri-rotina" style="display:none;flex-direction:column;gap:14px;margin-bottom:14px"></div>
           <div id="nutri-cards" style="display:none;display:flex;flex-direction:column;gap:14px"></div>
         </div>
@@ -666,6 +763,264 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
         </div>
 
         <div id="prog-historico"></div>
+      </div>
+
+      <!-- DIÁRIO ALIMENTAR -->
+      <div class="page" id="page-diario">
+        <div class="pg-header">
+          <div class="pg-title">Diário Alimentar</div>
+          <div class="pg-sub">Registre o que você realmente comeu — o Prof. Will acompanha isso no painel dele</div>
+        </div>
+
+        <!-- Navegação de data -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 16px;margin-bottom:16px">
+          <button onclick="mudarDiaDiario(-1)" style="background:rgba(255,255,255,.06);border:none;color:#fff;width:34px;height:34px;border-radius:8px;font-size:1rem;cursor:pointer">‹</button>
+          <div style="text-align:center">
+            <div id="diario-data-label" style="font-size:.95rem;font-weight:700;color:#fff">Hoje</div>
+            <div id="diario-data-sub" style="font-size:.68rem;color:#888"></div>
+          </div>
+          <button onclick="mudarDiaDiario(1)" id="diario-btn-proximo" style="background:rgba(255,255,255,.06);border:none;color:#fff;width:34px;height:34px;border-radius:8px;font-size:1rem;cursor:pointer">›</button>
+        </div>
+
+        <!-- Totais do dia -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px">
+          <div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 8px;text-align:center">
+            <div style="font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:.5px">Kcal</div>
+            <div id="diario-total-kcal" style="font-size:1.15rem;font-weight:800;color:#fbbf24">0</div>
+          </div>
+          <div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 8px;text-align:center">
+            <div style="font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:.5px">Prot</div>
+            <div id="diario-total-prot" style="font-size:1.15rem;font-weight:800;color:#10b981">0g</div>
+          </div>
+          <div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 8px;text-align:center">
+            <div style="font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:.5px">Carb</div>
+            <div id="diario-total-carb" style="font-size:1.15rem;font-weight:800;color:#f59e0b">0g</div>
+          </div>
+          <div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 8px;text-align:center">
+            <div style="font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:.5px">Gord</div>
+            <div id="diario-total-gord" style="font-size:1.15rem;font-weight:800;color:#8b5cf6">0g</div>
+          </div>
+        </div>
+        <div id="diario-meta-comparativo" style="display:none;text-align:center;font-size:.72rem;color:#888;margin:-12px 0 20px"></div>
+
+        <div id="diario-refeicoes"></div>
+      </div>
+
+      <!-- ENVIAR VÍDEO -->
+      <div class="page" id="page-videos">
+        <div class="pg-header">
+          <div class="pg-title">Enviar Vídeo</div>
+          <div class="pg-sub">Mande a execução do exercício pro Prof. Will avaliar sua postura</div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px;margin-bottom:20px">
+          <label style="font-size:.72rem;color:#888;text-transform:uppercase;letter-spacing:1px">Qual exercício? (opcional)</label>
+          <input type="text" id="video-exercicio" placeholder="Ex: Agachamento livre" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.88rem;font-family:var(--font-b);margin:6px 0 16px"/>
+
+          <label style="font-size:.72rem;color:#888;text-transform:uppercase;letter-spacing:1px">Observação ou dúvida (opcional)</label>
+          <textarea id="video-mensagem" rows="3" placeholder="Ex: Sinto que a técnica não está boa, pode conferir?" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.88rem;font-family:var(--font-b);resize:vertical;margin:6px 0 16px"></textarea>
+
+          <label style="font-size:.72rem;color:#888;text-transform:uppercase;letter-spacing:1px">Vídeo</label>
+          <div style="margin:6px 0 16px">
+            <div id="video-preview-wrap" style="display:none;margin-bottom:10px">
+              <video id="video-preview" controls style="width:100%;max-height:280px;border-radius:10px;background:#000"></video>
+              <button onclick="removerVideoSelecionado()" style="margin-top:8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;padding:7px 14px;border-radius:8px;font-size:.75rem;cursor:pointer">✕ Remover e escolher outro</button>
+            </div>
+            <label id="video-escolher-label" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.05);border:1px dashed var(--border);border-radius:10px;padding:24px;font-size:.85rem;color:#999">
+              🎥 Toque pra gravar ou escolher um vídeo
+              <input type="file" id="video-input" accept="video/*" capture="environment" style="display:none" onchange="preverVideoAvaliacao(this)"/>
+            </label>
+            <div style="font-size:.68rem;color:#666;margin-top:6px">Máximo de 15MB. Se o vídeo for muito longo, o envio pode demorar — prefira clipes curtos (10-20 segundos), focando bem no movimento.</div>
+          </div>
+
+          <button onclick="enviarVideoAvaliacao()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:13px;border-radius:10px;font-weight:800;font-size:.9rem;cursor:pointer">📤 Enviar pro Prof. Will</button>
+        </div>
+
+        <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#666;margin-bottom:10px">Vídeos enviados</div>
+        <div id="lista-videos-enviados">
+          <div style="text-align:center;padding:24px;color:#666;font-size:.82rem">⏳ Carregando...</div>
+        </div>
+      </div>
+
+      <!-- CHAT COM O PROFESSOR -->
+      <div class="page" id="page-chat">
+        <div class="pg-header">
+          <div class="pg-title">Mensagens</div>
+          <div class="pg-sub">Fale direto com o Prof. Will</div>
+        </div>
+
+        <div id="chat-mensagens" style="display:flex;flex-direction:column;gap:10px;min-height:200px;margin-bottom:16px">
+          <div style="text-align:center;padding:24px;color:#666;font-size:.82rem">⏳ Carregando conversa...</div>
+        </div>
+
+        <div style="position:sticky;bottom:76px;background:var(--bg);padding-top:8px;display:flex;gap:8px">
+          <textarea id="chat-input-mensagem" rows="1" placeholder="Escreva sua mensagem..." style="flex:1;background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:12px 16px;color:#fff;font-size:.88rem;font-family:var(--font-b);resize:none" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMensagemChat();}"></textarea>
+          <button onclick="enviarMensagemChat()" style="flex-shrink:0;width:46px;height:46px;background:var(--orange);border:none;border-radius:50%;color:#fff;font-size:1.2rem;cursor:pointer">➤</button>
+        </div>
+      </div>
+
+      <!-- ÁGUA -->
+      <div class="page" id="page-agua">
+        <div class="pg-header">
+          <div class="pg-title">Controle de Água</div>
+          <div class="pg-sub">Registre sua ingestão de água ao longo do dia</div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:24px;text-align:center;margin-bottom:20px">
+          <div style="position:relative;width:160px;height:160px;margin:0 auto 16px">
+            <svg width="160" height="160" style="transform:rotate(-90deg)">
+              <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="14"/>
+              <circle id="agua-anel-progresso" cx="80" cy="80" r="70" fill="none" stroke="#3b82f6" stroke-width="14" stroke-linecap="round" stroke-dasharray="440" stroke-dashoffset="440" style="transition:stroke-dashoffset .4s"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font-size:1.6rem">💧</div>
+              <div id="agua-total-label" style="font-size:1.3rem;font-weight:800;color:#fff">0ml</div>
+              <div id="agua-meta-label" style="font-size:.68rem;color:#888">meta: 2000ml</div>
+            </div>
+          </div>
+          <div id="agua-status-label" style="font-size:.82rem;color:#60a5fa;font-weight:600"></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+          <button onclick="adicionarAgua(200)" style="background:var(--card);border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:14px 6px;color:#60a5fa;font-weight:700;font-size:.8rem;cursor:pointer">+200ml</button>
+          <button onclick="adicionarAgua(300)" style="background:var(--card);border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:14px 6px;color:#60a5fa;font-weight:700;font-size:.8rem;cursor:pointer">+300ml</button>
+          <button onclick="adicionarAgua(500)" style="background:var(--card);border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:14px 6px;color:#60a5fa;font-weight:700;font-size:.8rem;cursor:pointer">+500ml</button>
+          <button onclick="abrirAguaPersonalizada()" style="background:var(--card);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 6px;color:#ccc;font-weight:700;font-size:.8rem;cursor:pointer">Outro</button>
+        </div>
+
+        <div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:.78rem;font-weight:700;color:#fff">🎯 Minha meta diária</span>
+            <button onclick="abrirEdicaoMetaAgua()" style="background:none;border:none;color:#60a5fa;font-size:.72rem;cursor:pointer">Editar</button>
+          </div>
+          <div id="agua-edicao-meta" style="display:none;gap:8px;margin-bottom:8px">
+            <input type="number" id="agua-input-meta" step="100" style="flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.85rem"/>
+            <button onclick="salvarMetaAgua()" style="background:var(--orange);border:none;color:#fff;padding:0 16px;border-radius:8px;font-size:.8rem;cursor:pointer">Salvar</button>
+          </div>
+        </div>
+
+        <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:12px;padding:14px 16px;margin-bottom:16px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="agua-lembrete-check" onchange="toggleLembreteAgua(this.checked)"/>
+            <span style="flex:1">
+              <span style="display:block;font-size:.82rem;color:#fff;font-weight:600">🔔 Me lembrar de beber água</span>
+              <span style="display:block;font-size:.68rem;color:#888;margin-top:2px">Funciona enquanto o app está aberto. Em alguns celulares também avisa com o app em segundo plano, mas isso não é garantido (principalmente no iPhone).</span>
+            </span>
+          </label>
+        </div>
+
+        <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#666;margin-bottom:10px">Hoje</div>
+        <div id="agua-lista-hoje"></div>
+      </div>
+
+      <!-- AVALIAÇÃO FÍSICA -->
+      <div class="page" id="page-avaliacao">
+        <div class="pg-header">
+          <div class="pg-title">Avaliação Física</div>
+          <div class="pg-sub">Registre suas medidas com uma fita métrica</div>
+        </div>
+
+        <div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.25);border-radius:12px;padding:14px 16px;margin-bottom:20px">
+          <div style="font-size:.82rem;color:#fde68a;font-weight:700;margin-bottom:4px">⚠️ Isso é uma estimativa</div>
+          <div style="font-size:.76rem;color:#ccc;line-height:1.5">O percentual de gordura aqui é calculado só com as circunferências (fórmula da Marinha dos EUA) — é uma boa forma de acompanhar a <strong>tendência</strong> ao longo do tempo, mas não substitui uma avaliação com dobras cutâneas feita pelo Prof. Will pessoalmente. Use pra ver se está progredindo, não como número exato.</div>
+        </div>
+
+        <div id="avaliacao-resultado-wrap" style="display:none;background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;text-align:center;margin-bottom:20px">
+          <div style="font-size:.68rem;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Última estimativa</div>
+          <div id="avaliacao-resultado-perc" style="font-size:2.2rem;font-weight:800;color:#34d399">--%</div>
+          <div id="avaliacao-resultado-data" style="font-size:.72rem;color:#888;margin-top:4px"></div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;margin-bottom:20px">
+          <div style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:14px">📐 Nova medição</div>
+
+          <label style="font-size:.72rem;color:#888;text-transform:uppercase;letter-spacing:1px">Sexo (define a fórmula usada)</label>
+          <div style="display:flex;gap:8px;margin:6px 0 16px" id="avaliacao-sexo-opts">
+            <button type="button" onclick="selecionarSexoAvaliacao('masculino')" data-val="masculino" class="avaliacao-sexo-btn" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:#ccc;font-size:.82rem;font-weight:700;cursor:pointer">🚹 Masculino</button>
+            <button type="button" onclick="selecionarSexoAvaliacao('feminino')" data-val="feminino" class="avaliacao-sexo-btn" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:#ccc;font-size:.82rem;font-weight:700;cursor:pointer">🚺 Feminino</button>
+          </div>
+
+          <div class="avaliacao-campo" style="margin-bottom:16px">
+            <label style="font-size:.78rem;color:#fff;font-weight:600">Altura</label>
+            <div style="font-size:.7rem;color:#888;margin-bottom:6px">Em pé, descalço, encostado na parede.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="aval-altura" placeholder="170" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem"/>
+              <span style="color:#888;font-size:.8rem">cm</span>
+            </div>
+          </div>
+
+          <div class="avaliacao-campo" style="margin-bottom:16px">
+            <label style="font-size:.78rem;color:#fff;font-weight:600">Pescoço</label>
+            <div style="font-size:.7rem;color:#888;margin-bottom:6px">Logo abaixo do "gogó" (laringe), fita na horizontal.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="aval-pescoco" placeholder="38" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem"/>
+              <span style="color:#888;font-size:.8rem">cm</span>
+            </div>
+          </div>
+
+          <div class="avaliacao-campo" style="margin-bottom:16px">
+            <label style="font-size:.78rem;color:#fff;font-weight:600">Cintura</label>
+            <div style="font-size:.7rem;color:#888;margin-bottom:6px">Na altura do umbigo, sem prender a respiração nem apertar a fita.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="aval-cintura" placeholder="80" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem"/>
+              <span style="color:#888;font-size:.8rem">cm</span>
+            </div>
+          </div>
+
+          <div class="avaliacao-campo" id="aval-campo-quadril" style="margin-bottom:16px;display:none">
+            <label style="font-size:.78rem;color:#fff;font-weight:600">Quadril</label>
+            <div style="font-size:.7rem;color:#888;margin-bottom:6px">Na parte mais larga do bumbum/quadril.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="aval-quadril" placeholder="98" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem"/>
+              <span style="color:#888;font-size:.8rem">cm</span>
+            </div>
+          </div>
+
+          <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#666;margin:20px 0 12px">Opcional — pra acompanhar mais detalhes</div>
+
+          <div class="avaliacao-campo" style="margin-bottom:16px">
+            <label style="font-size:.78rem;color:#fff;font-weight:600">Peito/Tórax</label>
+            <div style="font-size:.7rem;color:#888;margin-bottom:6px">Na altura dos mamilos, fita reta ao redor do tronco.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="aval-peito" placeholder="—" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem"/>
+              <span style="color:#888;font-size:.8rem">cm</span>
+            </div>
+          </div>
+
+          <div class="avaliacao-campo" style="margin-bottom:16px">
+            <label style="font-size:.78rem;color:#fff;font-weight:600">Braço</label>
+            <div style="font-size:.7rem;color:#888;margin-bottom:6px">No meio do bíceps, braço relaxado ao lado do corpo.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="aval-braco" placeholder="—" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem"/>
+              <span style="color:#888;font-size:.8rem">cm</span>
+            </div>
+          </div>
+
+          <div class="avaliacao-campo" style="margin-bottom:16px">
+            <label style="font-size:.78rem;color:#fff;font-weight:600">Coxa</label>
+            <div style="font-size:.7rem;color:#888;margin-bottom:6px">No meio da coxa, entre o quadril e o joelho.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="aval-coxa" placeholder="—" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem"/>
+              <span style="color:#888;font-size:.8rem">cm</span>
+            </div>
+          </div>
+
+          <div class="avaliacao-campo" style="margin-bottom:20px">
+            <label style="font-size:.78rem;color:#fff;font-weight:600">Panturrilha</label>
+            <div style="font-size:.7rem;color:#888;margin-bottom:6px">Na parte mais larga da panturrilha.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="aval-panturrilha" placeholder="—" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem"/>
+              <span style="color:#888;font-size:.8rem">cm</span>
+            </div>
+          </div>
+
+          <button onclick="salvarAvaliacaoFisica()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:13px;border-radius:10px;font-weight:800;font-size:.9rem;cursor:pointer">💾 Salvar avaliação</button>
+        </div>
+
+        <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#666;margin-bottom:10px">Histórico</div>
+        <div id="avaliacao-historico">
+          <div style="text-align:center;padding:20px;color:#666;font-size:.82rem">⏳ Carregando...</div>
+        </div>
       </div>
 
       <!-- HISTÓRICO -->
@@ -1446,7 +1801,9 @@ function comecarTreino(diaIdx){
     dias, diaIdx,
     exIdx: 0,
     seriesFeitas: 0,
-    gifs: window._fichaAtual?.gifs || {}
+    gifs: window._fichaAtual?.gifs || {},
+    cargasDigitadas: {},   // peso que o aluno vai digitando nessa sessão, por índice do exercício
+    ultimasCargas: {}      // última carga conhecida de cada exercício (nome -> {peso, data})
   };
 
   document.getElementById('seletor-dia').style.display='none';
@@ -1457,7 +1814,29 @@ function comecarTreino(diaIdx){
     navigator.wakeLock.request('screen').catch(()=>{});
   }
 
+  carregarUltimasCargas(dias[diaIdx]);
   renderizarExercicioAtivo();
+  abrirCheckinPreTreino();
+}
+
+async function carregarUltimasCargas(dia){
+  if(!SB || !usuario || modoDemo) return;
+  const nomes = (dia.exercicios||[]).map(e=>e.nome).filter(Boolean);
+  if(!nomes.length) return;
+  try{
+    const { data, error } = await SB.from('portal_cargas')
+      .select('exercicio_nome,peso_kg,data')
+      .eq('email', usuario.email)
+      .in('exercicio_nome', nomes)
+      .order('data',{ascending:false});
+    if(error || !data) return;
+    const ultimas = {};
+    data.forEach(row=>{
+      if(!ultimas[row.exercicio_nome]) ultimas[row.exercicio_nome] = { peso: row.peso_kg, data: row.data };
+    });
+    if(treinoAtivo) treinoAtivo.ultimasCargas = ultimas;
+    renderizarExercicioAtivo();
+  }catch(e){ console.warn('carregarUltimasCargas:', e); }
 }
 
 function renderizarExercicioAtivo(){
@@ -1509,6 +1888,7 @@ function renderizarExercicioAtivo(){
   }).join('');
 
   const descansoSeg = parseDescanso(ex.descanso||'90s');
+  const ultimaCarga = treinoAtivo.ultimasCargas?.[ex.nome] || null;
 
   document.getElementById('mt-body').innerHTML = `
     <div class="mt-ex-card">
@@ -1526,6 +1906,19 @@ function renderizarExercicioAtivo(){
       </div>
       ${gifHtml}
       ${combinadoHtml}
+      <div class="mt-series-wrap" style="padding-top:0">
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin:0 16px 14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <label style="font-size:.72rem;color:#aaa;font-weight:600;white-space:nowrap">🏋️ Carga usada hoje</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="number" id="mt-input-carga" step="0.5" placeholder="0" value="${treinoAtivo.cargasDigitadas[exIdx]??''}" oninput="registrarCargaDigitada(${exIdx},this.value)"
+                style="width:70px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:#fff;font-size:.9rem;text-align:center;font-weight:700"/>
+              <span style="color:#888;font-size:.78rem">kg</span>
+            </div>
+          </div>
+          ${ultimaCarga ? `<div style="font-size:.66rem;color:#666;margin-top:6px">Última vez (${new Date(ultimaCarga.data+'T12:00:00').toLocaleDateString('pt-BR')}): <strong style="color:#999">${ultimaCarga.peso}kg</strong></div>` : ''}
+        </div>
+      </div>
       <div class="mt-series-wrap">
         <div class="mt-series-title">Séries concluídas</div>
         <div class="mt-series-dots">${dotsHtml}</div>
@@ -1650,7 +2043,40 @@ function concluirTreino(){
   } else {
     extra.innerHTML = '';
     registrarTreinoConcluido(diaNome);
+    salvarCargasDoTreino();
+    setTimeout(()=>abrirCheckinPosTreino(), 600);
   }
+}
+
+function registrarCargaDigitada(exIdx, valor){
+  if(!treinoAtivo) return;
+  const num = parseFloat(valor);
+  if(valor==='' || isNaN(num)) delete treinoAtivo.cargasDigitadas[exIdx];
+  else treinoAtivo.cargasDigitadas[exIdx] = num;
+}
+
+async function salvarCargasDoTreino(){
+  if(!SB || !usuario || !treinoAtivo) return;
+  const dia = treinoAtivo.dias[treinoAtivo.diaIdx];
+  const hoje = dataParaChaveISO(new Date());
+  const entradas = Object.entries(treinoAtivo.cargasDigitadas||{});
+  if(!entradas.length) return;
+
+  try{
+    const linhas = entradas.map(([exIdx, peso])=>{
+      const ex = dia.exercicios[parseInt(exIdx)];
+      return {
+        email: usuario.email,
+        exercicio_nome: ex?.nome || 'Exercício',
+        peso_kg: peso,
+        series_realizadas: parseInt(ex?.series)||null,
+        reps_realizadas: ex?.reps||null,
+        data: hoje,
+        criado_em: new Date().toISOString()
+      };
+    });
+    await SB.from('portal_cargas').insert(linhas);
+  }catch(e){ console.warn('salvarCargasDoTreino:', e); }
 }
 
 async function registrarTreinoConcluido(diaNome){
@@ -1666,6 +2092,142 @@ async function registrarTreinoConcluido(diaNome){
   }catch(e){ console.warn('Erro ao registrar treino concluído:', e); }
 }
 
+// ── CHECK-IN DE ENERGIA / DOR / SONO ──────────────────────────────────────────
+function abrirCheckinPreTreino(){
+  if(modoDemo || !SB || !usuario) return;
+  const existente = document.getElementById('checkin-overlay');
+  if(existente) existente.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'checkin-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border-radius:18px;max-width:380px;width:100%;padding:24px;text-align:center">
+      <div style="font-size:1.6rem;margin-bottom:8px">👋</div>
+      <div style="font-size:1rem;font-weight:800;color:#fff;margin-bottom:4px">Antes de começar...</div>
+      <div style="font-size:.78rem;color:#888;margin-bottom:20px">Isso ajuda o Prof. Will a ajustar seu treino quando precisar</div>
+
+      <div style="margin-bottom:18px">
+        <div style="font-size:.78rem;color:#ccc;font-weight:600;margin-bottom:8px">⚡ Como está sua energia hoje?</div>
+        <div id="checkin-energia-opts" style="display:flex;gap:6px;justify-content:center">${gerarEscalaCheckin('energia')}</div>
+      </div>
+      <div style="margin-bottom:18px">
+        <div style="font-size:.78rem;color:#ccc;font-weight:600;margin-bottom:8px">😴 Como foi seu sono?</div>
+        <div id="checkin-sono-opts" style="display:flex;gap:6px;justify-content:center">${gerarEscalaCheckin('sono')}</div>
+      </div>
+      <div style="margin-bottom:22px">
+        <div style="font-size:.78rem;color:#ccc;font-weight:600;margin-bottom:8px">💪 Alguma dor muscular?</div>
+        <div id="checkin-dor-opts" style="display:flex;gap:6px;justify-content:center">${gerarEscalaCheckin('dor')}</div>
+      </div>
+
+      <button onclick="salvarCheckin('pre')" style="width:100%;background:var(--orange);color:#fff;border:none;padding:12px;border-radius:10px;font-weight:800;font-size:.85rem;cursor:pointer;margin-bottom:8px">Começar treino →</button>
+      <button onclick="document.getElementById('checkin-overlay').remove()" style="width:100%;background:none;border:none;color:#666;padding:8px;font-size:.75rem;cursor:pointer">Pular</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  window._checkinRespostas = {};
+}
+
+function abrirCheckinPosTreino(){
+  if(modoDemo || !SB || !usuario) return;
+  const existente = document.getElementById('checkin-overlay');
+  if(existente) existente.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'checkin-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border-radius:18px;max-width:380px;width:100%;padding:24px;text-align:center">
+      <div style="font-size:1.6rem;margin-bottom:8px">🏁</div>
+      <div style="font-size:1rem;font-weight:800;color:#fff;margin-bottom:4px">Treino concluído!</div>
+      <div style="font-size:.78rem;color:#888;margin-bottom:20px">Como você se sente agora?</div>
+
+      <div style="margin-bottom:18px">
+        <div style="font-size:.78rem;color:#ccc;font-weight:600;margin-bottom:8px">⚡ Nível de esforço percebido</div>
+        <div id="checkin-energia-opts" style="display:flex;gap:6px;justify-content:center">${gerarEscalaCheckin('energia')}</div>
+      </div>
+      <div style="margin-bottom:22px">
+        <div style="font-size:.78rem;color:#ccc;font-weight:600;margin-bottom:8px">💪 Sentiu alguma dor incomum?</div>
+        <div id="checkin-dor-opts" style="display:flex;gap:6px;justify-content:center">${gerarEscalaCheckin('dor')}</div>
+      </div>
+
+      <button onclick="salvarCheckin('pos')" style="width:100%;background:var(--orange);color:#fff;border:none;padding:12px;border-radius:10px;font-weight:800;font-size:.85rem;cursor:pointer;margin-bottom:8px">Enviar</button>
+      <button onclick="document.getElementById('checkin-overlay').remove()" style="width:100%;background:none;border:none;color:#666;padding:8px;font-size:.75rem;cursor:pointer">Pular</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  window._checkinRespostas = {};
+}
+
+function gerarEscalaCheckin(campo){
+  const emojis = { energia:['😴','😕','🙂','💪','🔥'], sono:['😫','😕','🙂','😊','😴'], dor:['🤕','😣','😐','🙂','✅'] };
+  return [1,2,3,4,5].map(n=>`
+    <button type="button" onclick="selecionarCheckin('${campo}',${n},this)" data-campo="${campo}" data-val="${n}"
+      style="width:42px;height:42px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-size:1.1rem;cursor:pointer">${emojis[campo][n-1]}</button>
+  `).join('');
+}
+
+function selecionarCheckin(campo, valor, btnEl){
+  window._checkinRespostas[campo] = valor;
+  document.querySelectorAll(`#checkin-${campo}-opts button`).forEach(b=>{
+    const ativo = parseInt(b.dataset.val)===valor;
+    b.style.borderColor = ativo ? 'var(--orange)' : 'var(--border)';
+    b.style.background = ativo ? 'rgba(240,89,10,.15)' : 'rgba(255,255,255,.04)';
+  });
+}
+
+async function salvarCheckin(momento){
+  const overlay = document.getElementById('checkin-overlay');
+  if(overlay) overlay.remove();
+  if(!SB || !usuario) return;
+
+  const r = window._checkinRespostas||{};
+  if(!r.energia && !r.sono && !r.dor) return; // nada preenchido, não salva vazio
+
+  try{
+    await SB.from('portal_checkin').insert({
+      email: usuario.email,
+      data: dataParaChaveISO(new Date()),
+      momento,
+      energia: r.energia||null,
+      dor_muscular: r.dor||null,
+      qualidade_sono: momento==='pre' ? (r.sono||null) : null,
+      criado_em: new Date().toISOString()
+    });
+  }catch(e){ console.warn('salvarCheckin:', e); }
+}
+
+function calcularSequenciaDias(logs){
+  if(!logs.length) return 0;
+  const datasUnicas = [...new Set(logs.map(l=>dataParaChaveISO(new Date(l.concluido_em))))].sort().reverse();
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const hojeChave = dataParaChaveISO(hoje);
+  const ontemChave = dataParaChaveISO(new Date(hoje.getTime()-86400000));
+
+  // Se o treino mais recente não foi hoje nem ontem, a sequência já quebrou
+  if(datasUnicas[0]!==hojeChave && datasUnicas[0]!==ontemChave) return 0;
+
+  let seq = 1;
+  for(let i=0; i<datasUnicas.length-1; i++){
+    const atual = new Date(datasUnicas[i]+'T12:00:00');
+    const anterior = new Date(datasUnicas[i+1]+'T12:00:00');
+    const diffDias = Math.round((atual-anterior)/86400000);
+    if(diffDias<=2){ seq++; } else { break; } // tolera 1 dia de descanso entre treinos
+  }
+  return seq;
+}
+
+function atualizarSequenciaDias(logs){
+  const seq = calcularSequenciaDias(logs);
+  const el = document.getElementById('dash-sequencia-wrap');
+  const num = document.getElementById('dash-sequencia-num');
+  if(!el || !num) return;
+  if(seq >= 2){
+    el.style.display = 'flex';
+    num.textContent = seq;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 async function carregarConquistas(){
   if(!SB || !usuario || modoDemo) return;
   const box = document.getElementById('conquistas-box');
@@ -1677,6 +2239,8 @@ async function carregarConquistas(){
     if(error) throw error;
     logs = data || [];
   }catch(e){ console.warn('Conquistas indisponíveis (tabela pode não existir ainda):', e); return; }
+
+  atualizarSequenciaDias(logs);
 
   const total = logs.length;
   if(total === 0){ box.style.display = 'none'; return; }
@@ -1726,6 +2290,10 @@ function montarNutricao(fichas){
 
   const temNutri = nutri && Object.values(nutri).some(v=>v);
   const temRotina = refeicoes && refeicoes.length;
+  window._rotinaAlimentarAtual = temRotina ? refeicoes : null;
+
+  const btnLista = document.getElementById('btn-lista-compras');
+  if(btnLista) btnLista.style.display = temRotina ? 'flex' : 'none';
 
   if(!temNutri && !temRotina){
     empty.style.display = 'flex';
@@ -1856,7 +2424,13 @@ async function entrarNoApp(){
   document.getElementById('auth-wrap').style.display='none';
   document.getElementById('app').style.display='flex';
   const nome = dadosCliente?.nome || usuario.email;
-  document.getElementById('nav-user-email').textContent = nome.split(' ')[0] || usuario.email;
+  const primeiroNome = nome.split(' ')[0] || usuario.email;
+  document.getElementById('nav-user-email').textContent = primeiroNome;
+
+  // Saudação de boas-vindas, ajustada pelo horário do dia
+  const hora = new Date().getHours();
+  const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
+  setTimeout(()=> notif(`👋 ${saudacao}, ${primeiroNome}!`,'#10b981'), 400);
 
   // Alertar se ainda usa senha temporária
   if(dadosCliente?.senha_temp && !dadosCliente?.senha_redefinida){
@@ -1864,6 +2438,9 @@ async function entrarNoApp(){
   }
   await carregarDados();
   configurarSincronizacaoAutomatica();
+  verificarMensagensNaoLidasPortal();
+  await carregarAgua();
+  inicializarLembreteAguaSeAtivo();
 }
 async function fazerLogout(){
   usuario = null; dadosCliente = null; modoDemo = false;
@@ -1921,6 +2498,10 @@ async function sincronizarSilenciosamente(origem){
   try{
     console.log('[sync] Atualizando dados automaticamente —', origem);
     await carregarDados();
+    await verificarMensagensNaoLidasPortal();
+    await carregarAgua();
+    // Se a página de chat estiver aberta no momento, atualiza a conversa também
+    if(document.getElementById('page-chat')?.classList.contains('active')) await carregarChat();
   }catch(e){
     console.warn('[sync] Falha na sincronização automática:', e);
   }finally{
@@ -2272,6 +2853,11 @@ function showPage(id){
   document.getElementById('sb-'+id)?.classList.add('active');
   document.getElementById('bn-'+id)?.classList.add('active');
   window.scrollTo(0,0);
+  if(id==='videos') carregarVideosEnviados();
+  if(id==='diario') carregarDiarioAlimentar();
+  if(id==='chat') carregarChat();
+  if(id==='agua') carregarAgua();
+  if(id==='avaliacao'){ inicializarSexoAvaliacao(); carregarAvaliacaoFisica(); }
 }
 
 // ── NOTIF ─────────────────────────────────────────────────────────────────────
@@ -2326,6 +2912,914 @@ async function enviarFeedback(){
     notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
   }
 }
+
+// ── ENVIAR VÍDEO PRA AVALIAÇÃO ────────────────────────────────────────────────
+window._videoSelecionadoBase64 = null;
+
+function preverVideoAvaliacao(input){
+  const file = input.files[0];
+  if(!file) return;
+  const LIMITE_MB = 15;
+  if(file.size > LIMITE_MB*1024*1024){
+    notif(`Vídeo muito grande (máx. ${LIMITE_MB}MB). Grave um clipe mais curto ou reduza a qualidade.`,'#ef4444',true);
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._videoSelecionadoBase64 = e.target.result;
+    const wrap = document.getElementById('video-preview-wrap');
+    const preview = document.getElementById('video-preview');
+    const label = document.getElementById('video-escolher-label');
+    if(preview) preview.src = window._videoSelecionadoBase64;
+    if(wrap) wrap.style.display = 'block';
+    if(label) label.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerVideoSelecionado(){
+  window._videoSelecionadoBase64 = null;
+  const wrap = document.getElementById('video-preview-wrap');
+  const label = document.getElementById('video-escolher-label');
+  const input = document.getElementById('video-input');
+  if(wrap) wrap.style.display = 'none';
+  if(label) label.style.display = 'flex';
+  if(input) input.value = '';
+}
+
+async function enviarVideoAvaliacao(){
+  if(modoDemo){ notif('Essa função é exclusiva para alunos com plano ativo','#f59e0b',true); return; }
+  if(!SB || !usuario){ notif('Você precisa estar logado para enviar','#ef4444',true); return; }
+  if(!window._videoSelecionadoBase64){ notif('Escolha ou grave um vídeo antes de enviar','#ef4444',true); return; }
+
+  const exercicio = document.getElementById('video-exercicio').value.trim();
+  const mensagem = document.getElementById('video-mensagem').value.trim();
+
+  notif('⏳ Enviando vídeo...','#3b82f6');
+  try{
+    const { error } = await SB.from('videos_avaliacao').insert({
+      email: usuario.email,
+      nome: dadosCliente?.nome || usuario.email,
+      exercicio: exercicio || null,
+      mensagem_aluno: mensagem || null,
+      video: window._videoSelecionadoBase64,
+      status: 'pendente',
+      criado_em: new Date().toISOString()
+    });
+    if(error){
+      console.error('enviarVideoAvaliacao:', error);
+      notif('Erro ao enviar: '+error.message,'#ef4444',true);
+      return;
+    }
+
+    notif('✅ Vídeo enviado! O Prof. Will vai dar uma olhada e te retornar por aqui mesmo.','#10b981');
+    document.getElementById('video-exercicio').value = '';
+    document.getElementById('video-mensagem').value = '';
+    removerVideoSelecionado();
+    carregarVideosEnviados();
+  }catch(e){
+    console.error('enviarVideoAvaliacao — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+  }
+}
+
+async function carregarVideosEnviados(){
+  const el = document.getElementById('lista-videos-enviados');
+  if(!el) return;
+  if(modoDemo){ el.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Não disponível na degustação.</div>'; return; }
+  if(!SB || !usuario){ return; }
+
+  try{
+    // Não busca a coluna "video" aqui (arquivo grande) — só o essencial pra listar.
+    // O vídeo em si só é carregado se o aluno quiser rever o que mandou.
+    const { data, error } = await SB.from('videos_avaliacao')
+      .select('id,exercicio,mensagem_aluno,status,feedback_professor,criado_em,avaliado_em')
+      .eq('email', usuario.email)
+      .order('criado_em',{ascending:false});
+    if(error){ el.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Erro ao carregar histórico.</div>'; console.error(error); return; }
+    if(!data || !data.length){ el.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Você ainda não enviou nenhum vídeo.</div>'; return; }
+
+    el.innerHTML = data.map(v=>{
+      const avaliado = v.status === 'avaliado';
+      return `<div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;margin-bottom:10px;border-left:3px solid ${avaliado?'#10b981':'#eab308'}">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px">
+          <span style="font-size:.85rem;font-weight:700;color:#fff">${v.exercicio ? escHtmlPortal(v.exercicio) : 'Vídeo enviado'}</span>
+          <span style="font-size:.68rem;color:${avaliado?'#34d399':'#eab308'};font-weight:700;white-space:nowrap">${avaliado?'✅ Avaliado':'⏳ Aguardando'}</span>
+        </div>
+        <div style="font-size:.68rem;color:#666;margin-bottom:8px">${new Date(v.criado_em).toLocaleDateString('pt-BR')}</div>
+        ${v.mensagem_aluno ? `<div style="font-size:.78rem;color:#aaa;margin-bottom:8px">Você escreveu: "${escHtmlPortal(v.mensagem_aluno)}"</div>` : ''}
+        ${avaliado && v.feedback_professor ? `<div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px;font-size:.82rem;color:#d1fae5;margin-top:6px"><strong>Retorno do Prof. Will:</strong> ${escHtmlPortal(v.feedback_professor)}</div>` : ''}
+        <button onclick="verVideoEnviado('${v.id}')" style="margin-top:8px;background:rgba(255,255,255,.05);border:1px solid var(--border);color:#999;padding:6px 12px;border-radius:6px;font-size:.72rem;cursor:pointer">▶ Rever meu vídeo</button>
+      </div>`;
+    }).join('');
+  }catch(e){
+    console.error('carregarVideosEnviados — erro inesperado:', e);
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Erro ao carregar.</div>';
+  }
+}
+
+async function verVideoEnviado(id){
+  if(!SB) return;
+  notif('⏳ Carregando vídeo...','#3b82f6');
+  try{
+    const { data, error } = await SB.from('videos_avaliacao').select('video').eq('id', id).single();
+    if(error || !data?.video){ notif('Erro ao carregar o vídeo.','#ef4444',true); return; }
+    const w = window.open('');
+    if(w) w.document.write(`<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh"><video src="${data.video}" controls autoplay style="max-width:100%;max-height:100%"></video></body>`);
+  }catch(e){ console.error('verVideoEnviado:', e); notif('Erro inesperado.','#ef4444',true); }
+}
+
+function escHtmlPortal(v){
+  return String(v ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── CHAT COM O PROFESSOR ──────────────────────────────────────────────────────
+async function carregarChat(){
+  const el = document.getElementById('chat-mensagens');
+  if(!el) return;
+  if(modoDemo){ el.innerHTML = '<div style="text-align:center;padding:24px;color:#666;font-size:.82rem">Chat não disponível na degustação.</div>'; return; }
+  if(!SB || !usuario) return;
+
+  try{
+    const { data, error } = await SB.from('portal_mensagens')
+      .select('*')
+      .eq('email', usuario.email)
+      .order('criado_em',{ascending:true});
+    if(error){
+      const ehTabelaFaltando = /relation .*portal_mensagens.* does not exist/i.test(error.message||'');
+      el.innerHTML = `<div style="text-align:center;padding:24px;color:#666;font-size:.82rem">${ehTabelaFaltando ? 'Ainda não disponível.' : 'Erro ao carregar: '+error.message}</div>`;
+      console.error('carregarChat:', error);
+      return;
+    }
+    window._chatMensagens = data || [];
+    renderChat();
+
+    // Marca como lidas as mensagens do professor que o aluno acabou de ver
+    const naoLidas = (data||[]).filter(m=>m.remetente==='professor' && !m.lida);
+    if(naoLidas.length){
+      await Promise.all(naoLidas.map(m=> SB.from('portal_mensagens').update({lida:true}).eq('id', m.id)));
+      atualizarBadgeChatPortal();
+    }
+  }catch(e){
+    console.error('carregarChat — erro inesperado:', e);
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:#666;font-size:.82rem">Erro inesperado.</div>';
+  }
+}
+
+function renderChat(){
+  const el = document.getElementById('chat-mensagens');
+  if(!el) return;
+  const msgs = window._chatMensagens || [];
+
+  if(!msgs.length){
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:#666;font-size:.82rem">Nenhuma mensagem ainda. Manda um "oi" pro Prof. Will! 👋</div>';
+    return;
+  }
+
+  el.innerHTML = msgs.map(m=>{
+    const ehAluno = m.remetente === 'aluno';
+    const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    return `<div style="display:flex;justify-content:${ehAluno?'flex-end':'flex-start'}">
+      <div style="max-width:78%;background:${ehAluno?'linear-gradient(135deg,var(--orange),#ff6b00)':'var(--card)'};border:${ehAluno?'none':'1px solid rgba(255,255,255,.08)'};border-radius:${ehAluno?'16px 16px 4px 16px':'16px 16px 16px 4px'};padding:10px 14px">
+        <div style="font-size:.85rem;color:#fff;white-space:pre-wrap;word-break:break-word">${escHtmlPortal(m.mensagem)}</div>
+        <div style="font-size:.62rem;color:${ehAluno?'rgba(255,255,255,.75)':'#777'};margin-top:3px;text-align:right">${hora}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.scrollIntoView({behavior:'smooth', block:'end'});
+  setTimeout(()=>{ el.scrollTop = el.scrollHeight; window.scrollTo(0, document.body.scrollHeight); }, 100);
+}
+
+async function enviarMensagemChat(){
+  const input = document.getElementById('chat-input-mensagem');
+  const texto = input?.value.trim();
+  if(!texto) return;
+  if(modoDemo){ notif('Chat não disponível na degustação','#f59e0b',true); return; }
+  if(!SB || !usuario) return;
+
+  input.value = '';
+  try{
+    const { error } = await SB.from('portal_mensagens').insert({
+      email: usuario.email,
+      remetente: 'aluno',
+      mensagem: texto,
+      lida: false,
+      criado_em: new Date().toISOString()
+    });
+    if(error){ notif('Erro ao enviar: '+error.message,'#ef4444',true); input.value = texto; return; }
+    await carregarChat();
+  }catch(e){
+    console.error('enviarMensagemChat — erro inesperado:', e);
+    notif('Erro inesperado ao enviar.','#ef4444',true);
+    input.value = texto;
+  }
+}
+
+async function verificarMensagensNaoLidasPortal(){
+  if(modoDemo || !SB || !usuario) return;
+  try{
+    const { data, error } = await SB.from('portal_mensagens')
+      .select('id')
+      .eq('email', usuario.email)
+      .eq('remetente','professor')
+      .eq('lida', false);
+    if(error) return;
+    window._chatNaoLidas = data?.length || 0;
+    atualizarBadgeChatPortal();
+  }catch(e){ console.warn('verificarMensagensNaoLidasPortal:', e); }
+}
+
+function atualizarBadgeChatPortal(){
+  const n = window._chatNaoLidas || 0;
+  const badgeSidebar = document.getElementById('chat-badge-sidebar');
+  const badgeQuick = document.getElementById('chat-badge-quickaccess');
+  if(badgeSidebar){
+    if(n>0){ badgeSidebar.textContent = n; badgeSidebar.style.display = 'inline-block'; }
+    else{ badgeSidebar.style.display = 'none'; }
+  }
+  if(badgeQuick){
+    if(n>0){ badgeQuick.textContent = n; badgeQuick.style.display = 'flex'; }
+    else{ badgeQuick.style.display = 'none'; }
+  }
+}
+
+// ── CONTROLE DE ÁGUA ──────────────────────────────────────────────────────────
+function metaAguaPadrao(){
+  // Se tiver peso cadastrado, usa 35ml por kg (referência comum); senão, 2000ml
+  const peso = Number(dadosCliente?.peso) || null;
+  return peso ? Math.round(peso * 35 / 50) * 50 : 2000; // arredonda pra múltiplo de 50
+}
+
+function obterMetaAgua(){
+  if(!usuario) return metaAguaPadrao();
+  const salva = localStorage.getItem('wgf_meta_agua_'+usuario.email);
+  return salva ? parseInt(salva) : metaAguaPadrao();
+}
+
+function salvarMetaAguaLocal(ml){
+  if(!usuario) return;
+  localStorage.setItem('wgf_meta_agua_'+usuario.email, String(ml));
+}
+
+async function carregarAgua(){
+  if(modoDemo){
+    const lista = document.getElementById('agua-lista-hoje');
+    if(lista) lista.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Não disponível na degustação.</div>';
+    return;
+  }
+  if(!SB || !usuario) return;
+
+  try{
+    const hoje = dataParaChaveISO(new Date());
+    const { data, error } = await SB.from('portal_agua').select('*').eq('email', usuario.email).eq('data', hoje).order('criado_em',{ascending:false});
+    if(error){
+      console.error('carregarAgua:', error);
+      const lista = document.getElementById('agua-lista-hoje');
+      const ehTabelaFaltando = /relation .*portal_agua.* does not exist/i.test(error.message||'');
+      if(lista) lista.innerHTML = `<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">${ehTabelaFaltando ? 'Ainda não disponível.' : 'Erro ao carregar.'}</div>`;
+      return;
+    }
+    window._aguaHoje = data || [];
+    renderAgua();
+  }catch(e){ console.error('carregarAgua — erro inesperado:', e); }
+}
+
+function renderAgua(){
+  const itens = window._aguaHoje || [];
+  const total = itens.reduce((s,it)=>s+(Number(it.quantidade_ml)||0), 0);
+  const meta = obterMetaAgua();
+  const perc = Math.min(100, Math.round((total/meta)*100));
+
+  // Anel de progresso (SVG circle, circunferência = 2*pi*70 ≈ 440)
+  const anel = document.getElementById('agua-anel-progresso');
+  if(anel){
+    const offset = 440 - (440*perc/100);
+    anel.setAttribute('stroke-dashoffset', offset);
+    anel.setAttribute('stroke', perc>=100 ? '#10b981' : '#3b82f6');
+  }
+  const totalLabel = document.getElementById('agua-total-label');
+  if(totalLabel) totalLabel.textContent = total+'ml';
+  const metaLabel = document.getElementById('agua-meta-label');
+  if(metaLabel) metaLabel.textContent = 'meta: '+meta+'ml';
+  const statusLabel = document.getElementById('agua-status-label');
+  if(statusLabel){
+    statusLabel.textContent = perc>=100 ? '🎉 Meta batida hoje!' : `Faltam ${meta-total}ml pra bater a meta`;
+    statusLabel.style.color = perc>=100 ? '#34d399' : '#60a5fa';
+  }
+  const inputMeta = document.getElementById('agua-input-meta');
+  if(inputMeta && !inputMeta.matches(':focus')) inputMeta.value = meta;
+
+  // Atualiza também o card resumido do Dashboard
+  const dashLabel = document.getElementById('dash-agua-label');
+  const dashBarra = document.getElementById('dash-agua-barra');
+  if(dashLabel) dashLabel.textContent = `${total}ml de ${meta}ml (${perc}%)`;
+  if(dashBarra) dashBarra.style.width = perc+'%';
+
+  // Lista de registros de hoje
+  const listaEl = document.getElementById('agua-lista-hoje');
+  if(listaEl){
+    if(!itens.length){
+      listaEl.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Nenhum registro ainda hoje.</div>';
+    } else {
+      listaEl.innerHTML = itens.map(it=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 14px;margin-bottom:8px">
+          <span style="font-size:.85rem;color:#fff">💧 ${it.quantidade_ml}ml</span>
+          <span style="font-size:.7rem;color:#888">${new Date(it.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+          <button onclick="removerAgua('${it.id}')" style="background:none;border:none;color:#666;font-size:.85rem;cursor:pointer">✕</button>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+async function adicionarAgua(ml){
+  if(modoDemo){ notif('Não disponível na degustação','#f59e0b',true); return; }
+  if(!SB || !usuario) return;
+  try{
+    const { error } = await SB.from('portal_agua').insert({
+      email: usuario.email,
+      data: dataParaChaveISO(new Date()),
+      quantidade_ml: ml,
+      criado_em: new Date().toISOString()
+    });
+    if(error){ notif('Erro ao registrar: '+error.message,'#ef4444',true); return; }
+    notif(`💧 +${ml}ml registrado!`,'#3b82f6');
+    await carregarAgua();
+  }catch(e){ console.error('adicionarAgua:', e); }
+}
+
+function abrirAguaPersonalizada(){
+  const valor = prompt('Quantos ml você bebeu?', '250');
+  const ml = parseInt(valor);
+  if(ml && ml>0 && ml<=5000) adicionarAgua(ml);
+  else if(valor!==null) notif('Digite um valor entre 1 e 5000ml','#ef4444',true);
+}
+
+async function removerAgua(id){
+  if(!SB) return;
+  try{
+    const { error } = await SB.from('portal_agua').delete().eq('id', id);
+    if(error){ notif('Erro ao remover: '+error.message,'#ef4444',true); return; }
+    await carregarAgua();
+  }catch(e){ console.error('removerAgua:', e); }
+}
+
+function abrirEdicaoMetaAgua(){
+  const el = document.getElementById('agua-edicao-meta');
+  if(el) el.style.display = el.style.display==='none' ? 'flex' : 'none';
+}
+
+function salvarMetaAgua(){
+  const ml = parseInt(document.getElementById('agua-input-meta')?.value);
+  if(!ml || ml<500 || ml>8000){ notif('Digite uma meta entre 500 e 8000ml','#ef4444',true); return; }
+  salvarMetaAguaLocal(ml);
+  document.getElementById('agua-edicao-meta').style.display = 'none';
+  notif('✅ Meta atualizada!','#10b981');
+  renderAgua();
+}
+
+// ── LEMBRETE DE ÁGUA ──────────────────────────────────────────────────────────
+function toggleLembreteAgua(ativo){
+  if(!usuario) return;
+  localStorage.setItem('wgf_lembrete_agua_'+usuario.email, ativo ? '1' : '0');
+  if(ativo){
+    if('Notification' in window && Notification.permission==='default'){
+      Notification.requestPermission();
+    }
+    configurarLembreteAgua();
+    notif('🔔 Lembretes ativados! Vão aparecer a cada 90 minutos enquanto o app estiver aberto.','#3b82f6');
+  } else {
+    if(window._lembreteAguaInterval) clearInterval(window._lembreteAguaInterval);
+    notif('Lembretes desativados.','#888');
+  }
+}
+
+function configurarLembreteAgua(){
+  if(window._lembreteAguaInterval) clearInterval(window._lembreteAguaInterval);
+  window._lembreteAguaInterval = setInterval(()=>{
+    if(document.visibilityState!=='visible') return;
+    if(emTreinoAtivo()) return; // não atrapalha o treino
+    const total = (window._aguaHoje||[]).reduce((s,it)=>s+(Number(it.quantidade_ml)||0),0);
+    const meta = obterMetaAgua();
+    if(total >= meta) return; // já bateu a meta, não precisa mais lembrar
+    const msg = '💧 Hora de beber água! Você já tomou '+total+'ml hoje.';
+    notif(msg,'#3b82f6');
+    if('Notification' in window && Notification.permission==='granted'){
+      try{ new Notification('WillgomesFit', { body: msg, icon: 'icon-192.png' }); }catch(e){}
+    }
+  }, 90*60*1000); // a cada 90 minutos
+}
+
+function inicializarLembreteAguaSeAtivo(){
+  if(!usuario) return;
+  const ativo = localStorage.getItem('wgf_lembrete_agua_'+usuario.email) === '1';
+  const check = document.getElementById('agua-lembrete-check');
+  if(check) check.checked = ativo;
+  if(ativo) configurarLembreteAgua();
+}
+
+// ── AVALIAÇÃO FÍSICA (circunferências + estimativa de % de gordura) ──────────
+function selecionarSexoAvaliacao(sexo){
+  window._avaliacaoSexoAtual = sexo;
+  document.querySelectorAll('.avaliacao-sexo-btn').forEach(b=>{
+    const ativo = b.dataset.val === sexo;
+    b.style.background = ativo ? 'rgba(240,89,10,.15)' : 'rgba(255,255,255,.04)';
+    b.style.borderColor = ativo ? 'var(--orange)' : 'var(--border)';
+    b.style.color = ativo ? '#fff' : '#ccc';
+  });
+  const campoQuadril = document.getElementById('aval-campo-quadril');
+  if(campoQuadril) campoQuadril.style.display = sexo==='feminino' ? 'block' : 'none';
+}
+
+// Fórmula da Marinha dos EUA — estimativa por circunferências (sem dobras cutâneas)
+function calcularPercentualGorduraMarinha(sexo, alturaCm, pescocoCm, cinturaCm, quadrilCm){
+  if(!alturaCm || !pescocoCm || !cinturaCm) return null;
+  if(sexo==='feminino'){
+    if(!quadrilCm) return null;
+    const valor = 495 / (1.29579 - 0.35004*Math.log10(cinturaCm+quadrilCm-pescocoCm) + 0.22100*Math.log10(alturaCm)) - 450;
+    return valor>0 && valor<70 ? Math.round(valor*10)/10 : null;
+  } else {
+    const valor = 495 / (1.0324 - 0.19077*Math.log10(cinturaCm-pescocoCm) + 0.15456*Math.log10(alturaCm)) - 450;
+    return valor>0 && valor<70 ? Math.round(valor*10)/10 : null;
+  }
+}
+
+function inicializarSexoAvaliacao(){
+  // Tenta pré-selecionar com base no cadastro, se já souber
+  const sexoCadastro = (dadosCliente?.sexo||dadosCliente?.genero||'').toLowerCase();
+  if(sexoCadastro.includes('fem')) selecionarSexoAvaliacao('feminino');
+  else if(sexoCadastro.includes('masc')) selecionarSexoAvaliacao('masculino');
+}
+
+async function salvarAvaliacaoFisica(){
+  if(modoDemo){ notif('Não disponível na degustação','#f59e0b',true); return; }
+  if(!SB || !usuario) return;
+
+  const sexo = window._avaliacaoSexoAtual;
+  const altura = parseFloat(document.getElementById('aval-altura').value);
+  const pescoco = parseFloat(document.getElementById('aval-pescoco').value);
+  const cintura = parseFloat(document.getElementById('aval-cintura').value);
+  const quadril = parseFloat(document.getElementById('aval-quadril').value) || null;
+  const peito = parseFloat(document.getElementById('aval-peito').value) || null;
+  const braco = parseFloat(document.getElementById('aval-braco').value) || null;
+  const coxa = parseFloat(document.getElementById('aval-coxa').value) || null;
+  const panturrilha = parseFloat(document.getElementById('aval-panturrilha').value) || null;
+
+  if(!sexo){ notif('Escolha seu sexo (define qual fórmula usar)','#ef4444',true); return; }
+  if(!altura || !pescoco || !cintura){ notif('Preencha altura, pescoço e cintura pra calcular a estimativa','#ef4444',true); return; }
+  if(sexo==='feminino' && !quadril){ notif('Pra mulheres, o quadril também é obrigatório na fórmula','#ef4444',true); return; }
+
+  const percEstimado = calcularPercentualGorduraMarinha(sexo, altura, pescoco, cintura, quadril);
+  if(!percEstimado){ notif('Não foi possível calcular com esses valores — confira as medidas digitadas.','#ef4444',true); return; }
+
+  try{
+    const { error } = await SB.from('portal_avaliacao_fisica').insert({
+      email: usuario.email,
+      data: dataParaChaveISO(new Date()),
+      sexo, altura_cm: altura, pescoco_cm: pescoco, cintura_cm: cintura, quadril_cm: quadril,
+      peito_cm: peito, braco_cm: braco, coxa_cm: coxa, panturrilha_cm: panturrilha,
+      percentual_gordura_estimado: percEstimado,
+      criado_em: new Date().toISOString()
+    });
+    if(error){ notif('Erro ao salvar: '+error.message,'#ef4444',true); return; }
+    notif(`✅ Avaliação salva! Estimativa: ${percEstimado}% de gordura.`,'#10b981');
+    carregarAvaliacaoFisica();
+  }catch(e){
+    console.error('salvarAvaliacaoFisica — erro inesperado:', e);
+    notif('Erro inesperado ao salvar.','#ef4444',true);
+  }
+}
+
+async function carregarAvaliacaoFisica(){
+  const el = document.getElementById('avaliacao-historico');
+  if(modoDemo){ if(el) el.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Não disponível na degustação.</div>'; return; }
+  if(!SB || !usuario) return;
+
+  try{
+    const { data, error } = await SB.from('portal_avaliacao_fisica').select('*').eq('email', usuario.email).order('criado_em',{ascending:false});
+    if(error){
+      const ehTabelaFaltando = /relation .*portal_avaliacao_fisica.* does not exist/i.test(error.message||'');
+      if(el) el.innerHTML = `<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">${ehTabelaFaltando ? 'Ainda não disponível.' : 'Erro ao carregar.'}</div>`;
+      console.error('carregarAvaliacaoFisica:', error);
+      return;
+    }
+    const lista = data || [];
+
+    const resultWrap = document.getElementById('avaliacao-resultado-wrap');
+    if(lista.length && resultWrap){
+      resultWrap.style.display = 'block';
+      document.getElementById('avaliacao-resultado-perc').textContent = lista[0].percentual_gordura_estimado+'%';
+      document.getElementById('avaliacao-resultado-data').textContent = new Date(lista[0].criado_em).toLocaleDateString('pt-BR');
+    }
+
+    if(!el) return;
+    if(!lista.length){
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Nenhuma avaliação registrada ainda.</div>';
+      return;
+    }
+    el.innerHTML = lista.map((a,i)=>{
+      const anterior = lista[i+1];
+      let diffHtml = '';
+      if(anterior?.percentual_gordura_estimado!=null){
+        const diff = Math.round((a.percentual_gordura_estimado - anterior.percentual_gordura_estimado)*10)/10;
+        const cor = diff<0 ? '#34d399' : diff>0 ? '#f87171' : '#888';
+        diffHtml = ` <span style="color:${cor};font-size:.72rem">(${diff>0?'+':''}${diff}%)</span>`;
+      }
+      return `<div style="background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <span style="font-size:.9rem;font-weight:800;color:#34d399">${a.percentual_gordura_estimado}%${diffHtml}</span>
+          <span style="font-size:.7rem;color:#888">${new Date(a.criado_em).toLocaleDateString('pt-BR')}</span>
+        </div>
+        <div style="font-size:.72rem;color:#999;display:flex;flex-wrap:wrap;gap:10px">
+          <span>Cintura: ${a.cintura_cm}cm</span>
+          <span>Pescoço: ${a.pescoco_cm}cm</span>
+          ${a.quadril_cm?`<span>Quadril: ${a.quadril_cm}cm</span>`:''}
+          ${a.braco_cm?`<span>Braço: ${a.braco_cm}cm</span>`:''}
+          ${a.coxa_cm?`<span>Coxa: ${a.coxa_cm}cm</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    console.error('carregarAvaliacaoFisica — erro inesperado:', e);
+  }
+}
+
+
+
+
+// ── DIÁRIO ALIMENTAR ──────────────────────────────────────────────────────────
+const REFEICOES_DIARIO = [
+  { chave:'Café da Manhã', emoji:'🌅' },
+  { chave:'Almoço', emoji:'☀️' },
+  { chave:'Jantar', emoji:'🌙' },
+  { chave:'Lanches/Outros', emoji:'🍎' },
+];
+
+function dataParaChaveISO(d){
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth()+1).padStart(2,'0');
+  const dia = String(d.getDate()).padStart(2,'0');
+  return `${ano}-${mes}-${dia}`;
+}
+
+function inicializarDataDiario(){
+  if(!window._diarioDataAtual) window._diarioDataAtual = new Date();
+}
+
+function mudarDiaDiario(delta){
+  inicializarDataDiario();
+  const nova = new Date(window._diarioDataAtual);
+  nova.setDate(nova.getDate()+delta);
+  const hoje = new Date();
+  if(nova > hoje) return; // não deixa navegar pro futuro
+  window._diarioDataAtual = nova;
+  carregarDiarioAlimentar();
+}
+
+async function carregarDiarioAlimentar(){
+  inicializarDataDiario();
+  const d = window._diarioDataAtual;
+  const hoje = new Date();
+  const ehHoje = dataParaChaveISO(d) === dataParaChaveISO(hoje);
+
+  const label = document.getElementById('diario-data-label');
+  const sub = document.getElementById('diario-data-sub');
+  if(label) label.textContent = ehHoje ? 'Hoje' : d.toLocaleDateString('pt-BR',{weekday:'long', day:'2-digit', month:'long'});
+  if(sub) sub.textContent = ehHoje ? d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+  const btnProximo = document.getElementById('diario-btn-proximo');
+  if(btnProximo){ btnProximo.style.opacity = ehHoje ? '.3' : '1'; btnProximo.style.pointerEvents = ehHoje ? 'none' : 'auto'; }
+
+  const refeicoesEl = document.getElementById('diario-refeicoes');
+  if(refeicoesEl) refeicoesEl.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">⏳ Carregando...</div>';
+
+  if(modoDemo){
+    if(refeicoesEl) refeicoesEl.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Diário alimentar não disponível na degustação.</div>';
+    return;
+  }
+  if(!SB || !usuario) return;
+
+  try{
+    const { data, error } = await SB.from('portal_diario_alimentar')
+      .select('*')
+      .eq('email', usuario.email)
+      .eq('data', dataParaChaveISO(d))
+      .order('criado_em',{ascending:true});
+    if(error){ console.error('carregarDiarioAlimentar:', error); if(refeicoesEl) refeicoesEl.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Erro ao carregar.</div>'; return; }
+
+    window._diarioItensHoje = data || [];
+    renderDiarioAlimentar();
+  }catch(e){
+    console.error('carregarDiarioAlimentar — erro inesperado:', e);
+    if(refeicoesEl) refeicoesEl.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:.82rem">Erro inesperado.</div>';
+  }
+}
+
+function renderDiarioAlimentar(){
+  const itens = window._diarioItensHoje || [];
+  const refeicoesEl = document.getElementById('diario-refeicoes');
+  if(!refeicoesEl) return;
+
+  let totalKcal=0, totalProt=0, totalCarb=0, totalGord=0;
+  itens.forEach(it=>{
+    totalKcal += Number(it.calorias)||0;
+    totalProt += Number(it.proteina)||0;
+    totalCarb += Number(it.carboidrato)||0;
+    totalGord += Number(it.gordura)||0;
+  });
+  document.getElementById('diario-total-kcal').textContent = Math.round(totalKcal);
+  document.getElementById('diario-total-prot').textContent = Math.round(totalProt)+'g';
+  document.getElementById('diario-total-carb').textContent = Math.round(totalCarb)+'g';
+  document.getElementById('diario-total-gord').textContent = Math.round(totalGord)+'g';
+
+  const metaEl = document.getElementById('diario-meta-comparativo');
+  const metaFicha = (window._fichaAtual?.refeicoes_json||[]).reduce((s,r)=>s+(Number(r.metaCalorias)||0),0);
+  if(metaEl){
+    if(metaFicha){
+      const diff = Math.round(totalKcal - metaFicha);
+      const sinal = diff>0?'+':'';
+      metaEl.style.display = 'block';
+      metaEl.textContent = `Meta da ficha: ${metaFicha} kcal · Hoje: ${sinal}${diff} kcal ${diff>0?'acima':diff<0?'abaixo':'exato'}`;
+    } else {
+      metaEl.style.display = 'none';
+    }
+  }
+
+  refeicoesEl.innerHTML = REFEICOES_DIARIO.map(ref=>{
+    const itensRef = itens.filter(it=>it.refeicao===ref.chave);
+    const totalRef = itensRef.reduce((s,it)=>s+(Number(it.calorias)||0),0);
+    return `<div style="background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:14px;margin-bottom:14px;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:${itensRef.length?'1px solid rgba(255,255,255,.06)':'none'}">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:1.1rem">${ref.emoji}</span>
+          <span style="font-size:.9rem;font-weight:700;color:#fff">${ref.chave}</span>
+          ${totalRef ? `<span style="font-size:.72rem;color:#fbbf24">· ${Math.round(totalRef)} kcal</span>` : ''}
+        </div>
+        <button onclick="abrirSeletorAlimentoDiario('${ref.chave}')" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34d399;width:28px;height:28px;border-radius:8px;font-size:1.1rem;cursor:pointer;line-height:1">+</button>
+      </div>
+      ${itensRef.map(it=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.04)">
+          <div style="flex:1">
+            <div style="font-size:.84rem;color:#fff;font-weight:600">${escHtmlPortal(it.alimento_nome)}</div>
+            <div style="font-size:.68rem;color:#888">${escHtmlPortal(it.quantidade||'')}</div>
+          </div>
+          <div style="text-align:right;margin-right:10px">
+            <div style="font-size:.78rem;color:#fbbf24;font-weight:700">${Math.round(it.calorias||0)} kcal</div>
+          </div>
+          <button onclick="removerItemDiario('${it.id}')" style="background:none;border:none;color:#666;font-size:.9rem;cursor:pointer;padding:4px">✕</button>
+        </div>
+      `).join('')}
+    </div>`;
+  }).join('');
+}
+
+async function removerItemDiario(id){
+  if(!SB) return;
+  try{
+    const { error } = await SB.from('portal_diario_alimentar').delete().eq('id', id);
+    if(error){ notif('Erro ao remover: '+error.message,'#ef4444',true); return; }
+    carregarDiarioAlimentar();
+  }catch(e){ console.error('removerItemDiario:', e); }
+}
+
+// ── LISTA DE COMPRAS (a partir da rotina alimentar publicada) ────────────────
+function gerarListaCompras(){
+  const rotina = window._rotinaAlimentarAtual;
+  if(!rotina || !rotina.length){ notif('Nenhuma rotina alimentar publicada ainda.','#f59e0b',true); return; }
+
+  const existente = document.getElementById('lista-compras-overlay');
+  if(existente) existente.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'lista-compras-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border-radius:20px 20px 0 0;max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column">
+      <div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.95rem;font-weight:800;color:#fff">🛒 Lista de Compras</div>
+        <button onclick="document.getElementById('lista-compras-overlay').remove()" style="background:none;border:none;color:#999;font-size:1.3rem;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px">
+        <label style="font-size:.78rem;color:#ccc">Comprar para quantos dias?</label>
+        <select id="lista-compras-dias" onchange="renderizarListaCompras()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:6px 10px;color:#fff;font-size:.82rem">
+          <option value="1">1 dia</option>
+          <option value="3">3 dias</option>
+          <option value="7" selected>7 dias (semana)</option>
+          <option value="14">14 dias</option>
+        </select>
+      </div>
+      <div id="lista-compras-conteudo" style="overflow-y:auto;padding:16px 18px 28px"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  renderizarListaCompras();
+}
+
+function renderizarListaCompras(){
+  const rotina = window._rotinaAlimentarAtual;
+  const el = document.getElementById('lista-compras-conteudo');
+  if(!rotina || !el) return;
+
+  const dias = parseInt(document.getElementById('lista-compras-dias')?.value)||7;
+
+  // Consolida todos os alimentos de todas as refeições, somando quantidades numéricas
+  // quando possível, e listando o resto com "usar Nx" pra multiplicar a critério.
+  const consolidado = {};
+  rotina.forEach(ref=>{
+    (ref.alimentos||[]).forEach(al=>{
+      if(!al.item) return;
+      const chave = al.item.trim().toLowerCase();
+      if(!consolidado[chave]) consolidado[chave] = { nome: al.item, ocorrencias: [] };
+      consolidado[chave].ocorrencias.push(al.quantidade||'');
+    });
+  });
+
+  const itens = Object.values(consolidado).map(item=>{
+    // Tenta parsear "NÚMERO + unidade" (ex: "100g", "50 g", "1 unidade")
+    const somasPorUnidade = {};
+    let temQtdNaoNumerica = false;
+    item.ocorrencias.forEach(q=>{
+      const m = (q||'').match(/^([\d.,]+)\s*(g|kg|ml|l|unidade|unidades|fatias?|colher(?:es)? de sopa|colher(?:es)? de chá)?/i);
+      if(m && m[1]){
+        const num = parseFloat(m[1].replace(',','.'));
+        const unidade = (m[2]||'porção').toLowerCase();
+        somasPorUnidade[unidade] = (somasPorUnidade[unidade]||0) + num;
+      } else {
+        temQtdNaoNumerica = true;
+      }
+    });
+
+    const partes = Object.entries(somasPorUnidade).map(([unidade,soma])=>{
+      const total = Math.round(soma*dias*10)/10;
+      return `${total}${unidade==='porção'?' porções':unidade.startsWith('g')||unidade.startsWith('kg')||unidade.startsWith('ml')||unidade==='l'?unidade:' '+unidade}`;
+    });
+    if(temQtdNaoNumerica) partes.push(`(${item.ocorrencias.length}x por dia — ajuste a critério)`);
+
+    return { nome: item.nome, detalhe: partes.join(' + ') || `usar ${dias}x` };
+  }).sort((a,b)=>a.nome.localeCompare(b.nome));
+
+  el.innerHTML = `
+    <div style="font-size:.72rem;color:#888;margin-bottom:14px">Baseado na sua rotina alimentar atual, multiplicado pra ${dias} dia(s). Ajuste como preferir — é uma estimativa pra facilitar a compra, não uma medida exata.</div>
+    ${itens.map((it,i)=>`
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer">
+        <input type="checkbox" style="margin-top:3px;width:18px;height:18px;accent-color:var(--orange)" onchange="this.parentElement.style.opacity=this.checked?'.4':'1';this.nextElementSibling.style.textDecoration=this.checked?'line-through':'none'"/>
+        <span style="flex:1">
+          <span style="display:block;font-size:.86rem;color:#fff;font-weight:600">${escHtmlPortal(it.nome)}</span>
+          <span style="display:block;font-size:.72rem;color:#888;margin-top:2px">${escHtmlPortal(it.detalhe)}</span>
+        </span>
+      </label>
+    `).join('')}
+  `;
+}
+
+
+async function abrirSeletorAlimentoDiario(refeicao){
+  window._diarioRefeicaoAlvo = refeicao;
+  const existente = document.getElementById('seletor-diario-overlay');
+  if(existente) existente.remove();
+
+  if(!window._bancoAlimentosPortal){
+    if(!SB) return;
+    try{
+      const { data, error } = await SB.from('banco_alimentos').select('id,nome,categoria,porcao_padrao,calorias,proteina,carboidrato,gordura');
+      if(error){ notif('Erro ao carregar alimentos: '+error.message,'#ef4444',true); return; }
+      window._bancoAlimentosPortal = data || [];
+    }catch(e){ console.error('abrirSeletorAlimentoDiario:', e); notif('Erro ao carregar alimentos.','#ef4444',true); return; }
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'seletor-diario-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border-radius:20px 20px 0 0;max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column">
+      <div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.95rem;font-weight:800;color:#fff">🔎 Adicionar em ${refeicao}</div>
+        <button onclick="document.getElementById('seletor-diario-overlay').remove()" style="background:none;border:none;color:#999;font-size:1.3rem;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:12px 18px">
+        <input type="text" id="diario-busca-alimento" placeholder="Buscar alimento..." oninput="filtrarAlimentoDiario()"
+          style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 14px;color:#fff;font-size:.9rem;font-family:var(--font-b)"/>
+      </div>
+      <div id="diario-lista-alimentos" style="overflow-y:auto;padding:0 18px 24px;flex:1"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  renderListaAlimentoDiario(window._bancoAlimentosPortal||[]);
+  setTimeout(()=>document.getElementById('diario-busca-alimento')?.focus(), 100);
+}
+
+function filtrarAlimentoDiario(){
+  const termo = (document.getElementById('diario-busca-alimento')?.value||'').toLowerCase().trim();
+  const lista = (window._bancoAlimentosPortal||[]).filter(a => !termo || (a.nome||'').toLowerCase().includes(termo));
+  renderListaAlimentoDiario(lista.slice(0,60));
+}
+
+function renderListaAlimentoDiario(lista){
+  const el = document.getElementById('diario-lista-alimentos');
+  if(!el) return;
+  if(!lista.length){
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:#666;font-size:.85rem">Nenhum alimento encontrado.</div>';
+    return;
+  }
+  el.innerHTML = lista.map(a=>`
+    <div onclick="abrirQuantidadeAlimentoDiario('${a.id}')" style="cursor:pointer;padding:12px 10px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:.86rem;color:#fff;font-weight:600">${escHtmlPortal(a.nome)}</div>
+        <div style="font-size:.7rem;color:#888">${escHtmlPortal(a.porcao_padrao||'')}</div>
+      </div>
+      <div style="font-size:.78rem;color:#fbbf24;font-weight:700;white-space:nowrap">${a.calorias||0} kcal</div>
+    </div>
+  `).join('');
+}
+
+function abrirQuantidadeAlimentoDiario(alimentoId){
+  const a = (window._bancoAlimentosPortal||[]).find(x=>x.id===alimentoId);
+  if(!a) return;
+  window._diarioAlimentoEscolhido = a;
+
+  const el = document.getElementById('diario-lista-alimentos');
+  const buscaEl = document.getElementById('diario-busca-alimento');
+  if(buscaEl) buscaEl.style.display = 'none';
+  if(el){
+    el.innerHTML = `
+      <div style="text-align:center;padding:10px 0 20px">
+        <div style="font-size:1rem;font-weight:800;color:#fff;margin-bottom:4px">${escHtmlPortal(a.nome)}</div>
+        <div style="font-size:.78rem;color:#888">Porção padrão: ${escHtmlPortal(a.porcao_padrao||'')} · ${a.calorias||0} kcal</div>
+      </div>
+      <label style="font-size:.72rem;color:#888;text-transform:uppercase;letter-spacing:1px">Quantas porções você comeu?</label>
+      <div style="display:flex;align-items:center;gap:12px;margin:10px 0 20px;justify-content:center">
+        <button onclick="ajustarMultiplicadorDiario(-0.5)" style="background:rgba(255,255,255,.08);border:none;color:#fff;width:40px;height:40px;border-radius:10px;font-size:1.2rem;cursor:pointer">−</button>
+        <input type="number" id="diario-multiplicador" value="1" step="0.5" min="0.25" style="width:70px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;color:#fff;font-size:1.1rem;font-weight:700"/>
+        <button onclick="ajustarMultiplicadorDiario(0.5)" style="background:rgba(255,255,255,.08);border:none;color:#fff;width:40px;height:40px;border-radius:10px;font-size:1.2rem;cursor:pointer">+</button>
+      </div>
+      <div id="diario-preview-calculo" style="text-align:center;font-size:.82rem;color:#34d399;margin-bottom:20px"></div>
+      <button onclick="confirmarAdicaoDiario()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:13px;border-radius:12px;font-weight:800;font-size:.9rem;cursor:pointer">✅ Adicionar</button>
+      <button onclick="voltarBuscaDiario()" style="width:100%;background:none;border:none;color:#888;padding:12px;font-size:.8rem;cursor:pointer;margin-top:6px">‹ Voltar pra busca</button>
+    `;
+    document.getElementById('diario-multiplicador').addEventListener('input', atualizarPreviewCalculoDiario);
+    atualizarPreviewCalculoDiario();
+  }
+}
+
+function ajustarMultiplicadorDiario(delta){
+  const input = document.getElementById('diario-multiplicador');
+  if(!input) return;
+  const novo = Math.max(0.25, (parseFloat(input.value)||1) + delta);
+  input.value = novo;
+  atualizarPreviewCalculoDiario();
+}
+
+function atualizarPreviewCalculoDiario(){
+  const a = window._diarioAlimentoEscolhido;
+  const mult = parseFloat(document.getElementById('diario-multiplicador')?.value)||1;
+  const el = document.getElementById('diario-preview-calculo');
+  if(!a || !el) return;
+  const kcal = Math.round((a.calorias||0)*mult);
+  const prot = Math.round((a.proteina||0)*mult);
+  const carb = Math.round((a.carboidrato||0)*mult);
+  const gord = Math.round((a.gordura||0)*mult);
+  el.textContent = `${kcal} kcal · ${prot}g prot · ${carb}g carb · ${gord}g gord`;
+}
+
+function voltarBuscaDiario(){
+  const buscaEl = document.getElementById('diario-busca-alimento');
+  if(buscaEl) buscaEl.style.display = 'block';
+  renderListaAlimentoDiario(window._bancoAlimentosPortal||[]);
+}
+
+async function confirmarAdicaoDiario(){
+  const a = window._diarioAlimentoEscolhido;
+  const refeicao = window._diarioRefeicaoAlvo;
+  const mult = parseFloat(document.getElementById('diario-multiplicador')?.value)||1;
+  if(!a || !refeicao || !usuario) return;
+
+  inicializarDataDiario();
+  const payload = {
+    email: usuario.email,
+    data: dataParaChaveISO(window._diarioDataAtual),
+    refeicao,
+    alimento_nome: a.nome,
+    quantidade: mult===1 ? (a.porcao_padrao||'') : `${mult}x ${a.porcao_padrao||'porção'}`,
+    multiplicador: mult,
+    calorias: Math.round((a.calorias||0)*mult),
+    proteina: Math.round((a.proteina||0)*mult*10)/10,
+    carboidrato: Math.round((a.carboidrato||0)*mult*10)/10,
+    gordura: Math.round((a.gordura||0)*mult*10)/10,
+    criado_em: new Date().toISOString()
+  };
+
+  try{
+    const { error } = await SB.from('portal_diario_alimentar').insert(payload);
+    if(error){ notif('Erro ao adicionar: '+error.message,'#ef4444',true); return; }
+    const overlay = document.getElementById('seletor-diario-overlay');
+    if(overlay) overlay.remove();
+    notif(`✅ "${a.nome}" adicionado!`,'#10b981');
+    carregarDiarioAlimentar();
+  }catch(e){
+    console.error('confirmarAdicaoDiario — erro inesperado:', e);
+    notif('Erro inesperado ao adicionar.','#ef4444',true);
+  }
+}
+
 
 function notif(msg, cor='#10b981', persistente=false){
   const el = document.getElementById('notif');

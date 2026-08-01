@@ -257,6 +257,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
     <a class="nav-item" onclick="showPage('vencimentos',this)"><span class="nav-icon">⏰</span>Vencimentos</a>
     <a class="nav-item" onclick="showPage('degustacoes',this)"><span class="nav-icon">🎯</span>Degustações</a>
     <a class="nav-item" onclick="showPage('captacao',this)"><span class="nav-icon">📥</span>Captação<span class="tab-cnt" id="cnt-captacao-novos" style="display:none"></span></a>
+    <a class="nav-item" onclick="showPage('datasespeciais',this)"><span class="nav-icon">🎉</span>Datas Especiais<span class="tab-cnt" id="cnt-datas-especiais" style="display:none"></span></a>
     <div class="sb-section">Conteúdo</div>
     <a class="nav-item" onclick="showPage('bancoex',this)"><span class="nav-icon">🎬</span>Banco de Exercícios</a>
     <a class="nav-item" onclick="showPage('bancoalim',this)"><span class="nav-icon">🥗</span>Banco de Alimentos</a>
@@ -487,6 +488,25 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <!-- PÁGINA DATAS ESPECIAIS -->
+    <div class="page" id="page-datasespeciais">
+      <div class="topbar">
+        <div class="page-title">DATAS<span> ESPECIAIS</span></div>
+        <button class="btn btn-green" onclick="carregarDatasEspeciais()" style="font-size:.8rem;padding:8px 16px">🔄 Atualizar</button>
+      </div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:6px">Aniversário, tempo de contrato e dia da profissão de cada aluno — detectados automaticamente a partir dos dados já cadastrados.</p>
+      <p style="font-size:.72rem;color:#eab308;margin-bottom:16px">⚠️ Isso não envia nada sozinho — o sistema não tem um servidor rodando o tempo todo. Toda vez que você abre essa página, ele confere as datas e te avisa; o envio é sempre com um clique seu.</p>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button onclick="filtrarDatasEspeciais('hoje')" id="filtro-datas-hoje" class="btn" style="font-size:.8rem;padding:8px 16px;background:rgba(240,89,10,.15);border-color:var(--orange);color:var(--orange)">🎉 Hoje</button>
+        <button onclick="filtrarDatasEspeciais('semana')" id="filtro-datas-semana" class="btn" style="font-size:.8rem;padding:8px 16px;background:rgba(255,255,255,.04);border-color:var(--border);color:#999">📅 Próximos 7 dias</button>
+      </div>
+
+      <div id="lista-datas-especiais">
+        <div style="text-align:center;padding:32px;color:var(--muted)">⏳ Carregando...</div>
       </div>
     </div>
 
@@ -790,6 +810,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
         <button class="tab-btn" onclick="switchMTab('timer',this)">⏱ Prazo</button>
         <button class="tab-btn" onclick="switchMTab('portal',this)">🌐 Portal</button>
         <button class="tab-btn" onclick="switchMTab('notas',this)">📝 Notas</button>
+        <button class="tab-btn" onclick="switchMTab('chat',this)">💬 Chat<span id="chat-badge-cliente" style="display:none;background:#ef4444;color:#fff;font-size:.62rem;font-weight:800;padding:1px 6px;border-radius:10px;margin-left:5px"></span></button>
         <button class="tab-btn" onclick="switchMTab('relatorio',this)">📊 Relatório</button>
       </div>
 
@@ -1060,6 +1081,17 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
         </div>
       </div>
 
+      <!-- CHAT -->
+      <div class="tab-panel" id="mt-chat">
+        <div id="chat-cliente-mensagens" style="display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:420px;overflow-y:auto;padding:4px;margin-bottom:14px">
+          <div style="text-align:center;padding:24px;color:var(--muted);font-size:.82rem">⏳ Carregando conversa...</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <textarea id="chat-cliente-input" rows="1" placeholder="Escreva sua resposta..." style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:#fff;font-size:.85rem;font-family:var(--font-b);resize:none" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMensagemChatCliente();}"></textarea>
+          <button onclick="enviarMensagemChatCliente()" class="btn btn-orange" style="flex-shrink:0;padding:0 20px">Enviar</button>
+        </div>
+      </div>
+
       <!-- RELATÓRIO -->
       <div class="tab-panel" id="mt-relatorio">
         <div id="rel-loading" style="text-align:center;padding:32px;color:var(--muted);display:none">
@@ -1091,6 +1123,19 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
             </div>
           </div>
 
+          <!-- Comparador de Fotos -->
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#f472b6">📸 Fotos de Progresso</span>
+              <label style="display:flex;align-items:center;gap:5px;font-size:.68rem;color:#999;cursor:pointer">
+                <input type="checkbox" id="foto-grade-toggle" onchange="toggleGradeComparadorFoto(this.checked)"/> grade de referência
+              </label>
+            </div>
+            <div style="padding:14px 16px" id="rel-fotos-progresso">
+              <div style="color:var(--muted);font-size:.82rem">Carregando...</div>
+            </div>
+          </div>
+
           <!-- Feedbacks do aluno -->
           <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
@@ -1109,6 +1154,40 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
               <button onclick="carregarDiarioAlimentarCliente(clienteAtual)" style="background:none;border:none;color:#60a5fa;font-size:.68rem;cursor:pointer">🔄 Atualizar</button>
             </div>
             <div style="padding:14px 16px" id="rel-diario-alimentar">
+              <div style="color:var(--muted);font-size:.82rem">Carregando...</div>
+            </div>
+          </div>
+
+          <!-- Avaliação Física do aluno -->
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#fbbf24">📏 Avaliação Física (autoavaliação)</span>
+              <button onclick="carregarAvaliacaoFisicaCliente(clienteAtual)" style="background:none;border:none;color:#60a5fa;font-size:.68rem;cursor:pointer">🔄 Atualizar</button>
+            </div>
+            <div style="padding:10px 16px;background:rgba(234,179,8,.06);border-bottom:1px solid var(--border);font-size:.7rem;color:#eab308">⚠️ Medidas tiradas pelo próprio aluno com fita métrica — % de gordura é estimativa (fórmula da Marinha), não substitui dobras cutâneas.</div>
+            <div style="padding:14px 16px" id="rel-avaliacao-fisica">
+              <div style="color:var(--muted);font-size:.82rem">Carregando...</div>
+            </div>
+          </div>
+
+          <!-- Check-in de energia/dor/sono -->
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#60a5fa">📋 Check-in (últimos 10 registros)</span>
+              <button onclick="carregarCheckinsCliente(clienteAtual)" style="background:none;border:none;color:#60a5fa;font-size:.68rem;cursor:pointer">🔄 Atualizar</button>
+            </div>
+            <div style="padding:14px 16px" id="rel-checkins">
+              <div style="color:var(--muted);font-size:.82rem">Carregando...</div>
+            </div>
+          </div>
+
+          <!-- Progressão de Carga -->
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#10b981">🏋️ Progressão de Carga</span>
+              <button onclick="carregarProgressaoCargaCliente(clienteAtual)" style="background:none;border:none;color:#60a5fa;font-size:.68rem;cursor:pointer">🔄 Atualizar</button>
+            </div>
+            <div style="padding:14px 16px" id="rel-progressao-carga">
               <div style="color:var(--muted);font-size:.82rem">Carregando...</div>
             </div>
           </div>
@@ -1424,6 +1503,8 @@ async function abrirCliente(id){
   window._fichaTemAlteracoesNaoPublicadas = false;
   const c = clienteAtual;
   const l = LS.get(id);
+
+  verificarMensagensNaoLidasCliente(c);
 
   // Header
   set('m-nome', c.nome||'Cliente');
@@ -2001,6 +2082,7 @@ function showPage(id,el){
   if(el) el.classList.add('active');
   if(id==='degustacoes'){ renderizarEditorDegustacao(); carregarStatusManutencaoDegustacao(); }
   if(id==='captacao'){ carregarCaptacao(); }
+  if(id==='datasespeciais'){ carregarDatasEspeciais(); }
   if(id==='bancoex'){ carregarBancoExercicios(); }
   if(id==='bancoalim'){ carregarBancoAlimentos(); }
   if(id==='videosaval'){ carregarVideosAvaliacao(); }
@@ -2027,8 +2109,112 @@ function switchMTab(id,el){
   if(id==='portal' && clienteAtual){
     carregarAbaPortal(clienteAtual);
   }
+  if(id==='chat' && clienteAtual){
+    carregarChatCliente(clienteAtual);
+  }
 }
 function fecharModal(){ document.getElementById('modal-cliente').classList.remove('open'); document.body.style.overflow=''; }
+
+// ── CHAT COM O ALUNO ──────────────────────────────────────────────────────────
+async function carregarChatCliente(c){
+  const el = document.getElementById('chat-cliente-mensagens');
+  if(!el) return;
+  if(!SB || !c?.email){ el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:.82rem">Cliente sem e-mail cadastrado.</div>'; return; }
+
+  try{
+    const { data, error } = await SB.from('portal_mensagens')
+      .select('*')
+      .eq('email', c.email)
+      .order('criado_em',{ascending:true});
+    if(error){
+      const ehTabelaFaltando = /relation .*portal_mensagens.* does not exist/i.test(error.message||'');
+      el.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:.82rem">${ehTabelaFaltando ? 'Ainda não disponível — rode o sql_mensagens_chat.sql no Supabase.' : 'Erro ao carregar: '+error.message}</div>`;
+      console.error('carregarChatCliente:', error);
+      return;
+    }
+    window._chatClienteMensagens = data || [];
+    renderChatCliente();
+
+    // Marca como lidas as mensagens do aluno que você acabou de ver
+    const naoLidas = (data||[]).filter(m=>m.remetente==='aluno' && !m.lida);
+    if(naoLidas.length){
+      await Promise.all(naoLidas.map(m=> SB.from('portal_mensagens').update({lida:true}).eq('id', m.id)));
+      atualizarBadgeChatCliente(0);
+    }
+  }catch(e){
+    console.error('carregarChatCliente — erro inesperado:', e);
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:.82rem">Erro inesperado.</div>';
+  }
+}
+
+function renderChatCliente(){
+  const el = document.getElementById('chat-cliente-mensagens');
+  if(!el) return;
+  const msgs = window._chatClienteMensagens || [];
+
+  if(!msgs.length){
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:.82rem">Nenhuma mensagem trocada ainda com este aluno.</div>';
+    return;
+  }
+
+  el.innerHTML = msgs.map(m=>{
+    const ehProfessor = m.remetente === 'professor';
+    const hora = new Date(m.criado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    return `<div style="display:flex;justify-content:${ehProfessor?'flex-end':'flex-start'}">
+      <div style="max-width:78%;background:${ehProfessor?'var(--orange)':'var(--card2)'};border:${ehProfessor?'none':'1px solid var(--border)'};border-radius:${ehProfessor?'14px 14px 4px 14px':'14px 14px 14px 4px'};padding:9px 13px">
+        <div style="font-size:.82rem;color:#fff;white-space:pre-wrap;word-break:break-word">${escHtml(m.mensagem)}</div>
+        <div style="font-size:.6rem;color:${ehProfessor?'rgba(255,255,255,.75)':'#777'};margin-top:3px;text-align:right">${hora}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.scrollTop = el.scrollHeight;
+}
+
+async function enviarMensagemChatCliente(){
+  const input = document.getElementById('chat-cliente-input');
+  const texto = input?.value.trim();
+  const c = clienteAtual;
+  if(!texto || !c?.email || !SB) return;
+
+  input.value = '';
+  try{
+    const { error } = await SB.from('portal_mensagens').insert({
+      email: c.email,
+      remetente: 'professor',
+      mensagem: texto,
+      lida: false,
+      criado_em: new Date().toISOString()
+    });
+    if(error){ notif('Erro ao enviar: '+error.message,'#ef4444',true); input.value = texto; return; }
+    await carregarChatCliente(c);
+  }catch(e){
+    console.error('enviarMensagemChatCliente — erro inesperado:', e);
+    notif('Erro inesperado ao enviar.','#ef4444',true);
+    input.value = texto;
+  }
+}
+
+async function verificarMensagensNaoLidasCliente(c){
+  if(!SB || !c?.email) return;
+  try{
+    const { data, error } = await SB.from('portal_mensagens')
+      .select('id')
+      .eq('email', c.email)
+      .eq('remetente','aluno')
+      .eq('lida', false);
+    if(error) return;
+    atualizarBadgeChatCliente(data?.length || 0);
+  }catch(e){ console.warn('verificarMensagensNaoLidasCliente:', e); }
+}
+
+function atualizarBadgeChatCliente(n){
+  const badge = document.getElementById('chat-badge-cliente');
+  if(!badge) return;
+  if(n>0){ badge.textContent = n; badge.style.display = 'inline-block'; }
+  else{ badge.style.display = 'none'; }
+}
+
 function abrirNovoCliente(){ document.getElementById('modal-novo').classList.add('open'); document.body.style.overflow='hidden'; }
 
 document.getElementById('modal-cliente').addEventListener('click',function(e){ if(e.target===this) fecharModal(); });
@@ -5175,6 +5361,18 @@ async function gerarRelatorioCliente(c){
 
   // Diário alimentar (o que o aluno realmente registrou comendo)
   await carregarDiarioAlimentarCliente(c);
+
+  // Fotos de progresso (comparador antes/depois)
+  await carregarFotosProgressoCliente(c);
+
+  // Avaliação física (circunferências registradas pelo próprio aluno)
+  await carregarAvaliacaoFisicaCliente(c);
+
+  // Check-in de energia/dor/sono
+  await carregarCheckinsCliente(c);
+
+  // Progressão de carga por exercício
+  await carregarProgressaoCargaCliente(c);
 }
 
 async function carregarFeedbacksCliente(c){
@@ -5318,6 +5516,247 @@ async function carregarDiarioAlimentarCliente(c){
     el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Erro ao carregar diário alimentar.</div>';
   }
 }
+
+async function carregarAvaliacaoFisicaCliente(c){
+  const el = document.getElementById('rel-avaliacao-fisica');
+  if(!el) return;
+  if(!SB || !c?.email){ el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Cliente sem e-mail cadastrado.</div>'; return; }
+
+  try{
+    const { data, error } = await SB.from('portal_avaliacao_fisica').select('*').eq('email', c.email).order('criado_em',{ascending:false});
+    if(error){
+      const ehTabelaFaltando = /relation .*portal_avaliacao_fisica.* does not exist/i.test(error.message||'');
+      el.innerHTML = `<div style="color:var(--muted);font-size:.82rem">${ehTabelaFaltando ? 'Ainda não disponível — rode o sql_avaliacao_fisica.sql no Supabase.' : 'Erro ao carregar: '+error.message}</div>`;
+      console.error('carregarAvaliacaoFisicaCliente:', error);
+      return;
+    }
+    const lista = data || [];
+    if(!lista.length){
+      el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">O aluno ainda não registrou nenhuma avaliação física.</div>';
+      return;
+    }
+
+    const html = lista.map((a,i)=>{
+      const anterior = lista[i+1];
+      let diffHtml = '';
+      if(anterior?.percentual_gordura_estimado!=null && a.percentual_gordura_estimado!=null){
+        const diff = Math.round((a.percentual_gordura_estimado - anterior.percentual_gordura_estimado)*10)/10;
+        const cor = diff<0 ? '#34d399' : diff>0 ? '#f87171' : '#888';
+        diffHtml = ` <span style="color:${cor};font-size:.72rem">(${diff>0?'+':''}${diff}%)</span>`;
+      }
+      return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <span style="font-size:.85rem;font-weight:800;color:#fbbf24">${a.percentual_gordura_estimado!=null ? a.percentual_gordura_estimado+'% gordura (estimado)' : 'Sem estimativa'}${diffHtml}</span>
+          <span style="font-size:.68rem;color:var(--muted)">${new Date(a.criado_em).toLocaleDateString('pt-BR')}</span>
+        </div>
+        <div style="font-size:.74rem;color:#ccc;display:flex;flex-wrap:wrap;gap:10px">
+          <span>Altura: ${a.altura_cm}cm</span>
+          <span>Pescoço: ${a.pescoco_cm}cm</span>
+          <span>Cintura: ${a.cintura_cm}cm</span>
+          ${a.quadril_cm?`<span>Quadril: ${a.quadril_cm}cm</span>`:''}
+          ${a.peito_cm?`<span>Peito: ${a.peito_cm}cm</span>`:''}
+          ${a.braco_cm?`<span>Braço: ${a.braco_cm}cm</span>`:''}
+          ${a.coxa_cm?`<span>Coxa: ${a.coxa_cm}cm</span>`:''}
+          ${a.panturrilha_cm?`<span>Panturrilha: ${a.panturrilha_cm}cm</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = html;
+  }catch(e){
+    console.error('carregarAvaliacaoFisicaCliente — erro inesperado:', e);
+    el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Erro ao carregar avaliação física.</div>';
+  }
+}
+
+async function carregarCheckinsCliente(c){
+  const el = document.getElementById('rel-checkins');
+  if(!el) return;
+  if(!SB || !c?.email){ el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Cliente sem e-mail cadastrado.</div>'; return; }
+
+  try{
+    const { data, error } = await SB.from('portal_checkin').select('*').eq('email', c.email).order('criado_em',{ascending:false}).limit(10);
+    if(error){
+      const ehTabelaFaltando = /relation .*portal_checkin.* does not exist/i.test(error.message||'');
+      el.innerHTML = `<div style="color:var(--muted);font-size:.82rem">${ehTabelaFaltando ? 'Ainda não disponível — rode o sql_progressao_checkin.sql no Supabase.' : 'Erro ao carregar: '+error.message}</div>`;
+      return;
+    }
+    if(!data || !data.length){ el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Nenhum check-in registrado ainda.</div>'; return; }
+
+    const emojis = { energia:['😴','😕','🙂','💪','🔥'], sono:['😫','😕','🙂','😊','😴'], dor:['🤕','😣','😐','🙂','✅'] };
+    el.innerHTML = data.map(ck=>{
+      const momentoLabel = ck.momento==='pre' ? 'Antes do treino' : 'Depois do treino';
+      const alertaDor = ck.dor_muscular && ck.dor_muscular<=2;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;border:1px solid ${alertaDor?'rgba(239,68,68,.3)':'var(--border)'};border-radius:8px;padding:9px 12px;margin-bottom:8px;${alertaDor?'background:rgba(239,68,68,.05)':''}">
+        <div>
+          <div style="font-size:.76rem;color:#fff;font-weight:600">${momentoLabel}</div>
+          <div style="font-size:.68rem;color:var(--muted)">${new Date(ck.criado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+        <div style="display:flex;gap:10px;font-size:.9rem">
+          ${ck.energia?`<span title="Energia">${emojis.energia[ck.energia-1]}</span>`:''}
+          ${ck.qualidade_sono?`<span title="Sono">${emojis.sono[ck.qualidade_sono-1]}</span>`:''}
+          ${ck.dor_muscular?`<span title="Dor muscular">${emojis.dor[ck.dor_muscular-1]}</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    console.error('carregarCheckinsCliente — erro inesperado:', e);
+    el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Erro ao carregar check-ins.</div>';
+  }
+}
+
+async function carregarProgressaoCargaCliente(c){
+  const el = document.getElementById('rel-progressao-carga');
+  if(!el) return;
+  if(!SB || !c?.email){ el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Cliente sem e-mail cadastrado.</div>'; return; }
+
+  try{
+    const { data, error } = await SB.from('portal_cargas').select('*').eq('email', c.email).order('data',{ascending:true});
+    if(error){
+      const ehTabelaFaltando = /relation .*portal_cargas.* does not exist/i.test(error.message||'');
+      el.innerHTML = `<div style="color:var(--muted);font-size:.82rem">${ehTabelaFaltando ? 'Ainda não disponível — rode o sql_progressao_checkin.sql no Supabase.' : 'Erro ao carregar: '+error.message}</div>`;
+      return;
+    }
+    if(!data || !data.length){ el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Nenhuma carga registrada ainda — isso é preenchido pelo aluno durante o Modo Treino Ativo.</div>'; return; }
+
+    // Agrupa por exercício, mantendo a ordem cronológica de cada um
+    const porExercicio = {};
+    data.forEach(row=>{
+      if(!porExercicio[row.exercicio_nome]) porExercicio[row.exercicio_nome] = [];
+      porExercicio[row.exercicio_nome].push(row);
+    });
+
+    el.innerHTML = Object.entries(porExercicio).map(([nome, registros])=>{
+      const primeiro = registros[0];
+      const ultimo = registros[registros.length-1];
+      const diff = registros.length>1 ? Math.round((ultimo.peso_kg-primeiro.peso_kg)*10)/10 : null;
+      const cor = diff>0 ? '#34d399' : diff<0 ? '#f87171' : '#888';
+      return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-size:.82rem;font-weight:700;color:#fff">${escHtml(nome)}</span>
+          <span style="font-size:.78rem;color:#10b981;font-weight:700">${ultimo.peso_kg}kg${diff!==null?` <span style="color:${cor};font-size:.68rem">(${diff>0?'+':''}${diff}kg desde ${new Date(primeiro.data+'T12:00:00').toLocaleDateString('pt-BR')})</span>`:''}</span>
+        </div>
+        <div style="font-size:.68rem;color:var(--muted)">${registros.length} registro(s) · último em ${new Date(ultimo.data+'T12:00:00').toLocaleDateString('pt-BR')}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    console.error('carregarProgressaoCargaCliente — erro inesperado:', e);
+    el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Erro ao carregar progressão de carga.</div>';
+  }
+}
+
+
+// ── COMPARADOR DE FOTOS DE PROGRESSO (visão do professor) ────────────────────
+async function carregarFotosProgressoCliente(c){
+  const el = document.getElementById('rel-fotos-progresso');
+  if(!el) return;
+  if(!SB || !c?.email){ el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Cliente sem e-mail cadastrado.</div>'; return; }
+
+  try{
+    // Busca só id/data/peso de todos os registros (leve). O ID de quem TEM foto
+    // vem numa segunda consulta, sem trazer o conteúdo da foto — só confirma quais têm.
+    const { data: todos, error: erroTodos } = await SB.from('portal_progresso')
+      .select('id,criado_em,peso').eq('email', c.email).order('criado_em',{ascending:true});
+    if(erroTodos){ el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Erro ao carregar: '+erroTodos.message+'</div>'; return; }
+
+    const { data: comFoto, error: erroFoto } = await SB.from('portal_progresso')
+      .select('id,criado_em').eq('email', c.email).not('foto','is',null).order('criado_em',{ascending:true});
+    if(erroFoto){ el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Erro ao carregar fotos: '+erroFoto.message+'</div>'; return; }
+
+    window._fotosProgressoCliente = comFoto || [];
+
+    if(!comFoto || comFoto.length < 1){
+      el.innerHTML = `<div style="color:var(--muted);font-size:.82rem">${(!todos||!todos.length) ? 'Nenhum registro de progresso ainda.' : 'O aluno ainda não enviou nenhuma foto de progresso.'}</div>`;
+      return;
+    }
+    if(comFoto.length === 1){
+      el.innerHTML = `<div style="color:var(--muted);font-size:.82rem">Só tem 1 foto enviada até agora (${new Date(comFoto[0].criado_em).toLocaleDateString('pt-BR')}) — precisa de pelo menos 2 pra comparar.</div>
+        <button onclick="verFotoUnicaCliente('${comFoto[0].id}')" style="margin-top:10px;background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.3);color:#f472b6;padding:7px 16px;border-radius:8px;font-size:.78rem;cursor:pointer">👁 Ver essa foto</button>`;
+      return;
+    }
+
+    const opcoes = comFoto.map(f=>`<option value="${f.id}">${new Date(f.criado_em).toLocaleDateString('pt-BR')}</option>`).join('');
+    el.innerHTML = `
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1">
+          <label style="font-size:.65rem;color:#888;text-transform:uppercase">Antes</label>
+          <select id="foto-select-antes" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:7px;color:#fff;font-size:.78rem;margin-top:4px">${opcoes}</select>
+        </div>
+        <div style="flex:1">
+          <label style="font-size:.65rem;color:#888;text-transform:uppercase">Depois</label>
+          <select id="foto-select-depois" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:7px;color:#fff;font-size:.78rem;margin-top:4px">${opcoes}</select>
+        </div>
+      </div>
+      <button onclick="montarComparadorFotoPainel()" style="width:100%;background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.3);color:#f472b6;padding:9px;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;margin-bottom:14px">🔄 Comparar essas duas</button>
+      <div id="comparador-foto-painel-wrap" style="display:none">
+        <div style="position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border);aspect-ratio:3/4;max-width:340px;margin:0 auto;background:#111">
+          <img id="foto-painel-depois" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/>
+          <img id="foto-painel-antes" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;clip-path:inset(0 50% 0 0)"/>
+          <div id="foto-painel-grade" style="display:none;position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.35) 1px,transparent 1px);background-size:33.33% 33.33%"></div>
+          <div id="comparador-linha-painel" style="position:absolute;top:0;bottom:0;left:50%;width:2px;background:#fff;box-shadow:0 0 8px rgba(0,0,0,.5);pointer-events:none"></div>
+          <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;font-size:.62rem;font-weight:700;padding:3px 8px;border-radius:6px">ANTES</div>
+          <div style="position:absolute;top:8px;right:8px;background:rgba(16,185,129,.85);color:#fff;font-size:.62rem;font-weight:700;padding:3px 8px;border-radius:6px">DEPOIS</div>
+          <input type="range" id="comparador-slider-painel" min="0" max="100" value="50" oninput="moverComparadorFotoPainel(this.value)"
+            style="position:absolute;bottom:10px;left:8%;width:84%">
+        </div>
+        <div id="comparador-datas-painel" style="text-align:center;font-size:.72rem;color:#888;margin-top:8px"></div>
+      </div>
+    `;
+
+    // Pré-seleciona a mais antiga como "antes" e a mais recente como "depois"
+    document.getElementById('foto-select-antes').value = comFoto[0].id;
+    document.getElementById('foto-select-depois').value = comFoto[comFoto.length-1].id;
+    montarComparadorFotoPainel();
+  }catch(e){
+    console.error('carregarFotosProgressoCliente — erro inesperado:', e);
+    el.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Erro inesperado ao carregar fotos.</div>';
+  }
+}
+
+async function montarComparadorFotoPainel(){
+  const idAntes = document.getElementById('foto-select-antes')?.value;
+  const idDepois = document.getElementById('foto-select-depois')?.value;
+  if(!idAntes || !idDepois || !SB) return;
+
+  const wrap = document.getElementById('comparador-foto-painel-wrap');
+  if(wrap) wrap.style.display = 'block';
+
+  try{
+    const [{ data: antesData }, { data: depoisData }] = await Promise.all([
+      SB.from('portal_progresso').select('foto,criado_em').eq('id', idAntes).single(),
+      SB.from('portal_progresso').select('foto,criado_em').eq('id', idDepois).single(),
+    ]);
+    if(antesData?.foto) document.getElementById('foto-painel-antes').src = antesData.foto;
+    if(depoisData?.foto) document.getElementById('foto-painel-depois').src = depoisData.foto;
+    document.getElementById('comparador-datas-painel').textContent =
+      `${new Date(antesData?.criado_em).toLocaleDateString('pt-BR')}  →  ${new Date(depoisData?.criado_em).toLocaleDateString('pt-BR')}`;
+    moverComparadorFotoPainel(50);
+  }catch(e){ console.error('montarComparadorFotoPainel:', e); notif('Erro ao carregar as fotos.','#ef4444',true); }
+}
+
+function moverComparadorFotoPainel(pct){
+  const linha = document.getElementById('comparador-linha-painel');
+  const antes = document.getElementById('foto-painel-antes');
+  if(linha) linha.style.left = pct+'%';
+  if(antes) antes.style.clipPath = `inset(0 ${100-pct}% 0 0)`;
+}
+
+function toggleGradeComparadorFoto(ativo){
+  const grade = document.getElementById('foto-painel-grade');
+  if(grade) grade.style.display = ativo ? 'block' : 'none';
+}
+
+async function verFotoUnicaCliente(id){
+  if(!SB) return;
+  try{
+    const { data } = await SB.from('portal_progresso').select('foto').eq('id', id).single();
+    if(data?.foto){
+      const w = window.open('');
+      if(w) w.document.write(`<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh"><img src="${data.foto}" style="max-width:100%;max-height:100%"></body>`);
+    }
+  }catch(e){ console.error('verFotoUnicaCliente:', e); }
+}
+
 
 
 // ── AGUARDAR DOCX CARREGAR (retry ativo, até 8s) ────────────────────────────
@@ -7188,6 +7627,232 @@ async function salvarTreinoDegustacao(){
 }
 
 // ── DEGUSTAÇÕES ───────────────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════
+// DATAS ESPECIAIS — aniversário, contratação e dia da profissão
+// ══════════════════════════════════════════════════════════════════════════
+
+// Mapeamento de profissões comuns pro dia comemorativo no Brasil.
+// A busca é por palavra-chave dentro do texto livre que o cliente preencheu,
+// então cobre variações tipo "advogado", "advogada", "sou advogado" etc.
+const DIAS_PROFISSAO = [
+  { chave:'advogad', nome:'Advogado(a)', mes:8, dia:11 },
+  { chave:'médic', nome:'Médico(a)', mes:10, dia:18 },
+  { chave:'medic', nome:'Médico(a)', mes:10, dia:18 },
+  { chave:'enfermeir', nome:'Enfermeiro(a)', mes:5, dia:12 },
+  { chave:'professor', nome:'Professor(a)', mes:10, dia:15 },
+  { chave:'engenheir', nome:'Engenheiro(a)', mes:12, dia:11 },
+  { chave:'contad', nome:'Contador(a)', mes:4, dia:25 },
+  { chave:'dentista', nome:'Dentista', mes:10, dia:25 },
+  { chave:'odont', nome:'Dentista', mes:10, dia:25 },
+  { chave:'psicólog', nome:'Psicólogo(a)', mes:8, dia:27 },
+  { chave:'psicolog', nome:'Psicólogo(a)', mes:8, dia:27 },
+  { chave:'nutricionista', nome:'Nutricionista', mes:8, dia:31 },
+  { chave:'fisioterapeut', nome:'Fisioterapeuta', mes:10, dia:13 },
+  { chave:'arquitet', nome:'Arquiteto(a)', mes:12, dia:15 },
+  { chave:'farmacêutic', nome:'Farmacêutico(a)', mes:1, dia:20 },
+  { chave:'farmaceutic', nome:'Farmacêutico(a)', mes:1, dia:20 },
+  { chave:'veterinári', nome:'Veterinário(a)', mes:9, dia:9 },
+  { chave:'veterinari', nome:'Veterinário(a)', mes:9, dia:9 },
+  { chave:'motorista', nome:'Motorista', mes:7, dia:25 },
+  { chave:'vendedor', nome:'Vendedor(a)', mes:10, dia:1 },
+  { chave:'empresári', nome:'Empresário(a)', mes:10, dia:5 },
+  { chave:'empresari', nome:'Empresário(a)', mes:10, dia:5 },
+  { chave:'jornalista', nome:'Jornalista', mes:4, dia:7 },
+  { chave:'bancári', nome:'Bancário(a)', mes:8, dia:28 },
+  { chave:'bancari', nome:'Bancário(a)', mes:8, dia:28 },
+  { chave:'policial', nome:'Policial', mes:4, dia:21 },
+  { chave:'militar', nome:'Militar', mes:8, dia:25 },
+  { chave:'servidor público', nome:'Servidor(a) Público(a)', mes:10, dia:28 },
+  { chave:'servidor publico', nome:'Servidor(a) Público(a)', mes:10, dia:28 },
+  { chave:'design', nome:'Designer', mes:12, dia:8 },
+  { chave:'programador', nome:'Programador(a)', mes:10, dia:9 },
+  { chave:'desenvolvedor', nome:'Desenvolvedor(a)', mes:10, dia:9 },
+  { chave:'analista de sistemas', nome:'Analista de Sistemas', mes:9, dia:27 },
+  { chave:'publicitári', nome:'Publicitário(a)', mes:5, dia:16 },
+  { chave:'publicitari', nome:'Publicitário(a)', mes:5, dia:16 },
+  { chave:'biólog', nome:'Biólogo(a)', mes:5, dia:3 },
+  { chave:'biolog', nome:'Biólogo(a)', mes:5, dia:3 },
+  { chave:'personal trainer', nome:'Personal Trainer', mes:9, dia:3 },
+  { chave:'educador físic', nome:'Educador(a) Físico(a)', mes:9, dia:1 },
+  { chave:'educador fisic', nome:'Educador(a) Físico(a)', mes:9, dia:1 },
+  { chave:'corretor', nome:'Corretor(a) de Imóveis', mes:8, dia:27 },
+];
+
+function encontrarDiaProfissao(profissaoTexto){
+  if(!profissaoTexto) return null;
+  const texto = profissaoTexto.toLowerCase();
+  return DIAS_PROFISSAO.find(p => texto.includes(p.chave)) || null;
+}
+
+// Calcula quantos dias faltam pra próxima ocorrência de uma data mês/dia (aniversário-like)
+function diasAteProximaOcorrencia(mes, dia){
+  const hoje = new Date();
+  hoje.setHours(0,0,0,0);
+  let proxima = new Date(hoje.getFullYear(), mes-1, dia);
+  if(proxima < hoje) proxima = new Date(hoje.getFullYear()+1, mes-1, dia);
+  const diffMs = proxima - hoje;
+  return Math.round(diffMs / 86400000);
+}
+
+function parseDataBR(dataStr){
+  // Aceita tanto "YYYY-MM-DD" (input date) quanto "DD/MM/YYYY"
+  if(!dataStr) return null;
+  if(dataStr.includes('-')){
+    const [ano,mes,dia] = dataStr.split('-').map(Number);
+    if(!ano||!mes||!dia) return null;
+    return {ano,mes,dia};
+  }
+  if(dataStr.includes('/')){
+    const [dia,mes,ano] = dataStr.split('/').map(Number);
+    if(!ano||!mes||!dia) return null;
+    return {ano,mes,dia};
+  }
+  return null;
+}
+
+window._filtroDatasEspeciais = 'hoje';
+
+async function carregarDatasEspeciais(){
+  const el = document.getElementById('lista-datas-especiais');
+  if(!el) return;
+  if(!clientes || !clientes.length){ el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted)">Nenhum cliente cadastrado ainda.</div>'; return; }
+
+  const eventos = [];
+
+  clientes.forEach(c=>{
+    const q = c._questionario;
+    const nasc = q?.cliente?.['c-nasc'] || c.nasc;
+    const prof = q?.cliente?.['c-prof'] || c.profissao;
+
+    // Aniversário
+    const dataNasc = parseDataBR(nasc);
+    if(dataNasc){
+      const dias = diasAteProximaOcorrencia(dataNasc.mes, dataNasc.dia);
+      const idade = dataNasc.ano ? (new Date().getFullYear() - dataNasc.ano + (dias===0 || dias>300 ? 0 : 1)) : null;
+      eventos.push({ tipo:'aniversario', cliente:c, dias, label:'🎂 Aniversário', idade });
+    }
+
+    // Aniversário de contratação
+    const dataInicio = c.data_inicio || c.criado_em;
+    if(dataInicio){
+      const d = new Date(dataInicio);
+      const dias = diasAteProximaOcorrencia(d.getMonth()+1, d.getDate());
+      const anos = new Date().getFullYear() - d.getFullYear() + (dias===0 || dias>300 ? 0 : 1);
+      if(anos >= 1){ // só faz sentido comemorar depois de completar pelo menos 1 ano
+        eventos.push({ tipo:'contratacao', cliente:c, dias, label:'🤝 Aniversário de Contrato', anos });
+      }
+    }
+
+    // Dia da profissão
+    const diaProf = encontrarDiaProfissao(prof);
+    if(diaProf){
+      const dias = diasAteProximaOcorrencia(diaProf.mes, diaProf.dia);
+      eventos.push({ tipo:'profissao', cliente:c, dias, label:`💼 Dia do(a) ${diaProf.nome}`, profissaoNome: diaProf.nome });
+    }
+  });
+
+  window._eventosDatasEspeciais = eventos.sort((a,b)=>a.dias-b.dias);
+
+  const hojeCount = eventos.filter(e=>e.dias===0).length;
+  const badge = document.getElementById('cnt-datas-especiais');
+  if(badge){
+    if(hojeCount>0){ badge.textContent = hojeCount; badge.style.display = 'inline-block'; }
+    else{ badge.style.display = 'none'; }
+  }
+
+  renderDatasEspeciais();
+}
+
+function filtrarDatasEspeciais(tipo){
+  window._filtroDatasEspeciais = tipo;
+  document.getElementById('filtro-datas-hoje').style.background = tipo==='hoje' ? 'rgba(240,89,10,.15)' : 'rgba(255,255,255,.04)';
+  document.getElementById('filtro-datas-hoje').style.color = tipo==='hoje' ? 'var(--orange)' : '#999';
+  document.getElementById('filtro-datas-semana').style.background = tipo==='semana' ? 'rgba(240,89,10,.15)' : 'rgba(255,255,255,.04)';
+  document.getElementById('filtro-datas-semana').style.color = tipo==='semana' ? 'var(--orange)' : '#999';
+  renderDatasEspeciais();
+}
+
+function renderDatasEspeciais(){
+  const el = document.getElementById('lista-datas-especiais');
+  if(!el) return;
+  const tipo = window._filtroDatasEspeciais;
+  const eventos = (window._eventosDatasEspeciais||[]).filter(e => tipo==='hoje' ? e.dias===0 : e.dias<=7);
+
+  if(!eventos.length){
+    el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);border:1px dashed var(--border);border-radius:12px">
+      ${tipo==='hoje' ? 'Nenhuma data especial hoje.' : 'Nenhuma data especial nos próximos 7 dias.'}
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = eventos.map((ev,idx)=>{
+    const c = ev.cliente;
+    const wpp = (c.whatsapp||'').replace(/\D/g,'');
+    const msg = mensagemDataEspecial(ev);
+    const quando = ev.dias===0 ? 'Hoje!' : ev.dias===1 ? 'Amanhã' : `Em ${ev.dias} dias`;
+    const corBorda = ev.dias===0 ? '#f0590a' : '#666';
+    const idxGlobal = (window._eventosDatasEspeciais||[]).indexOf(ev);
+    return `<div style="background:var(--card2);border:1px solid var(--border);border-left:3px solid ${corBorda};border-radius:8px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+        <span style="font-size:.9rem;font-weight:700;color:#fff">${escHtml(c.nome)}</span>
+        <span style="font-size:.7rem;color:${ev.dias===0?'var(--orange)':'#888'};font-weight:700">${quando}</span>
+      </div>
+      <div style="font-size:.8rem;color:#ccc;margin-bottom:10px">${ev.label}${ev.idade?` · completa ${ev.idade} anos`:''}${ev.anos?` · ${ev.anos} ano(s) de contrato`:''}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="enviarDataEspecialNoPortal(${idxGlobal},this)" ${!c.email?'disabled title="Cliente sem e-mail cadastrado, não tem acesso ao portal"':''} style="display:inline-flex;align-items:center;gap:6px;background:rgba(240,89,10,.15);border:1px solid rgba(240,89,10,.3);color:var(--orange);padding:7px 16px;border-radius:8px;font-size:.78rem;font-weight:700;cursor:${c.email?'pointer':'not-allowed'};opacity:${c.email?'1':'.5'}">📱 Mandar no Portal</button>
+        <a href="https://wa.me/${wpp}?text=${encodeURIComponent(msg)}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25d366;padding:7px 16px;border-radius:8px;font-size:.78rem;font-weight:700;text-decoration:none">💬 WhatsApp</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function enviarDataEspecialNoPortal(idxGlobal, btnEl){
+  const ev = (window._eventosDatasEspeciais||[])[idxGlobal];
+  if(!ev){ notif('Não encontrei esse evento — atualize a página e tente de novo.','#ef4444',true); return; }
+  const c = ev.cliente;
+  if(!c.email){ notif('Esse cliente não tem e-mail cadastrado, então não tem acesso ao portal.','#ef4444',true); return; }
+  if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
+
+  const msg = mensagemDataEspecial(ev);
+  if(btnEl){ btnEl.disabled = true; btnEl.textContent = '⏳ Enviando...'; }
+
+  try{
+    const { error } = await SB.from('portal_mensagens').insert({
+      email: c.email,
+      remetente: 'professor',
+      mensagem: msg,
+      lida: false,
+      criado_em: new Date().toISOString()
+    });
+    if(error){
+      notif('Erro ao enviar: '+error.message,'#ef4444',true);
+      if(btnEl){ btnEl.disabled = false; btnEl.textContent = '📱 Mandar no Portal'; }
+      return;
+    }
+    notif(`✅ Mensagem enviada pro portal de ${c.nome.split(' ')[0]}! Vai aparecer no chat dele.`,'#10b981');
+    if(btnEl){ btnEl.innerHTML = '✅ Enviado'; btnEl.style.opacity = '.6'; }
+  }catch(e){
+    console.error('enviarDataEspecialNoPortal — erro inesperado:', e);
+    notif('Erro inesperado ao enviar.','#ef4444',true);
+    if(btnEl){ btnEl.disabled = false; btnEl.textContent = '📱 Mandar no Portal'; }
+  }
+}
+
+function mensagemDataEspecial(ev){
+  const nome = (ev.cliente.nome||'').split(' ')[0];
+  if(ev.tipo==='aniversario'){
+    return `🎉 Parabéns, ${nome}! Hoje é seu dia e eu não podia deixar de te desejar tudo de bom! Que esse novo ano venha com muita saúde, energia e conquistas dentro e fora da academia. Conte comigo! 💪🎂`;
+  }
+  if(ev.tipo==='contratacao'){
+    return `🤝 ${nome}, hoje completa ${ev.anos} ano(s) que a gente começou essa jornada juntos! Muito obrigado pela confiança e dedicação — é uma honra fazer parte da sua evolução. Bora continuar evoluindo! 💪`;
+  }
+  if(ev.tipo==='profissao'){
+    return `👏 ${nome}, feliz Dia do(a) ${ev.profissaoNome}! Seu esforço e dedicação na profissão merecem ser celebrados. Desejo muito sucesso na sua carreira! 🎉`;
+  }
+  return `Parabéns, ${nome}! 🎉`;
+}
+
 async function carregarCaptacao(){
   if(!SB){ notif('Supabase não conectado','#ef4444'); return; }
   const { data, error } = await SB.from('leads_degustacao').select('*').order('criado_em',{ascending:false});
@@ -7430,6 +8095,7 @@ async function init(){
   await loadClientes();
   carregarCaptacao().catch(e=>console.warn('carregarCaptacao (init):', e));
   carregarVideosAvaliacao().catch(e=>console.warn('carregarVideosAvaliacao (init):', e));
+  carregarDatasEspeciais().catch(e=>console.warn('carregarDatasEspeciais (init):', e));
 }
 
 init();
