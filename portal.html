@@ -107,6 +107,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
 .ficha-date{font-size:.75rem;color:var(--muted)}
 .treino-dia{margin-bottom:20px}
 .treino-dia-nome{font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.treino-padrao-comum{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:8px 12px;margin-bottom:12px}
 .treino-dia-nome::after{content:'';flex:1;height:1px;background:rgba(232,93,4,.2)}
 .exercicio-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
 .exercicio-row:last-child{border-bottom:none}
@@ -494,29 +495,25 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
           </div>
         </div>
 
-        <!-- ACESSO RÁPIDO -->
+        <!-- ACESSO RÁPIDO — só o que não está no menu de baixo -->
         <div style="margin-bottom:22px">
           <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#666;margin-bottom:10px">Acesso Rápido</div>
           <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch">
-            <button onclick="showPage('ficha')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
-              <span style="font-size:1.5rem">📋</span>
-              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Meu Treino</span>
-            </button>
             <button onclick="showPage('diario')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
               <span style="font-size:1.5rem">📝</span>
               <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Diário</span>
             </button>
-            <button onclick="showPage('nutri')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
-              <span style="font-size:1.5rem">🍎</span>
-              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Alimentação</span>
-            </button>
-            <button onclick="showPage('progresso')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
-              <span style="font-size:1.5rem">📈</span>
-              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Progresso</span>
+            <button onclick="showPage('agua')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <span style="font-size:1.5rem">💧</span>
+              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Água</span>
             </button>
             <button onclick="showPage('videos')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
               <span style="font-size:1.5rem">📹</span>
               <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Vídeo</span>
+            </button>
+            <button onclick="showPage('avaliacao')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <span style="font-size:1.5rem">📏</span>
+              <span style="font-size:.66rem;color:#ccc;text-align:center;line-height:1.2">Avaliação</span>
             </button>
             <button onclick="showPage('chat')" style="flex-shrink:0;width:84px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;position:relative">
               <span id="chat-badge-quickaccess" style="display:none;position:absolute;top:6px;right:6px;background:var(--orange);color:#fff;font-size:.58rem;font-weight:800;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center"></span>
@@ -559,26 +556,6 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
           <div style="background:rgba(255,255,255,.08);border-radius:20px;height:8px;overflow:hidden">
             <div id="dash-agua-barra" style="background:linear-gradient(90deg,#3b82f6,#60a5fa);height:100%;width:0%;border-radius:20px;transition:width .3s"></div>
           </div>
-        </button>
-
-        <!-- DIÁRIO ALIMENTAR -->
-        <button onclick="showPage('diario')" style="display:flex;align-items:center;gap:12px;width:100%;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:12px;padding:12px 16px;margin-bottom:20px;cursor:pointer;text-align:left">
-          <span style="font-size:1.3rem;flex-shrink:0">📝</span>
-          <span style="flex:1">
-            <span style="display:block;color:#fff;font-size:.82rem;font-weight:700">Registrar o que comi hoje</span>
-            <span style="display:block;color:#888;font-size:.72rem">Anote suas refeições e acompanhe calorias e macros do dia.</span>
-          </span>
-          <span style="color:#34d399;font-size:.75rem;flex-shrink:0">Abrir</span>
-        </button>
-
-        <!-- ENVIAR VÍDEO PRA AVALIAÇÃO -->
-        <button onclick="showPage('videos')" style="display:flex;align-items:center;gap:12px;width:100%;background:rgba(232,93,4,.08);border:1px solid rgba(232,93,4,.25);border-radius:12px;padding:12px 16px;margin-bottom:20px;cursor:pointer;text-align:left">
-          <span style="font-size:1.3rem;flex-shrink:0">📹</span>
-          <span style="flex:1">
-            <span style="display:block;color:#fff;font-size:.82rem;font-weight:700">Enviar vídeo da execução</span>
-            <span style="display:block;color:#888;font-size:.72rem">Grave fazendo o exercício e mande pro Prof. Will avaliar sua postura.</span>
-          </span>
-          <span style="color:var(--orange);font-size:.75rem;flex-shrink:0">Enviar</span>
         </button>
 
         <!-- FEEDBACK DO ALUNO -->
@@ -901,6 +878,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;d
             <input type="number" id="agua-input-meta" step="100" style="flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.85rem"/>
             <button onclick="salvarMetaAgua()" style="background:var(--orange);border:none;color:#fff;padding:0 16px;border-radius:8px;font-size:.8rem;cursor:pointer">Salvar</button>
           </div>
+          <div style="font-size:.66rem;color:#666">Calculada com base no seu peso e na sua frequência de treino. Pode editar se preferir um valor diferente.</div>
         </div>
 
         <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:12px;padding:14px 16px;margin-bottom:16px">
@@ -2531,6 +2509,13 @@ async function carregarDados(){
     dadosCliente = { ...dadosCliente, ...clientes[0], ...(clientes[0].dados||{}) };
   }
 
+  // Busca o questionário/anamnese completo (dias de treino, nível de atividade etc.) — usado
+  // pra individualizar recomendações como a meta de água, em vez de só olhar o peso.
+  try{
+    const { data: quest } = await SB.from('questionarios').select('dados').eq('email', usuario.email).order('ts',{ascending:false}).limit(1);
+    window._anamneseAtual = quest?.[0]?.dados || null;
+  }catch(e){ console.warn('Não foi possível carregar a anamnese completa:', e); }
+
   // Buscar fichas publicadas (por e-mail — é a chave confiável nesse sistema, já que o login
   // não usa autenticação real do Supabase, então user_id quase nunca está preenchido)
   const { data:fichas } = await SB.from('portal_fichas').select('*').eq('email', usuario.email).order('criado_em',{ascending:false});
@@ -2692,6 +2677,18 @@ function montarFicha(fichas){
       html += `<div class="treino-dia">
         <div class="treino-dia-nome">${dia}</div>`;
       if(Array.isArray(exs)){
+        // Se todos os exercícios do dia usam os mesmos séries/reps/descanso/RIR,
+        // mostra isso UMA VEZ no topo do bloco em vez de repetir em cada exercício.
+        const padraoComum = calcularPadraoComumExercicios(exs);
+        if(padraoComum){
+          html += `<div class="treino-padrao-comum">
+            ${padraoComum.series?`<span class="ex-tag">📊 ${padraoComum.series} séries</span>`:''}
+            ${padraoComum.reps?`<span class="ex-tag">🔁 ${padraoComum.reps} reps</span>`:''}
+            ${padraoComum.descanso?`<span class="ex-tag">⏱️ ${padraoComum.descanso}</span>`:''}
+            ${padraoComum.rir!==undefined?`<span class="ex-tag">💪 RIR ${padraoComum.rir}</span>`:''}
+            <span style="font-size:.62rem;color:#666;margin-left:4px">(padrão pra todos os exercícios abaixo)</span>
+          </div>`;
+        }
         exs.forEach((ex,i)=>{
           const gifKey = 'gif__'+encodeURIComponent((ex.nome||ex.exercicio||'').toLowerCase().trim());
           const gifData = (f.gifs||{})[gifKey] || null;
@@ -2699,12 +2696,12 @@ function montarFicha(fichas){
             <div class="ex-num">${i+1}</div>
             <div class="ex-info">
               <div class="ex-nome">${ex.nome||ex.exercicio||ex}</div>
-              <div class="ex-det">
+              ${padraoComum ? '' : `<div class="ex-det">
                 ${ex.series?`<span class="ex-tag">📊 ${ex.series} séries</span>`:''}
                 ${ex.reps?`<span class="ex-tag">🔁 ${ex.reps} reps</span>`:''}
                 ${ex.descanso?`<span class="ex-tag">⏱️ ${ex.descanso}</span>`:''}
                 ${ex.rir!==undefined?`<span class="ex-tag">💪 RIR ${ex.rir}</span>`:''}
-              </div>
+              </div>`}
             </div>
             ${gifData
               ? (ehVideo(gifData)
@@ -2934,6 +2931,22 @@ function showPage(id){
 // ── NOTIF ─────────────────────────────────────────────────────────────────────
 function ehVideo(dataUrl){
   return typeof dataUrl === 'string' && dataUrl.startsWith('data:video/');
+}
+
+// Se todo mundo no dia usa o mesmo séries/reps/descanso/RIR, retorna esse padrão
+// comum (pra mostrar uma vez só). Se houver qualquer diferença, retorna null.
+function calcularPadraoComumExercicios(exs){
+  const validos = (exs||[]).filter(ex => ex && (ex.series || ex.reps || ex.descanso || ex.rir!==undefined));
+  if(validos.length < 2) return null; // com 0 ou 1 exercício não faz sentido consolidar
+
+  const primeiro = validos[0];
+  const igual = validos.every(ex =>
+    (ex.series||'') === (primeiro.series||'') &&
+    (ex.reps||'') === (primeiro.reps||'') &&
+    (ex.descanso||'') === (primeiro.descanso||'') &&
+    String(ex.rir??'') === String(primeiro.rir??'')
+  );
+  return igual ? primeiro : null;
 }
 
 function extrairYoutubeIdPortal(url){
@@ -3224,9 +3237,19 @@ function atualizarBadgeChatPortal(){
 
 // ── CONTROLE DE ÁGUA ──────────────────────────────────────────────────────────
 function metaAguaPadrao(){
-  // Se tiver peso cadastrado, usa 35ml por kg (referência comum); senão, 2000ml
+  // Base: 35ml por kg de peso corporal (referência comum). Sem peso cadastrado, usa 2000ml.
   const peso = Number(dadosCliente?.peso) || null;
-  return peso ? Math.round(peso * 35 / 50) * 50 : 2000; // arredonda pra múltiplo de 50
+  let meta = peso ? peso * 35 : 2000;
+
+  // Ajusta pra cima conforme a frequência de treino da anamnese — mais dias de
+  // treino por semana significa mais perda de líquido pelo suor, então mais água.
+  const diasTreinoTexto = window._anamneseAtual?.anamnese?.['an-dias'] || '';
+  const diasTreino = parseInt(diasTreinoTexto) || 0;
+  if(diasTreino >= 5) meta += 600;
+  else if(diasTreino >= 3) meta += 400;
+  else if(diasTreino >= 1) meta += 200;
+
+  return Math.round(meta/50)*50; // arredonda pra múltiplo de 50
 }
 
 function obterMetaAgua(){
