@@ -3606,7 +3606,10 @@ function renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData){
                <input type="file" accept=".gif,image/gif,.mp4,video/mp4" style="display:none" onchange="anexarGifEx(this,'${gifKey}',${dIdx},${eIdx})"/>
              </label>`
         }
-        ${!gifData ? `<button onclick="promptYoutubeEx(${dIdx},${eIdx})" title="Usar link do YouTube em vez de arquivo" style="width:56px;margin-top:4px;background:none;border:none;color:${ex.youtube_url?'#f87171':'#666'};font-size:.6rem;cursor:pointer;text-decoration:underline">${ex.youtube_url?'trocar link':'🔗 YouTube'}</button>` : ''}
+        ${!gifData ? `<div style="display:flex;flex-direction:column;gap:2px;margin-top:4px">
+          <button onclick="buscarMidiaNoBancoParaExercicio(${dIdx},${eIdx})" title="Procurar o vídeo desse exercício no Banco de Exercícios" style="width:56px;background:none;border:none;color:#60a5fa;font-size:.6rem;cursor:pointer;text-decoration:underline">🔍 Do Banco</button>
+          <button onclick="promptYoutubeEx(${dIdx},${eIdx})" title="Usar link do YouTube em vez de arquivo" style="width:56px;background:none;border:none;color:${ex.youtube_url?'#f87171':'#666'};font-size:.6rem;cursor:pointer;text-decoration:underline">${ex.youtube_url?'trocar link':'🔗 YouTube'}</button>
+        </div>` : ''}
       </div>
       <!-- CAMPOS EDITÁVEIS -->
       <div style="flex:1;min-width:200px;display:grid;gap:6px">
@@ -5428,9 +5431,31 @@ async function abrirSeletorBancoParaCombinado(dIdx, eIdx){
   abrirOverlaySeletorBanco();
 }
 
+// Busca no banco só a MÍDIA pra um exercício que já está na ficha (não muda o
+// nome nem cria um novo) — útil quando a geração automática não trouxe o vídeo.
+async function buscarMidiaNoBancoParaExercicio(dIdx, eIdx){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  const ex = window._fichaEditavel[dias[dIdx]]?.[eIdx];
+  if(!ex) return;
+
+  window._bancoAlvoMidia = { dIdx, eIdx };
+  window._bancoModoSelecao = 'buscar-midia';
+  window._seletorBancoGenero = '';
+  if(!window._bancoExercicios){ await carregarBancoExercicios(); }
+  abrirOverlaySeletorBanco();
+  // Pré-preenche a busca com o nome do próprio exercício, pra já filtrar direto
+  setTimeout(()=>{
+    const inputBusca = document.getElementById('seletor-banco-busca');
+    if(inputBusca){ inputBusca.value = ex.nome||''; filtrarSeletorBanco(); }
+  }, 50);
+}
+
 function abrirOverlaySeletorBanco(){
   const existente = document.getElementById('seletor-banco-overlay');
   if(existente) existente.remove();
+
+  const titulos = { combinado:'Escolher o 2º exercício (combo)', 'buscar-midia':'Escolher o vídeo pra esse exercício', novo:'Lançar do Banco de Exercícios' };
 
   const overlay = document.createElement('div');
   overlay.id = 'seletor-banco-overlay';
@@ -5438,7 +5463,7 @@ function abrirOverlaySeletorBanco(){
   overlay.innerHTML = `
     <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:520px;width:100%;max-height:80vh;display:flex;flex-direction:column">
       <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:.95rem;font-weight:800;color:#fff">📚 ${window._bancoModoSelecao==='combinado' ? 'Escolher o 2º exercício (combo)' : 'Lançar do Banco de Exercícios'}</div>
+        <div style="font-size:.95rem;font-weight:800;color:#fff">📚 ${titulos[window._bancoModoSelecao] || titulos.novo}</div>
         <button onclick="document.getElementById('seletor-banco-overlay').remove()" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button>
       </div>
       <div style="padding:12px 18px 0">
@@ -5464,7 +5489,8 @@ function renderSeletorBancoLista(lista){
     return;
   }
   const generoBadge = { masculino:'🚹', feminino:'🚺', unissex:'⚪' };
-  const handler = window._bancoModoSelecao==='combinado' ? 'selecionarExercicioBancoParaCombinado' : 'lancarExercicioDoBanco';
+  const handlers = { combinado:'selecionarExercicioBancoParaCombinado', 'buscar-midia':'selecionarMidiaDoBancoParaExercicio', novo:'lancarExercicioDoBanco' };
+  const handler = handlers[window._bancoModoSelecao] || handlers.novo;
   el.innerHTML = lista.map(ex=>{
     const midiaCarregada = window._bancoExMidiaPreview?.[ex.id];
     const midia = midiaCarregada
@@ -5575,6 +5601,45 @@ async function selecionarExercicioBancoParaCombinado(exId){
       renderizarEditorPortalAba();
     }
   }catch(e){ console.warn('selecionarExercicioBancoParaCombinado — erro ao buscar mídia:', e); }
+}
+
+// Anexa a mídia do exercício escolhido no banco a um exercício JÁ EXISTENTE na
+// ficha (usando o nome que ele já tem — não substitui o nome nem cria linha nova).
+async function selecionarMidiaDoBancoParaExercicio(exId){
+  const exBanco = (window._bancoExercicios||[]).find(e=>e.id===exId);
+  const alvo = window._bancoAlvoMidia;
+  if(!exBanco || !alvo || !window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  const exFicha = window._fichaEditavel[dias[alvo.dIdx]]?.[alvo.eIdx];
+  if(!exFicha) return;
+
+  const overlay = document.getElementById('seletor-banco-overlay');
+  if(overlay) overlay.remove();
+  notif('⏳ Buscando o vídeo...','#3b82f6');
+
+  const gifKey = 'gif__'+encodeURIComponent((exFicha.nome||'').toLowerCase().trim());
+  const midiaJaEmCache = window._bancoExMidiaPreview?.[exId];
+  if(midiaJaEmCache){
+    gifCache[gifKey] = midiaJaEmCache;
+    marcarGifModificado(gifKey);
+    notif(`✅ Vídeo de "${exBanco.nome}" anexado! Lembre de publicar.`,'#10b981');
+    renderizarEditorPortalAba();
+    return;
+  }
+  if(!SB) return;
+  try{
+    const { data, error } = await SB.from('banco_exercicios').select('midia').eq('id', exId).single();
+    if(error || !data?.midia){ notif('Esse exercício do banco não tem vídeo/GIF salvo ainda.','#f59e0b',true); return; }
+    gifCache[gifKey] = data.midia;
+    marcarGifModificado(gifKey);
+    if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
+    window._bancoExMidiaPreview[exId] = data.midia;
+    notif(`✅ Vídeo de "${exBanco.nome}" anexado! Lembre de publicar.`,'#10b981');
+    renderizarEditorPortalAba();
+  }catch(e){
+    console.warn('selecionarMidiaDoBancoParaExercicio — erro ao buscar mídia:', e);
+    notif('Erro inesperado ao buscar o vídeo.','#ef4444',true);
+  }
 }
 
 function escHtml(v){
