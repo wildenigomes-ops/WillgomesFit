@@ -1615,7 +1615,10 @@ function renderAnamnese(c){
   const div = document.getElementById('m-anamnese');
   const q = c._questionario;
   if(!q){
-    div.innerHTML=`<div class="empty"><div class="empty-icon">🩺</div><div class="empty-text">Questionário completo ainda não recebido.<br><br><button class="btn btn-orange" onclick="switchMTab('mfit',document.querySelectorAll('#modal-cliente .tab-btn')[3])">📤 Ir para o link do questionário</button></div></div>`;
+    div.innerHTML=`<div class="empty"><div class="empty-icon">🩺</div><div class="empty-text">Questionário completo ainda não recebido.<br><br>
+      <button class="btn btn-orange" onclick="switchMTab('mfit',document.querySelectorAll('#modal-cliente .tab-btn')[3])">📤 Ir para o link do questionário</button>
+      <button class="btn" onclick="abrirEdicaoAnamnese()" style="margin-left:8px;background:rgba(59,130,246,.15);color:#60a5fa;border-color:rgba(59,130,246,.3)">✏️ Preencher manualmente</button>
+    </div></div>`;
     return;
   }
   const cl = q.cliente||{};
@@ -1670,6 +1673,7 @@ function renderAnamnese(c){
     `<div style="background:var(--green-dim);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <span style="font-size:.8rem;color:var(--green)">✅ Questionário recebido em ${fmtDate(c._q_ts)}</span>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="abrirEdicaoAnamnese()" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;font-size:.72rem;font-weight:700;padding:5px 12px;border-radius:4px;cursor:pointer;white-space:nowrap;font-family:var(--font-b)">✏️ Editar Anamnese</button>
         <button onclick="exportarAnamnesePDF()" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;font-size:.72rem;font-weight:700;padding:5px 12px;border-radius:4px;cursor:pointer;white-space:nowrap;font-family:var(--font-b)">⬇ Exportar PDF</button>
         <button onclick="resetarQuestionario()" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#ef4444;font-size:.72rem;font-weight:700;padding:5px 12px;border-radius:4px;cursor:pointer;white-space:nowrap;font-family:var(--font-b)">🗑 Resetar Questionário</button>
         <button onclick="resetarTudoCliente()" style="background:rgba(239,68,68,.25);border:1px solid rgba(239,68,68,.5);color:#ff4444;font-size:.72rem;font-weight:700;padding:5px 12px;border-radius:4px;cursor:pointer;white-space:nowrap;font-family:var(--font-b)">⚠️ Resetar Tudo</button>
@@ -1678,6 +1682,121 @@ function renderAnamnese(c){
     + renderSection('Dados Pessoais', cl)
     + renderSection('Treino e Objetivos', an)
     + renderSection('Nutrição', nu);
+}
+
+
+// ── EDITAR ANAMNESE MANUALMENTE ───────────────────────────────────────────────
+const CAMPOS_ANAMNESE_EDITAVEL = {
+  'Dados Pessoais': [
+    ['c-nome','Nome'], ['c-email','E-mail'], ['c-tel','WhatsApp'], ['c-nasc','Nascimento (DD/MM/AAAA)'],
+    ['c-sexo','Sexo'], ['c-prof','Profissão'], ['c-cidade','Cidade'], ['c-uf','Estado'],
+    ['c-peso','Peso (kg)'], ['c-altura','Altura (cm)'],
+  ],
+  'Treino e Objetivos': [
+    ['objetivo','Objetivos'], ['nivel','Nível'], ['an-dias','Dias/semana'], ['an-dur','Duração'],
+    ['an-equip','Equipamentos'], ['an-hipertensao','Hipertensão'], ['an-diabetes','Diabetes'],
+    ['an-problemascardiacos','Prob. cardíacos'], ['an-problemasarticulares','Prob. articulares'],
+    ['an-problemasdecoluna','Prob. coluna'], ['an-liberacao','Liberação médica'],
+    ['an-lesoes','Lesões'], ['an-meds','Medicamentos'], ['an-dores','Dores/limitações'],
+    ['an-sono','Horas de sono'], ['an-sonoq','Qualidade do sono'], ['an-stress','Estresse'],
+    ['an-alcool','Álcool'], ['an-tabaco','Tabaco'], ['an-agua','Água/dia'],
+  ],
+  'Nutrição': [
+    ['nu-obj','Objetivo nutricional'], ['nu-ativ','Nível de atividade'],
+    ['nu-rest','Restrição alimentar'], ['nu-nao','Não come'], ['nu-supl','Suplementos'],
+  ],
+};
+
+function abrirEdicaoAnamnese(){
+  const c = clienteAtual;
+  if(!c) return;
+  const q = c._questionario || { cliente:{}, anamnese:{}, nutricao:{} };
+  const cl = q.cliente||{}, an = q.anamnese||{}, nu = q.nutricao||{};
+  const todosDados = { ...cl, ...an, ...nu };
+
+  const existente = document.getElementById('edicao-anamnese-overlay');
+  if(existente) existente.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'edicao-anamnese-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:640px;width:100%;max-height:85vh;display:flex;flex-direction:column">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.95rem;font-weight:800;color:#fff">✏️ Editar Anamnese — ${escHtml(c.nome||c.email)}</div>
+        <button onclick="document.getElementById('edicao-anamnese-overlay').remove()" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:8px 20px;background:rgba(59,130,246,.06);border-bottom:1px solid var(--border);font-size:.72rem;color:#60a5fa">Preencha ou corrija o que o aluno esqueceu no questionário. Campos em branco não aparecem no relatório.</div>
+      <div style="overflow-y:auto;padding:16px 20px;flex:1" id="edicao-anamnese-campos">
+        ${Object.entries(CAMPOS_ANAMNESE_EDITAVEL).map(([secao, campos])=>`
+          <div style="font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--orange);margin:14px 0 8px">${secao}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            ${campos.map(([chave,label])=>{
+              const valorAtual = Array.isArray(todosDados[chave]) ? todosDados[chave].join(', ') : (todosDados[chave]||'');
+              return `<div>
+                <label style="font-size:.68rem;color:#888">${label}</label>
+                <input type="text" id="edit-anamnese-${chave}" value="${escHtml(valorAtual)}"
+                  style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:7px 9px;color:#fff;font-size:.82rem;font-family:var(--font-b);margin-top:3px"/>
+              </div>`;
+            }).join('')}
+          </div>
+        `).join('')}
+      </div>
+      <div style="padding:14px 20px;border-top:1px solid var(--border)">
+        <button onclick="salvarEdicaoAnamnese()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:12px;border-radius:8px;font-weight:800;font-size:.85rem;cursor:pointer">💾 Salvar alterações</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function salvarEdicaoAnamnese(){
+  const c = clienteAtual;
+  if(!c || !SB) return;
+
+  // Campos que originalmente eram lista (array) — reconstrói como array ao salvar
+  const CAMPOS_LISTA = new Set(['objetivo','an-equip','an-lesoes','nu-rest','nu-nao','nu-supl']);
+
+  const novoCliente = {}, novaAnamnese = {}, novaNutricao = {};
+  Object.entries(CAMPOS_ANAMNESE_EDITAVEL).forEach(([secao, campos])=>{
+    campos.forEach(([chave])=>{
+      const input = document.getElementById('edit-anamnese-'+chave);
+      if(!input) return;
+      const valor = input.value.trim();
+      if(!valor) return; // não grava campo vazio, mantém limpo
+      const valorFinal = CAMPOS_LISTA.has(chave) ? valor.split(',').map(s=>s.trim()).filter(Boolean) : valor;
+      if(secao==='Dados Pessoais') novoCliente[chave] = valorFinal;
+      else if(secao==='Treino e Objetivos') novaAnamnese[chave] = valorFinal;
+      else novaNutricao[chave] = valorFinal;
+    });
+  });
+
+  const novoQuestionario = { cliente: novoCliente, anamnese: novaAnamnese, nutricao: novaNutricao };
+
+  notif('⏳ Salvando...','#3b82f6');
+  try{
+    // Atualiza a linha existente em "questionarios"; se o aluno nunca respondeu (não existe
+    // linha ainda), cria uma nova pra guardar o preenchimento manual.
+    const { data: existente } = await SB.from('questionarios').select('id').eq('email', c.email).limit(1);
+    let error;
+    if(existente && existente.length){
+      ({ error } = await SB.from('questionarios').update({ dados: novoQuestionario }).eq('email', c.email));
+    } else {
+      ({ error } = await SB.from('questionarios').insert({ email: c.email, nome: c.nome, dados: novoQuestionario, ts: new Date().toISOString() }));
+    }
+    if(error){ notif('Erro ao salvar: '+error.message,'#ef4444',true); console.error('salvarEdicaoAnamnese:', error); return; }
+
+    c._questionario = novoQuestionario;
+    c._q_ts = c._q_ts || new Date().toISOString();
+    const ci = clientes.findIndex(x=>x.id===c.id);
+    if(ci>=0){ clientes[ci]._questionario = novoQuestionario; }
+
+    document.getElementById('edicao-anamnese-overlay')?.remove();
+    notif('✅ Anamnese atualizada!','#10b981');
+    renderAnamnese(c);
+  }catch(e){
+    console.error('salvarEdicaoAnamnese — erro inesperado:', e);
+    notif('Erro inesperado: '+(e.message||e),'#ef4444',true);
+  }
 }
 
 async function aguardarJsPDF(timeoutMs=8000){
@@ -3181,11 +3300,16 @@ function renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData){
                ${midiaTag(gifData, 'width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--green);cursor:pointer', `verGifGrande('${gifKey}')`)}
                <button onclick="removerGifEx('${gifKey}',${dIdx},${eIdx})" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;padding:0">✕</button>
              </div>`
+          : ex.youtube_url
+          ? `<div style="position:relative;width:56px;height:56px;background:rgba(255,0,0,.1);border:1px solid rgba(255,0,0,.35);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem">
+               ▶️<button onclick="removerYoutubeEx(${dIdx},${eIdx})" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;padding:0">✕</button>
+             </div>`
           : `<label style="cursor:pointer;width:56px;height:56px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;font-size:.6rem;color:#555;text-align:center">
                📎<span>GIF/MP4</span>
                <input type="file" accept=".gif,image/gif,.mp4,video/mp4" style="display:none" onchange="anexarGifEx(this,'${gifKey}',${dIdx},${eIdx})"/>
              </label>`
         }
+        ${!gifData ? `<button onclick="promptYoutubeEx(${dIdx},${eIdx})" title="Usar link do YouTube em vez de arquivo" style="width:56px;margin-top:4px;background:none;border:none;color:${ex.youtube_url?'#f87171':'#666'};font-size:.6rem;cursor:pointer;text-decoration:underline">${ex.youtube_url?'trocar link':'🔗 YouTube'}</button>` : ''}
       </div>
       <!-- CAMPOS EDITÁVEIS -->
       <div style="flex:1;min-width:200px;display:grid;gap:6px">
@@ -3408,6 +3532,40 @@ function removerGifEx(gifKey, dIdx, eIdx){
   delete gifCache[gifKey];
   window._fichaTemAlteracoesNaoPublicadas = true;
   notif('🗑 Vídeo/GIF removido da edição. ⚠️ Clique em "🚀 Publicar ficha atual" pra confirmar — se você sair sem publicar, a versão antiga continua salva e vai voltar a aparecer.','#f59e0b',true);
+  renderizarEditorPortalAba();
+}
+
+// Extrai o ID de um vídeo do YouTube em qualquer formato comum de link
+function extrairYoutubeId(url){
+  if(!url) return null;
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function promptYoutubeEx(dIdx, eIdx){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  const ex = window._fichaEditavel[dias[dIdx]]?.[eIdx];
+  if(!ex) return;
+  const atual = ex.youtube_url || '';
+  const link = prompt('Cole o link do vídeo do YouTube pra esse exercício:', atual);
+  if(link===null) return; // cancelou
+  if(!link.trim()){ removerYoutubeEx(dIdx, eIdx); return; }
+  const id = extrairYoutubeId(link.trim());
+  if(!id){ notif('Não consegui reconhecer esse link como um vídeo do YouTube. Cole o link completo (ex: https://www.youtube.com/watch?v=XXXXXXXXXXX)','#ef4444',true); return; }
+  ex.youtube_url = link.trim();
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  notif('✅ Link do YouTube adicionado! Lembre de publicar.','#10b981');
+  renderizarEditorPortalAba();
+}
+
+function removerYoutubeEx(dIdx, eIdx){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  const ex = window._fichaEditavel[dias[dIdx]]?.[eIdx];
+  if(!ex) return;
+  delete ex.youtube_url;
+  window._fichaTemAlteracoesNaoPublicadas = true;
   renderizarEditorPortalAba();
 }
 
@@ -7126,7 +7284,7 @@ async function publicarNutricaoPortal(){
 
     // upsert com onConflict:'email' — atualiza a linha existente (preservando treino_json
     // e tudo mais que já estava lá) ou cria uma nova se o aluno ainda não tiver nenhuma ficha.
-    const { error } = await SB.from('portal_fichas').upsert({
+    const { data: dataSalva, error } = await SB.from('portal_fichas').upsert({
       email: c.email,
       nutri_json: nutri,
       refeicoes_json: window._rotinaAlimentar || null,
@@ -7134,11 +7292,25 @@ async function publicarNutricaoPortal(){
       titulo: jaTinha?.titulo || 'Ficha de Treino',
       criado_em: jaTinha?.criado_em || new Date().toISOString(),
       publicado_por: 'Prof. Will Gomes'
-    }, { onConflict: 'email', ignoreDuplicates: false });
+    }, { onConflict: 'email', ignoreDuplicates: false }).select();
 
     if(error){ notif('Erro ao publicar: '+error.message,'#ef4444',true); console.error('publicarNutricaoPortal:', error); return; }
 
-    notif('✅ Guia alimentar publicado no portal!','#10b981');
+    // Verificação de verdade: confirma que voltou do banco com o conteúdo esperado
+    console.log('[publicarNutricaoPortal] resposta do Supabase:', dataSalva);
+    if(!dataSalva || !dataSalva.length){
+      notif('⚠️ O Supabase não confirmou o salvamento. O guia pode NÃO ter sido publicado — tente de novo.','#ef4444',true);
+      return;
+    }
+    const refeicoesSalvas = dataSalva[0].refeicoes_json;
+    const refeicoesEsperadas = window._rotinaAlimentar || null;
+    if(JSON.stringify(refeicoesSalvas?.length||0) !== JSON.stringify(refeicoesEsperadas?.length||0)){
+      notif('⚠️ O guia foi salvo, mas o conteúdo confirmado é diferente do que você editou. Tente publicar de novo.','#ef4444',true);
+      console.error('[publicarNutricaoPortal] divergência: esperado', refeicoesEsperadas, 'salvo', refeicoesSalvas);
+      return;
+    }
+
+    notif('✅ Guia alimentar publicado e confirmado no portal!','#10b981');
     carregarAbaPortal(c);
   }catch(e){
     console.error('publicarNutricaoPortal — erro inesperado:', e);
@@ -7297,6 +7469,11 @@ function renderRotinaAlimentar(){
 
     const corTotal = totalRefeicao > (ref.metaCalorias||0)*1.1 ? '#f87171' : '#34d399';
     html += `<div style="text-align:right;font-size:.7rem;color:${corTotal};margin-top:4px">Total da refeição: <strong>${totalRefeicao} kcal</strong> ${ref.metaCalorias ? '/ meta '+ref.metaCalorias+' kcal' : ''}</div>`;
+    html += `<div style="margin-top:10px">
+      <label style="font-size:.62rem;color:#888;text-transform:uppercase;letter-spacing:.5px">💬 Observação pro aluno nessa refeição</label>
+      <textarea rows="2" placeholder="Ex: comer 30 min antes do treino, mastigar devagar..." onchange="atualizarRefeicaoCampo(${rIdx},'observacao',this.value)"
+        style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:7px 9px;color:#ccc;font-size:.76rem;font-family:var(--font-b);resize:vertical;margin-top:4px">${escHtml(ref.observacao)}</textarea>
+    </div>`;
     html += `</div></div>`;
   });
 

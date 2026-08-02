@@ -1918,10 +1918,13 @@ function renderizarExercicioAtivo(){
   // GIF
   const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
   const gifData = gifs[gifKey] || null;
+  const youtubeId = !gifData ? extrairYoutubeIdPortal(ex.youtube_url) : null;
   const gifHtml = gifData
     ? (ehVideo(gifData)
         ? `<div class="mt-gif-wrap"><video src="${gifData}" autoplay loop muted playsinline controlsList="nodownload noremoteplayback nofullscreen" disablePictureInPicture oncontextmenu="return false"></video></div>`
         : `<div class="mt-gif-wrap"><img src="${gifData}" alt="${ex.nome}" draggable="false" oncontextmenu="return false"/></div>`)
+    : youtubeId
+    ? `<div class="mt-gif-wrap"><iframe src="https://www.youtube.com/embed/${youtubeId}" style="width:100%;height:100%;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>`
     : `<div class="mt-gif-wrap"><div class="mt-gif-placeholder">🎬 <span>Execução: ${ex.obs||ex.nome}</span></div></div>`;
 
   // Exercício combinado (bi-set) — 2º movimento, se existir
@@ -2707,6 +2710,8 @@ function montarFicha(fichas){
               ? (ehVideo(gifData)
                   ? `<video src="${gifData}" class="ex-gif" autoplay loop muted playsinline controlsList="nodownload noremoteplayback nofullscreen" disablePictureInPicture oncontextmenu="return false" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"></video>`
                   : `<img src="${gifData}" class="ex-gif" draggable="false" oncontextmenu="return false" onclick="this.classList.toggle('ex-gif-grande')" title="Toque para ampliar"/>`)
+              : extrairYoutubeIdPortal(ex.youtube_url)
+              ? `<iframe src="https://www.youtube.com/embed/${extrairYoutubeIdPortal(ex.youtube_url)}" class="ex-gif" style="border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>`
               : ''}
           </div>
           ${ex.nome2 ? (()=>{
@@ -2929,6 +2934,12 @@ function showPage(id){
 // ── NOTIF ─────────────────────────────────────────────────────────────────────
 function ehVideo(dataUrl){
   return typeof dataUrl === 'string' && dataUrl.startsWith('data:video/');
+}
+
+function extrairYoutubeIdPortal(url){
+  if(!url) return null;
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
 }
 
 // ── FEEDBACK DO ALUNO ────────────────────────────────────────────────────────
