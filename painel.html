@@ -525,14 +525,20 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
         <input type="text" id="banco-busca" placeholder="🔎 Buscar exercício..." oninput="filtrarBancoExercicios()" style="flex:1;min-width:200px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)"/>
         <select id="banco-filtro-categoria" onchange="filtrarBancoExercicios()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
           <option value="" selected>Escolha a categoria...</option>
-          <option value="Membros Inferiores">Membros Inferiores</option>
-          <option value="Glúteo">Glúteo</option>
-          <option value="Membros Superiores">Membros Superiores</option>
-          <option value="Ombro">Ombro</option>
           <option value="Peito">Peito</option>
           <option value="Costas">Costas</option>
-          <option value="Fortalecimento">Fortalecimento</option>
+          <option value="Bíceps">Bíceps</option>
+          <option value="Tríceps">Tríceps</option>
+          <option value="Ombro">Ombro</option>
+          <option value="Trapézio">Trapézio</option>
+          <option value="Glúteo">Glúteo</option>
+          <option value="Quadríceps">Quadríceps</option>
+          <option value="Posteriores de Coxa">Posteriores de Coxa</option>
+          <option value="Panturrilha">Panturrilha</option>
+          <option value="Antebraço">Antebraço</option>
+          <option value="Core">Core</option>
           <option value="Cardio">Cardio</option>
+          <option value="Mobilidade">Mobilidade</option>
         </select>
         <select id="banco-filtro-genero" onchange="filtrarBancoExercicios()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.82rem;font-family:var(--font-b)">
           <option value="" selected>Escolha o gênero...</option>
@@ -728,14 +734,20 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
 
       <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Categoria</label>
       <select id="banco-ex-categoria" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem;font-family:var(--font-b);margin:6px 0 16px">
-        <option value="Membros Inferiores">Membros Inferiores</option>
-        <option value="Glúteo">Glúteo</option>
-        <option value="Membros Superiores">Membros Superiores</option>
-        <option value="Ombro">Ombro</option>
         <option value="Peito">Peito</option>
         <option value="Costas">Costas</option>
-        <option value="Fortalecimento">Fortalecimento</option>
+        <option value="Bíceps">Bíceps</option>
+        <option value="Tríceps">Tríceps</option>
+        <option value="Ombro">Ombro</option>
+        <option value="Trapézio">Trapézio</option>
+        <option value="Glúteo">Glúteo</option>
+        <option value="Quadríceps">Quadríceps</option>
+        <option value="Posteriores de Coxa">Posteriores de Coxa</option>
+        <option value="Panturrilha">Panturrilha</option>
+        <option value="Antebraço">Antebraço</option>
+        <option value="Core">Core</option>
         <option value="Cardio">Cardio</option>
+        <option value="Mobilidade">Mobilidade</option>
       </select>
 
       <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Demonstração (gênero)</label>
@@ -1007,6 +1019,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
           <!-- TREINO -->
           <div id="port-panel-treino">
             <p style="font-size:.8rem;color:var(--muted);margin-bottom:12px">Edite os exercícios e suba os GIFs. Após editar, clique em "Publicar ficha atual" acima.</p>
+            <div id="volume-grupo-muscular" style="margin-bottom:14px"></div>
             <div id="portal-aba-exercicios">
               <div style="text-align:center;padding:20px;color:#555;font-size:.82rem">⏳ Carregando ficha...</div>
             </div>
@@ -2482,8 +2495,8 @@ function prescreverTreino(){
   // ── BUSCA DE EXERCÍCIOS ───────────────────────────────────────────────────
   // Mapeia os grupos musculares do motor pras categorias usadas no Banco de Exercícios
   const MAPA_GRUPO_BANCO = {
-    'abdômen':'Fortalecimento', 'bíceps':'Membros Superiores', 'costas':'Costas', 'glúteos':'Glúteo',
-    'ombro':'Ombro', 'panturrilha':'Membros Inferiores', 'peitoral':'Peito', 'quadríceps':'Membros Inferiores', 'tríceps':'Membros Superiores',
+    'abdômen':'Core', 'bíceps':'Bíceps', 'costas':'Costas', 'glúteos':'Glúteo',
+    'ombro':'Ombro', 'panturrilha':'Panturrilha', 'peitoral':'Peito', 'quadríceps':'Quadríceps', 'tríceps':'Tríceps',
   };
 
   function buscarEx(grupo, n){
@@ -3076,6 +3089,117 @@ function verFichaPortal(){
   window.open(`https://wildenigomes-ops.github.io/WillgomesFit/portal.html`, '_blank');
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════
+// VOLUME POR GRUPO MUSCULAR — contagem semanal de séries, com referência de
+// literatura de ciência do esporte (não é prescrição exata, é um guia geral)
+// ══════════════════════════════════════════════════════════════════════════
+
+// Faixas semanais de séries por grupo muscular geralmente citadas em revisões
+// sobre volume e hipertrofia (ex: Schoenfeld et al., diretrizes tipo Renaissance
+// Periodization). São faixas GERAIS de referência, não uma prescrição individual —
+// grupos pequenos (antebraço, panturrilha) toleram bem o limite superior, grandes
+// (costas, quadríceps) costumam precisar de mais pra progredir.
+const VOLUME_SEMANAL_REFERENCIA = {
+  iniciante:     { min: 6,  max: 12 },
+  intermediario: { min: 10, max: 16 },
+  avancado:      { min: 14, max: 22 },
+};
+const GRUPOS_SEM_META_VOLUME = new Set(['Cardio','Mobilidade']); // não fazem sentido em "séries/semana"
+const CATEGORIAS_MUSCULARES = ['Peito','Costas','Bíceps','Tríceps','Ombro','Trapézio','Glúteo','Quadríceps','Posteriores de Coxa','Panturrilha','Antebraço','Core'];
+
+function detectarNivelAlunoAtual(){
+  const nivelTexto = (MOTOR_D?.anamnese?.nivel || '').toLowerCase();
+  if(nivelTexto.includes('avanç')) return 'avancado';
+  if(nivelTexto.includes('intermedi')) return 'intermediario';
+  if(nivelTexto.includes('iniciante')||nivelTexto.includes('básico')) return 'iniciante';
+  return 'intermediario'; // padrão razoável quando não sabemos
+}
+
+// Cruza o nome de cada exercício da ficha (todos os dias) com o Banco de
+// Exercícios pra descobrir o grupo muscular, e soma as séries de cada um.
+function calcularVolumePorGrupoMuscular(){
+  const ficha = window._fichaEditavel;
+  if(!ficha) return null;
+
+  const bancoPorNome = {};
+  (window._bancoExercicios||[]).forEach(be=>{
+    bancoPorNome[(be.nome||'').toLowerCase().trim()] = be.categoria;
+  });
+
+  const volume = {};
+  CATEGORIAS_MUSCULARES.forEach(c=>{ volume[c] = { series: 0, exercicios: 0 }; });
+  let semCategoria = 0;
+
+  Object.values(ficha).forEach(exercicios=>{
+    if(!Array.isArray(exercicios)) return;
+    exercicios.forEach(ex=>{
+      const categoria = bancoPorNome[(ex.nome||'').toLowerCase().trim()];
+      const numSeries = parseInt(ex.series) || 0;
+      if(categoria && volume[categoria]){
+        volume[categoria].series += numSeries;
+        volume[categoria].exercicios += 1;
+      } else if(categoria && GRUPOS_SEM_META_VOLUME.has(categoria)){
+        // cardio/mobilidade — conta mas não entra na comparação de meta
+      } else {
+        semCategoria++;
+      }
+    });
+  });
+
+  return { volume, semCategoria };
+}
+
+async function renderVolumePorGrupoMuscular(){
+  const el = document.getElementById('volume-grupo-muscular');
+  if(!el) return;
+
+  // Garante que o banco de exercícios (nome + categoria) está carregado, senão
+  // não tem como saber a qual grupo muscular cada exercício da ficha pertence.
+  if(!window._bancoExercicios){ await carregarBancoExercicios(); }
+
+  const resultado = calcularVolumePorGrupoMuscular();
+  if(!resultado){ el.innerHTML = ''; return; }
+
+  const { volume, semCategoria } = resultado;
+  const nivel = detectarNivelAlunoAtual();
+  const ref = VOLUME_SEMANAL_REFERENCIA[nivel];
+  const nomesNivel = { iniciante:'Iniciante', intermediario:'Intermediário', avancado:'Avançado' };
+
+  const linhas = CATEGORIAS_MUSCULARES.filter(c=>volume[c].series>0 || volume[c].exercicios>0).map(c=>{
+    const v = volume[c];
+    let cor = '#666', status = '';
+    if(v.series>0){
+      if(v.series < ref.min){ cor = '#f59e0b'; status = 'abaixo do usual'; }
+      else if(v.series > ref.max){ cor = '#f87171'; status = 'acima do usual'; }
+      else { cor = '#34d399'; status = 'dentro da faixa'; }
+    }
+    const pct = Math.min(100, Math.round((v.series/ref.max)*100));
+    return `<div style="margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:2px">
+        <span style="color:#ccc">${c}</span>
+        <span style="color:${cor}">${v.series} séries${status?` · ${status}`:''}</span>
+      </div>
+      <div style="background:rgba(255,255,255,.06);border-radius:20px;height:5px;overflow:hidden">
+        <div style="background:${cor};height:100%;width:${pct}%;border-radius:20px"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const semCategoriaAviso = semCategoria>0
+    ? `<div style="font-size:.68rem;color:#888;margin-top:8px">ℹ️ ${semCategoria} exercício(s) não puderam ser identificados por grupo muscular (nome não bate com nenhum do Banco de Exercícios).</div>`
+    : '';
+
+  el.innerHTML = `<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+      <span style="font-size:.68rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#60a5fa">📊 Volume Semanal por Grupo Muscular</span>
+      <span style="font-size:.66rem;color:#888">Referência: aluno ${nomesNivel[nivel]} (${ref.min}-${ref.max} séries/semana)</span>
+    </div>
+    ${linhas || '<div style="font-size:.75rem;color:#666">Nenhum exercício reconhecido do Banco ainda — lance exercícios pelo "📚 Do Banco" pra essa contagem funcionar.</div>'}
+    ${semCategoriaAviso}
+  </div>`;
+}
+
 async function renderizarEditorPortalAba(){
   const el = document.getElementById('portal-aba-exercicios');
   if(!el){ console.error('[renderizarEditorPortalAba] elemento #portal-aba-exercicios não encontrado no DOM'); return; }
@@ -3187,6 +3311,7 @@ async function renderizarEditorPortalAba(){
     // Salvar estrutura para edição
     window._fichaEditavel = exerciciosPorDia;
     el.innerHTML = html;
+    renderVolumePorGrupoMuscular();
   }catch(e){
     console.error('[renderizarEditorPortalAba] ERRO INESPERADO:', e);
     el.innerHTML = `<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:14px;font-size:.8rem;color:#f87171">
@@ -3872,13 +3997,19 @@ async function carregarPreviewMidiaExercicio(id){
 // Categorias que já são válidas hoje (Peito, Costas, Ombro, Cardio, Fortalecimento,
 // Membros Inferiores, Membros Superiores) não entram aqui — não precisam de correção.
 const MAPA_CATEGORIAS_ANTIGAS = {
-  'perna':'Membros Inferiores', 'pernas':'Membros Inferiores',
-  'quadríceps':'Membros Inferiores', 'posterior':'Membros Inferiores',
-  'panturrilha':'Membros Inferiores', 'bíceps':'Membros Superiores', 'tríceps':'Membros Superiores',
-  'braço':'Membros Superiores', 'braços':'Membros Superiores', 'antebraço':'Membros Superiores',
-  'abdômen':'Fortalecimento', 'abdominal':'Fortalecimento', 'core':'Fortalecimento',
-  'mobilidade':'Fortalecimento', 'outro':'Fortalecimento',
+  // Nomes bem específicos — mapeamento direto e confiável
+  'quadríceps':'Quadríceps', 'posterior':'Posteriores de Coxa', 'posteriores':'Posteriores de Coxa',
+  'panturrilha':'Panturrilha', 'bíceps':'Bíceps', 'tríceps':'Tríceps', 'antebraço':'Antebraço',
+  'abdômen':'Core', 'abdominal':'Core', 'core':'Core', 'mobilidade':'Mobilidade', 'trapézio':'Trapézio',
+  // Nomes genéricos das versões anteriores — a categoria certa fica ambígua (pode
+  // ser qualquer grupo daquela região), então usa um padrão razoável mas marca
+  // pra revisão manual depois, já que a correção automática não tem certeza aqui.
+  'perna':'Quadríceps', 'pernas':'Quadríceps',
+  'braço':'Bíceps', 'braços':'Bíceps',
+  'membros inferiores':'Quadríceps', 'membros superiores':'Bíceps',
+  'fortalecimento':'Core', 'outro':'Core',
 };
+const CATEGORIAS_AMBIGUAS_REVISAR = new Set(['perna','pernas','braço','braços','membros inferiores','membros superiores','fortalecimento','outro']);
 
 async function corrigirCategoriasAntigasBanco(){
   if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
@@ -3894,7 +4025,7 @@ async function corrigirCategoriasAntigasBanco(){
     todos = data || [];
   }catch(e){ notif('Erro inesperado: '+(e.message||e),'#ef4444',true); return; }
 
-  const categoriasValidas = new Set(['Peito','Costas','Ombro','Glúteo','Cardio','Fortalecimento','Membros Inferiores','Membros Superiores']);
+  const categoriasValidas = new Set(['Peito','Costas','Bíceps','Tríceps','Glúteo','Core','Quadríceps','Posteriores de Coxa','Panturrilha','Antebraço','Ombro','Trapézio','Cardio','Mobilidade']);
   const paraCorrigir = todos.filter(ex => ex.categoria && !categoriasValidas.has(ex.categoria));
 
   if(!paraCorrigir.length){
@@ -3904,21 +4035,24 @@ async function corrigirCategoriasAntigasBanco(){
 
   // Monta um resumo do que vai mudar, pra confirmar antes de aplicar
   const resumo = {};
+  let temAmbiguo = false;
   paraCorrigir.forEach(ex=>{
     const chave = ex.categoria.toLowerCase().trim();
-    const novaCategoria = MAPA_CATEGORIAS_ANTIGAS[chave] || 'Fortalecimento';
-    resumo[ex.categoria] = resumo[ex.categoria] || { destino: novaCategoria, qtd: 0 };
+    const novaCategoria = MAPA_CATEGORIAS_ANTIGAS[chave] || 'Core';
+    if(CATEGORIAS_AMBIGUAS_REVISAR.has(chave)) temAmbiguo = true;
+    resumo[ex.categoria] = resumo[ex.categoria] || { destino: novaCategoria, qtd: 0, ambiguo: CATEGORIAS_AMBIGUAS_REVISAR.has(chave) };
     resumo[ex.categoria].qtd++;
   });
-  const linhasResumo = Object.entries(resumo).map(([antiga,{destino,qtd}])=> `• "${antiga}" → "${destino}" (${qtd} exercício${qtd>1?'s':''})`).join('\n');
+  const linhasResumo = Object.entries(resumo).map(([antiga,{destino,qtd,ambiguo}])=> `• "${antiga}" → "${destino}"${ambiguo?' ⚠️ (revisar manualmente depois)':''} (${qtd} exercício${qtd>1?'s':''})`).join('\n');
+  const avisoAmbiguo = temAmbiguo ? '\n\n⚠️ Algumas categorias antigas eram genéricas demais pra saber o grupo muscular exato (ex: "Membros Inferiores" pode ser Quadríceps, Posteriores, Panturrilha ou Glúteo). Escolhi um destino razoável, mas VALE A PENA revisar esses exercícios manualmente depois.' : '';
 
-  if(!confirm(`Encontrei ${paraCorrigir.length} exercício(s) com categoria antiga. Vou atualizar assim:\n\n${linhasResumo}\n\nConfirmar a correção?`)) return;
+  if(!confirm(`Encontrei ${paraCorrigir.length} exercício(s) com categoria antiga. Vou atualizar assim:\n\n${linhasResumo}${avisoAmbiguo}\n\nConfirmar a correção?`)) return;
 
   notif('⏳ Corrigindo categorias...','#3b82f6');
   let sucesso = 0, falhas = 0;
   for(const ex of paraCorrigir){
     const chave = ex.categoria.toLowerCase().trim();
-    const novaCategoria = MAPA_CATEGORIAS_ANTIGAS[chave] || 'Fortalecimento';
+    const novaCategoria = MAPA_CATEGORIAS_ANTIGAS[chave] || 'Core';
     try{
       const { error } = await SB.from('banco_exercicios').update({ categoria: novaCategoria }).eq('id', ex.id);
       if(error){ falhas++; console.error('corrigirCategoriasAntigasBanco — falha em', ex.nome, error); }
@@ -7617,15 +7751,18 @@ async function gerarRotinaAlimentarBase(){
 
   // Estrutura de cada refeição: quais categorias buscar no banco
   const estrutura = [
-    {nome:'Café da Manhã', horario:'07:00', pct:0.25, categorias:['Cereais','Proteinas','Frutas']},
-    {nome:'Almoço', horario:'12:00', pct:0.30, categorias:['Cereais','Proteinas','Proteinas','Vegetais']},
-    {nome:'Lanche da Tarde', horario:'16:00', pct:0.15, categorias:['Frutas','Laticinios']},
-    {nome:'Jantar', horario:'19:30', pct:0.25, categorias:['Proteinas','Vegetais','Cereais']},
+    {nome:'Café da Manhã', horario:'07:00', pct:0.20, categorias:['Cereais','Proteinas','Frutas']},
+    {nome:'Lanche da Manhã', horario:'10:00', pct:0.08, categorias:['Frutas','Proteinas']},
+    {nome:'Almoço', horario:'12:00', pct:0.27, categorias:['Cereais','Proteinas','Proteinas','Vegetais']},
+    {nome:'Lanche da Tarde', horario:'16:00', pct:0.12, categorias:['Frutas','Laticinios']},
+    {nome:'Jantar', horario:'19:30', pct:0.22, categorias:['Proteinas','Vegetais','Cereais']},
     {nome:'Ceia', horario:'21:30', pct:0.05, categorias:['Laticinios']},
+    {nome:'Suplementação', horario:'Pós-treino', pct:0.06, categorias:['Suplementos']},
   ];
 
   function gerarUmDia(){
     return estrutura.map(ref => {
+      const ehSuplemento = ref.nome === 'Suplementação';
       const alimentosEscolhidos = ref.categorias
         .map(cat => sorteiaUm(cat))
         .filter(Boolean)
@@ -7634,7 +7771,9 @@ async function gerarRotinaAlimentarBase(){
       return {
         nome: ref.nome,
         horario: ref.horario,
-        metaCalorias: Math.round(metas.meta * ref.pct),
+        // Suplemento usa a dose padrão do produto (ex: "1 scoop"), não faz sentido
+        // "escalar" suplemento pela meta calórica do dia como as refeições normais
+        metaCalorias: ehSuplemento ? (alimentosEscolhidos[0]?.calorias || 0) : Math.round(metas.meta * ref.pct),
         alimentos: alimentosEscolhidos
       };
     });
@@ -7836,7 +7975,14 @@ async function abrirSeletorBancoAlimentoParaRotina(rIdx, aIdx){
   if(existente) existente.remove();
 
   window._alimentoAlvo = {rIdx, aIdx};
-  if(!window._bancoAlimentos){ await carregarBancoAlimentos(); }
+  console.log('[abrirSeletorBancoAlimentoParaRotina] alvo:', {rIdx, aIdx}, '| banco já em cache:', window._bancoAlimentos?.length||0, 'itens');
+
+  // Recarrega se nunca buscou OU se o cache está vazio (evita ficar preso num
+  // estado vazio de uma tentativa anterior que falhou silenciosamente)
+  if(!window._bancoAlimentos || !window._bancoAlimentos.length){
+    await carregarBancoAlimentos();
+    console.log('[abrirSeletorBancoAlimentoParaRotina] depois de recarregar:', window._bancoAlimentos?.length||0, 'itens');
+  }
 
   // Tenta identificar restrições do cliente pra destacar alimentos compatíveis (não bloqueia, só avisa)
   const restricaoTexto = (MOTOR_D?.nutricao?.['nu-rest']||'') + ' ' + (MOTOR_D?.nutricao?.['nu-nao']||'');
