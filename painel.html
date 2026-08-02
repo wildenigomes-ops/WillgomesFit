@@ -1025,6 +1025,11 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
               <div id="rotina-calorias-resumo" style="font-size:.72rem;color:#888;margin-bottom:4px"></div>
             </div>
 
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+              <div id="rotina-dias-tabs" style="display:flex;gap:4px;overflow-x:auto;padding-bottom:2px"></div>
+              <button onclick="copiarRotinaParaTodosDias()" style="flex-shrink:0;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);color:#a78bfa;padding:6px 12px;border-radius:6px;font-size:.68rem;font-weight:700;cursor:pointer;white-space:nowrap">📋 Copiar esse dia pra todos os dias</button>
+            </div>
+
             <div id="rotina-alimentar-editor" style="margin-bottom:14px">
               <div style="text-align:center;padding:16px;color:#666;font-size:.8rem">⏳ Carregando rotina alimentar...</div>
             </div>
@@ -5798,12 +5803,22 @@ async function carregarDiarioAlimentarCliente(c){
       return;
     }
 
-    // Busca a meta calórica da ficha atual pra comparar
-    let metaCalorias = 0;
+    // Busca a rotina alimentar por dia da semana, pra comparar cada data com a
+    // meta certa DAQUELE dia específico (não mais um número fixo pra semana toda)
+    let rotinaPorDia = {};
     try{
       const { data: fichaData } = await SB.from('portal_fichas').select('refeicoes_json').eq('email', c.email).order('criado_em',{ascending:false}).limit(1);
-      metaCalorias = (fichaData?.[0]?.refeicoes_json||[]).reduce((s,r)=>s+(Number(r.metaCalorias)||0),0);
+      const bruto = fichaData?.[0]?.refeicoes_json;
+      if(Array.isArray(bruto)){
+        DIAS_SEMANA.forEach(d => { rotinaPorDia[d] = bruto; }); // formato antigo — mesma lista pra todo dia
+      } else if(bruto){
+        rotinaPorDia = bruto;
+      }
     }catch(e){ console.warn('carregarDiarioAlimentarCliente — erro ao buscar meta:', e); }
+    function metaCaloriasDoDia(dataStr){
+      const diaSemana = DIAS_SEMANA[(new Date(dataStr+'T12:00:00').getDay()+6)%7];
+      return (rotinaPorDia[diaSemana]||[]).reduce((s,r)=>s+(Number(r.metaCalorias)||0),0);
+    }
 
     // Agrupa por dia
     const porDia = {};
@@ -5814,9 +5829,6 @@ async function carregarDiarioAlimentarCliente(c){
     const dias = Object.keys(porDia).sort((a,b)=>b.localeCompare(a));
 
     let html = '';
-    if(metaCalorias){
-      html += `<div style="font-size:.72rem;color:#888;margin-bottom:12px">Meta da ficha atual: <strong style="color:#fbbf24">${metaCalorias} kcal/dia</strong></div>`;
-    }
 
     html += dias.map(data=>{
       const itensDia = porDia[data];
@@ -5825,6 +5837,7 @@ async function carregarDiarioAlimentarCliente(c){
       const totalCarb = itensDia.reduce((s,it)=>s+(Number(it.carboidrato)||0),0);
       const totalGord = itensDia.reduce((s,it)=>s+(Number(it.gordura)||0),0);
       const dataFormatada = new Date(data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short', day:'2-digit', month:'2-digit'});
+      const metaCalorias = metaCaloriasDoDia(data);
 
       let corDiff = '#888';
       let labelDiff = '';
@@ -5832,7 +5845,7 @@ async function carregarDiarioAlimentarCliente(c){
         const diff = Math.round(totalKcal - metaCalorias);
         const percDiff = Math.abs(diff)/metaCalorias;
         corDiff = percDiff <= 0.1 ? '#34d399' : percDiff <= 0.25 ? '#fbbf24' : '#f87171';
-        labelDiff = ` <span style="color:${corDiff}">(${diff>0?'+':''}${diff} kcal)</span>`;
+        labelDiff = ` <span style="color:${corDiff}">(${diff>0?'+':''}${diff} kcal · meta ${metaCalorias} desse dia)</span>`;
       }
 
       const porRefeicao = {};
@@ -7361,7 +7374,7 @@ async function publicarNutricaoPortal(){
     const { data: dataSalva, error } = await SB.from('portal_fichas').upsert({
       email: c.email,
       nutri_json: nutri,
-      refeicoes_json: window._rotinaAlimentar || null,
+      refeicoes_json: window._rotinaAlimentarPorDia || null,
       atualizado_em: new Date().toISOString(),
       titulo: jaTinha?.titulo || 'Ficha de Treino',
       criado_em: jaTinha?.criado_em || new Date().toISOString(),
@@ -7384,10 +7397,11 @@ async function publicarNutricaoPortal(){
       return;
     }
     const refeicoesSalvas = dataSalva[0].refeicoes_json;
-    const refeicoesEsperadas = window._rotinaAlimentar || null;
-    if(JSON.stringify(refeicoesSalvas?.length||0) !== JSON.stringify(refeicoesEsperadas?.length||0)){
+    const diasEsperados = Object.keys(window._rotinaAlimentarPorDia||{}).length;
+    const diasSalvos = Object.keys(refeicoesSalvas||{}).length;
+    if(diasSalvos !== diasEsperados){
       notif('⚠️ O guia foi salvo, mas o conteúdo confirmado é diferente do que você editou. Tente publicar de novo.','#ef4444',true);
-      console.error('[publicarNutricaoPortal] divergência: esperado', refeicoesEsperadas, 'salvo', refeicoesSalvas);
+      console.error('[publicarNutricaoPortal] divergência: esperado', diasEsperados, 'dias, salvo', diasSalvos);
       return;
     }
 
@@ -7399,8 +7413,11 @@ async function publicarNutricaoPortal(){
   }
 }
 
+const DIAS_SEMANA = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+
 async function carregarNutriPortalAba(c){
-  window._rotinaAlimentar = null;
+  window._rotinaAlimentarPorDia = null;
+  window._diaRotinaAtivo = DIAS_SEMANA[(new Date().getDay()+6)%7]; // hoje, como padrão
   if(!SB || !c?.email){ renderRotinaAlimentar(); return; }
   const { data } = await SB.from('portal_fichas').select('nutri_json,refeicoes_json').eq('email', c.email).order('criado_em',{ascending:false}).limit(1);
   const nutri = data?.[0]?.nutri_json;
@@ -7410,7 +7427,55 @@ async function carregarNutriPortalAba(c){
       if(el && nutri[k]) el.value = nutri[k];
     });
   }
-  window._rotinaAlimentar = data?.[0]?.refeicoes_json || null;
+
+  const bruto = data?.[0]?.refeicoes_json || null;
+  window._rotinaAlimentarPorDia = normalizarRotinaPorDia(bruto);
+  atualizarReferenciaRotinaAtiva();
+  renderRotinaAlimentar();
+}
+
+// Aceita tanto o formato antigo (lista única de refeições, usada todo dia) quanto
+// o novo (um objeto com uma lista por dia da semana), sempre devolvendo o formato novo.
+function normalizarRotinaPorDia(bruto){
+  if(!bruto) return null;
+  if(Array.isArray(bruto)){
+    // Formato antigo — usa a mesma lista pra todos os dias, como ponto de partida
+    const porDia = {};
+    DIAS_SEMANA.forEach(d => { porDia[d] = JSON.parse(JSON.stringify(bruto)); });
+    return porDia;
+  }
+  // Já está no formato novo — garante que todos os 7 dias existem (mesmo vazios)
+  const porDia = {};
+  DIAS_SEMANA.forEach(d => { porDia[d] = bruto[d] || []; });
+  return porDia;
+}
+
+// Mantém window._rotinaAlimentar sempre apontando pra lista do dia ativo — assim,
+// todas as funções que já editam essa variável continuam funcionando sem mudança.
+function atualizarReferenciaRotinaAtiva(){
+  if(!window._rotinaAlimentarPorDia){ window._rotinaAlimentar = null; return; }
+  if(!window._rotinaAlimentarPorDia[window._diaRotinaAtivo]) window._rotinaAlimentarPorDia[window._diaRotinaAtivo] = [];
+  window._rotinaAlimentar = window._rotinaAlimentarPorDia[window._diaRotinaAtivo];
+}
+
+function mudarDiaRotina(dia){
+  window._diaRotinaAtivo = dia;
+  atualizarReferenciaRotinaAtiva();
+  renderRotinaAlimentar();
+}
+
+function copiarRotinaParaTodosDias(){
+  if(!window._rotinaAlimentar || !window._rotinaAlimentar.length){
+    notif('Não há nada nesse dia pra copiar ainda.','#f59e0b',true);
+    return;
+  }
+  if(!confirm(`Copiar a rotina de "${window._diaRotinaAtivo}" pra todos os outros dias da semana? Isso substitui o que já estiver nos outros dias.`)) return;
+  DIAS_SEMANA.forEach(d=>{
+    if(d !== window._diaRotinaAtivo){
+      window._rotinaAlimentarPorDia[d] = JSON.parse(JSON.stringify(window._rotinaAlimentar));
+    }
+  });
+  notif('✅ Copiado pra todos os dias da semana!','#10b981');
   renderRotinaAlimentar();
 }
 
@@ -7517,37 +7582,57 @@ async function gerarRotinaAlimentarBase(){
     {nome:'Ceia', horario:'21:30', pct:0.05, categorias:['Laticinios']},
   ];
 
-  window._rotinaAlimentar = estrutura.map(ref => {
-    const alimentosEscolhidos = ref.categorias
-      .map(cat => sorteiaUm(cat))
-      .filter(Boolean)
-      .map(paraItem);
-    if(!alimentosEscolhidos.length) alimentosEscolhidos.push({ item:'', quantidade:'', calorias:'', substituicao:'' });
-    return {
-      nome: ref.nome,
-      horario: ref.horario,
-      metaCalorias: Math.round(metas.meta * ref.pct),
-      alimentos: alimentosEscolhidos
-    };
-  });
+  function gerarUmDia(){
+    return estrutura.map(ref => {
+      const alimentosEscolhidos = ref.categorias
+        .map(cat => sorteiaUm(cat))
+        .filter(Boolean)
+        .map(paraItem);
+      if(!alimentosEscolhidos.length) alimentosEscolhidos.push({ item:'', quantidade:'', calorias:'', substituicao:'' });
+      return {
+        nome: ref.nome,
+        horario: ref.horario,
+        metaCalorias: Math.round(metas.meta * ref.pct),
+        alimentos: alimentosEscolhidos
+      };
+    });
+  }
+
+  // Gera pra semana inteira de uma vez — cada dia sorteia opções diferentes dentro
+  // das mesmas restrições, então o aluno não come exatamente igual todo dia.
+  window._rotinaAlimentarPorDia = {};
+  DIAS_SEMANA.forEach(d => { window._rotinaAlimentarPorDia[d] = gerarUmDia(); });
+  atualizarReferenciaRotinaAtiva();
 
   const avisoBanco = banco.length < 10 ? ' ⚠️ Seu Banco de Alimentos tem poucos itens ainda — considere clicar em "🌱 Popular com alimentos padrão" pra ter mais opções.' : '';
   const nomesRestricao = { vegano:'vegano', vegetariano:'vegetariano', sem_gluten:'sem glúten', sem_lactose:'sem lactose', baixo_sodio:'baixo sódio' };
   const restricoesTexto = restricoes.length ? ` Restrições detectadas na anamnese: ${restricoes.map(r=>nomesRestricao[r]||r).join(', ')}.` : '';
   const naoComeTextoAviso = naoComeItens.length ? ` Excluído por "não como": ${naoComeItens.join(', ')}.` : '';
-  notif(`✅ Rotina gerada com base na anamnese atualizada! Meta: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura).${restricoesTexto}${naoComeTextoAviso}${avisoBanco} Revise e ajuste as quantidades.`,'#10b981',true);
+  notif(`✅ Rotina gerada pra semana inteira, com base na anamnese atualizada! Meta: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura).${restricoesTexto}${naoComeTextoAviso}${avisoBanco} Revise e ajuste cada dia pelas abas acima.`,'#10b981',true);
   renderRotinaAlimentar();
 }
 
 function renderRotinaAlimentar(){
   const el = document.getElementById('rotina-alimentar-editor');
   const resumoEl = document.getElementById('rotina-calorias-resumo');
+  const tabsEl = document.getElementById('rotina-dias-tabs');
   if(!el) return;
+
+  // Desenha as abas dos dias da semana, destacando a ativa
+  if(tabsEl){
+    tabsEl.innerHTML = DIAS_SEMANA.map(d=>{
+      const ativo = d===window._diaRotinaAtivo;
+      const temConteudo = (window._rotinaAlimentarPorDia?.[d]||[]).length > 0;
+      return `<button onclick="mudarDiaRotina('${d}')" style="flex-shrink:0;padding:6px 12px;border-radius:6px;font-size:.7rem;font-weight:700;cursor:pointer;border:1px solid ${ativo?'#34d399':'var(--border)'};background:${ativo?'rgba(16,185,129,.15)':'rgba(255,255,255,.03)'};color:${ativo?'#34d399':'#999'};white-space:nowrap">
+        ${d.slice(0,3)}${temConteudo?' •':''}
+      </button>`;
+    }).join('');
+  }
 
   const rotina = window._rotinaAlimentar;
 
   if(!rotina || !rotina.length){
-    el.innerHTML = '<div style="text-align:center;padding:16px;color:#666;font-size:.8rem;border:1px dashed var(--border);border-radius:10px">Nenhuma refeição ainda. Use "🧮 Gerar com base no questionário" ou "➕ Adicionar refeição" abaixo.</div>';
+    el.innerHTML = `<div style="text-align:center;padding:16px;color:#666;font-size:.8rem;border:1px dashed var(--border);border-radius:10px">Nenhuma refeição ainda em "${window._diaRotinaAtivo}". Use "🧮 Gerar com base no questionário" (gera pra semana toda), "📋 Copiar de outro dia" ou "➕ Adicionar refeição" abaixo.</div>`;
     if(resumoEl) resumoEl.textContent = '';
     return;
   }
@@ -7633,7 +7718,9 @@ function atualizarAlimentoCampo(rIdx, aIdx, campo, valor){
 }
 
 function adicionarRefeicao(){
-  if(!window._rotinaAlimentar) window._rotinaAlimentar = [];
+  if(!window._rotinaAlimentarPorDia) window._rotinaAlimentarPorDia = {};
+  if(!window._rotinaAlimentarPorDia[window._diaRotinaAtivo]) window._rotinaAlimentarPorDia[window._diaRotinaAtivo] = [];
+  window._rotinaAlimentar = window._rotinaAlimentarPorDia[window._diaRotinaAtivo]; // garante que aponta pro mesmo array
   window._rotinaAlimentar.push({ nome:'Nova Refeição', horario:'12:00', metaCalorias:0, alimentos:[{item:'',quantidade:'',calorias:'',substituicao:''}] });
   renderRotinaAlimentar();
 }
