@@ -993,6 +993,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
           <div class="detail-section-title">📋 Ficha Publicada no Portal</div>
           <div id="portal-aba-ficha-status" style="font-size:.82rem;color:#888;margin-bottom:12px">Carregando...</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+            <button class="btn" onclick="abrirConfigGeracaoTreino()" style="font-size:.8rem;padding:9px 16px;background:rgba(59,130,246,.12);color:#60a5fa;border-color:rgba(59,130,246,.3)">🧮 Gerar automaticamente</button>
             <button class="btn btn-green" onclick="publicarNoPortal()" style="font-size:.8rem;padding:9px 16px">🚀 Publicar ficha atual</button>
             <button class="btn" onclick="verFichaPortal()" style="font-size:.8rem;padding:9px 16px;background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.3)">👁 Ver ficha publicada</button>
             <button class="btn" onclick="exportarFichaTreinoCompleta()" style="font-size:.8rem;padding:9px 16px;background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.3)">⬇ Word: Treino</button>
@@ -1722,6 +1723,14 @@ const CAMPOS_ANAMNESE_EDITAVEL = {
   'Nutrição': [
     ['nu-obj','Objetivo nutricional'], ['nu-ativ','Nível de atividade'],
     ['nu-rest','Restrição alimentar'], ['nu-nao','Não come'], ['nu-supl','Suplementos'],
+  ],
+  'Preferências por Refeição': [
+    ['nu-pref-cafe','O que gosta no Café da Manhã'],
+    ['nu-pref-lanchemanha','O que gosta no Lanche da Manhã'],
+    ['nu-pref-almoco','O que gosta no Almoço'],
+    ['nu-pref-lanchetarde','O que gosta no Lanche da Tarde'],
+    ['nu-pref-jantar','O que gosta no Jantar'],
+    ['nu-pref-ceia','O que gosta na Ceia'],
   ],
 };
 
@@ -3289,6 +3298,7 @@ async function renderizarEditorPortalAba(){
             style="flex:1;background:transparent;border:none;color:#a78bfa;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-b);outline:none"/>
           <button onclick="abrirSeletorBancoParaFicha(${dIdx})" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">📚 Do Banco</button>
           <button onclick="adicionarExercicio(${dIdx})" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981;padding:4px 10px;border-radius:6px;font-size:.7rem;cursor:pointer">+ Exercício</button>
+          <button onclick="regenerarApenasEsteDia(${dIdx})" title="Trocar todos os exercícios desse dia por outros, mantendo os outros dias intactos" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#60a5fa;padding:4px 9px;border-radius:6px;font-size:.7rem;cursor:pointer">🔄</button>
           <button onclick="removerDiaTreino(${dIdx})" title="Remover este dia inteiro" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;padding:4px 9px;border-radius:6px;font-size:.7rem;cursor:pointer">🗑</button>
         </div>
         <div id="ex-list-${dIdx}">`;
@@ -3407,6 +3417,153 @@ function soltarDia(event, dIdxDestino){
   renderizarEditorPortalAba();
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════
+// GERAÇÃO AUTOMÁTICA DE TREINO — com escolha de nível, dias e método
+// ══════════════════════════════════════════════════════════════════════════
+
+const METODOS_TREINO = {
+  tradicional: { nome:'Tradicional (séries retas)', desc:'Cada exercício com séries e descanso fixos, sem variação de método.' },
+  biset:       { nome:'Bi-set / Superset', desc:'Agrupa exercícios em dupla, executados sem descanso entre eles.' },
+  dropset:     { nome:'Drop-set', desc:'Na última série de cada exercício, reduz a carga e continua até a falha, sem descanso.' },
+  restpause:   { nome:'Rest-pause', desc:'Ao chegar perto da falha, descansa 15-20s e continua a mesma série.' },
+  circuito:    { nome:'Circuito', desc:'Todos os exercícios do dia em sequência, com descanso curto, repetindo o circuito.' },
+};
+
+function abrirConfigGeracaoTreino(){
+  const c = clienteAtual;
+  if(!c){ notif('Selecione um cliente primeiro','#ef4444',true); return; }
+
+  const nivelAtual = MOTOR_D?.anamnese?.nivel || 'Intermediario';
+  const diasAtual = parseInt(MOTOR_D?.anamnese?.['an-dias']) || 4;
+
+  const existente = document.getElementById('config-geracao-treino-overlay');
+  if(existente) existente.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'config-geracao-treino-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.95rem;font-weight:800;color:#fff">🧮 Gerar Treino Automaticamente</div>
+        <button onclick="document.getElementById('config-geracao-treino-overlay').remove()" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:18px 20px">
+        <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 12px;font-size:.74rem;color:#93c5fd;margin-bottom:16px">
+          O motor considera automaticamente objetivo, lesões/dores, equipamento disponível e gênero da anamnese. Aqui você pode ajustar nível e frequência se quiser diferente do que está no questionário.
+        </div>
+
+        <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Nível do aluno</label>
+        <select id="config-treino-nivel" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.85rem;margin:6px 0 14px">
+          <option value="Sedentario" ${nivelAtual==='Sedentario'?'selected':''}>Sedentário</option>
+          <option value="Iniciante" ${nivelAtual==='Iniciante'?'selected':''}>Iniciante</option>
+          <option value="Intermediario" ${nivelAtual==='Intermediario'?'selected':''}>Intermediário</option>
+          <option value="Avancado" ${nivelAtual==='Avancado'?'selected':''}>Avançado</option>
+          <option value="MuitoAvancado" ${nivelAtual==='MuitoAvancado'?'selected':''}>Muito Avançado</option>
+        </select>
+
+        <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Dias de treino por semana</label>
+        <select id="config-treino-dias" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.85rem;margin:6px 0 14px">
+          ${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${n===diasAtual?'selected':''}>${n}x por semana</option>`).join('')}
+        </select>
+
+        <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Método de treino</label>
+        <select id="config-treino-metodo" onchange="document.getElementById('desc-metodo-treino').textContent = METODOS_TREINO[this.value].desc" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:#fff;font-size:.85rem;margin:6px 0 4px">
+          ${Object.entries(METODOS_TREINO).map(([k,m])=>`<option value="${k}">${m.nome}</option>`).join('')}
+        </select>
+        <div id="desc-metodo-treino" style="font-size:.7rem;color:#888;margin-bottom:16px">${METODOS_TREINO.tradicional.desc}</div>
+
+        <button onclick="confirmarGeracaoAutomaticaTreino()" style="width:100%;background:var(--orange);color:#fff;border:none;padding:12px;border-radius:8px;font-weight:800;font-size:.85rem;cursor:pointer">🧮 Gerar ficha completa</button>
+        <div style="font-size:.68rem;color:#f59e0b;margin-top:8px;text-align:center">⚠️ Isso substitui os exercícios atuais da ficha (se houver). Publique depois de revisar.</div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function confirmarGeracaoAutomaticaTreino(){
+  const c = clienteAtual;
+  if(!c) return;
+
+  const nivelEscolhido = document.getElementById('config-treino-nivel').value;
+  const diasEscolhido = document.getElementById('config-treino-dias').value;
+  const metodoEscolhido = document.getElementById('config-treino-metodo').value;
+
+  if(window._fichaEditavel && Object.keys(window._fichaEditavel).length){
+    if(!confirm('Isso vai substituir os exercícios atuais da ficha por uma nova geração automática. Continuar?')) return;
+  }
+
+  document.getElementById('config-geracao-treino-overlay')?.remove();
+  notif('⏳ Gerando treino com base na anamnese...','#3b82f6');
+
+  // Garante que MOTOR_D está com a anamnese mais atual desse cliente antes de gerar
+  await sincronizarMotorComCliente(c);
+  if(!window._bancoExercicios){ await carregarBancoExercicios(); }
+
+  // Aplica os ajustes manuais escolhidos por cima da anamnese (sem perder o resto dela)
+  MOTOR_D.anamnese = { ...MOTOR_D.anamnese, nivel: nivelEscolhido, 'an-dias': diasEscolhido };
+
+  let treinos;
+  try{
+    treinos = prescreverTreino();
+  }catch(e){
+    notif('Erro ao gerar: '+(e.message||e),'#ef4444',true);
+    console.error('confirmarGeracaoAutomaticaTreino:', e);
+    return;
+  }
+
+  const novaFicha = {};
+  treinos.filter(t=>(t.exercicios||t.ex||[]).length>0).forEach(t=>{
+    novaFicha[t.nome] = t.exercicios||t.ex;
+  });
+
+  if(!Object.keys(novaFicha).length){
+    notif('Não consegui gerar exercícios — confira se o Banco de Exercícios tem itens cadastrados nas categorias certas, ou se o questionário do cliente foi preenchido.','#ef4444',true);
+    return;
+  }
+
+  aplicarMetodoTreino(novaFicha, metodoEscolhido);
+
+  window._fichaEditavel = novaFicha;
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  notif(`✅ Treino gerado! ${Object.keys(novaFicha).length} dia(s) · Nível ${nivelEscolhido} · Método: ${METODOS_TREINO[metodoEscolhido].nome}. Revise e clique em "Publicar ficha atual".`,'#10b981',true);
+  renderizarEditorPortalAba();
+}
+
+// Aplica o método de treino escolhido por cima da estrutura já gerada — ajusta
+// descanso, junta exercícios em combo, ou anota instruções especiais conforme o método.
+function aplicarMetodoTreino(ficha, metodo){
+  if(metodo==='tradicional') return;
+
+  Object.values(ficha).forEach(exercicios=>{
+    if(!Array.isArray(exercicios) || !exercicios.length) return;
+
+    if(metodo==='biset'){
+      // Agrupa exercícios em pares — o segundo de cada dupla vira o "combinado" do primeiro
+      for(let i=0; i<exercicios.length-1; i+=2){
+        exercicios[i].nome2 = exercicios[i+1].nome;
+        exercicios[i].obs = (exercicios[i].obs||'') + ' Bi-set: sem descanso entre os dois exercícios.';
+      }
+      // remove os que viraram "nome2" da lista principal, de trás pra frente pra não bagunçar os índices
+      for(let i=exercicios.length-1; i>=1; i-=2){ exercicios.splice(i,1); }
+    }
+
+    if(metodo==='dropset'){
+      // Marca o último exercício de cada dia com instrução de drop-set
+      const ultimo = exercicios[exercicios.length-1];
+      if(ultimo) ultimo.obs = (ultimo.obs||'') + ' Última série: DROP-SET — reduza 20-30% da carga sem descansar, vá até a falha.';
+    }
+
+    if(metodo==='restpause'){
+      exercicios.forEach(ex=>{ ex.obs = (ex.obs||'') + ' Rest-pause: perto da falha, pausa de 15-20s e continue a mesma série.'; });
+    }
+
+    if(metodo==='circuito'){
+      exercicios.forEach(ex=>{ ex.descanso = '20s'; ex.obs = (ex.obs||'') + ' Circuito: faça todos os exercícios do dia em sequência, descanse só entre voltas.'; });
+    }
+  });
+}
+
 function adicionarDiaTreino(){
   if(!window._fichaEditavel) return;
   const letras = ['A','B','C','D','E','F','G'];
@@ -3487,7 +3644,9 @@ function renderExercicioEditavel(ex, dIdx, eIdx, gifKey, gifData){
           style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:5px;padding:6px 10px;color:#aaa;font-size:.78rem;font-family:var(--font-b)"/>
         ${renderCombinadoExercicio(ex, dIdx, eIdx)}
       </div>
-      <!-- BOTÃO REMOVER -->
+      <!-- BOTÕES DE AÇÃO -->
+      <button onclick="trocarExercicioPorSimilar(${dIdx},${eIdx})" title="Trocar por outro exercício do mesmo grupo muscular"
+        style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);color:#60a5fa;padding:5px 9px;border-radius:6px;font-size:.75rem;cursor:pointer;flex-shrink:0">🔄</button>
       <button onclick="removerExercicio(${dIdx},${eIdx})" title="Remover exercício"
         style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:5px 9px;border-radius:6px;font-size:.75rem;cursor:pointer;flex-shrink:0">✕</button>
     </div>
@@ -3668,6 +3827,89 @@ function removerExercicio(dIdx, eIdx){
   if(!dias[dIdx]) return;
   window._fichaEditavel[dias[dIdx]].splice(eIdx, 1);
   window._fichaTemAlteracoesNaoPublicadas = true;
+  renderizarEditorPortalAba();
+}
+
+// Troca só UM exercício por outro do mesmo grupo muscular — útil quando o aluno
+// pede pra mudar algo específico, sem precisar mexer no resto da ficha.
+async function trocarExercicioPorSimilar(dIdx, eIdx){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  const exAtual = window._fichaEditavel[dias[dIdx]]?.[eIdx];
+  if(!exAtual) return;
+
+  if(!window._bancoExercicios){ await carregarBancoExercicios(); }
+  const bancoInfo = (window._bancoExercicios||[]).find(be => (be.nome||'').toLowerCase().trim() === (exAtual.nome||'').toLowerCase().trim());
+  if(!bancoInfo){
+    notif('Esse exercício não foi encontrado no Banco de Exercícios, então não sei qual é o grupo muscular pra sugerir um similar. Use "📚 Do Banco" pra escolher manualmente.','#f59e0b',true);
+    return;
+  }
+
+  const nomesJaNaFicha = new Set(Object.values(window._fichaEditavel).flat().map(e=>(e.nome||'').toLowerCase().trim()));
+  const alternativas = (window._bancoExercicios||[]).filter(be =>
+    be.categoria===bancoInfo.categoria &&
+    be.id!==bancoInfo.id &&
+    !nomesJaNaFicha.has((be.nome||'').toLowerCase().trim())
+  );
+
+  if(!alternativas.length){
+    notif(`Não encontrei outro exercício de "${bancoInfo.categoria}" no banco que já não esteja nessa ficha. Cadastre mais opções no Banco de Exercícios.`,'#f59e0b',true);
+    return;
+  }
+
+  const escolhido = alternativas[Math.floor(Math.random()*alternativas.length)];
+  exAtual.nome = escolhido.nome;
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  notif(`🔄 Trocado por "${escolhido.nome}" (mesmo grupo: ${bancoInfo.categoria}). Busque o vídeo desse exercício pelo "📚 Do Banco" se quiser trazer a mídia também.`,'#10b981',true);
+  renderizarEditorPortalAba();
+}
+
+// Regenera só os exercícios de UM dia, mantendo os outros dias intocados —
+// útil quando o aluno pede pra mudar um treino inteiro específico.
+async function regenerarApenasEsteDia(dIdx){
+  if(!window._fichaEditavel) return;
+  const dias = Object.keys(window._fichaEditavel);
+  const nomeDia = dias[dIdx];
+  const exerciciosAtuais = window._fichaEditavel[nomeDia];
+  if(!nomeDia || !exerciciosAtuais) return;
+
+  if(!confirm(`Trocar TODOS os exercícios de "${nomeDia}" por uma nova seleção? Os outros dias não são afetados.`)) return;
+
+  if(!window._bancoExercicios){ await carregarBancoExercicios(); }
+
+  // Descobre quais grupos musculares esse dia trabalhava, olhando os exercícios atuais
+  const categoriasDoDia = [...new Set(exerciciosAtuais.map(ex=>{
+    const info = (window._bancoExercicios||[]).find(be => (be.nome||'').toLowerCase().trim() === (ex.nome||'').toLowerCase().trim());
+    return info?.categoria;
+  }).filter(Boolean))];
+
+  if(!categoriasDoDia.length){
+    notif('Não consegui identificar os grupos musculares desse dia (os exercícios não batem com o Banco). Edite manualmente ou use "📚 Do Banco" exercício por exercício.','#f59e0b',true);
+    return;
+  }
+
+  const nomesJaEmOutrosDias = new Set(Object.entries(window._fichaEditavel).filter(([d])=>d!==nomeDia).flatMap(([,exs])=>exs).map(e=>(e.nome||'').toLowerCase().trim()));
+  const novosExercicios = [];
+  categoriasDoDia.forEach(cat=>{
+    const qtdOriginal = exerciciosAtuais.filter(ex=>{
+      const info = (window._bancoExercicios||[]).find(be => (be.nome||'').toLowerCase().trim() === (ex.nome||'').toLowerCase().trim());
+      return info?.categoria === cat;
+    }).length;
+    const pool = (window._bancoExercicios||[]).filter(be => be.categoria===cat && !nomesJaEmOutrosDias.has((be.nome||'').toLowerCase().trim()) && !novosExercicios.some(n=>n.nome===be.nome));
+    pool.sort(()=>Math.random()-0.5).slice(0, qtdOriginal).forEach(be=>{
+      const modelo = exerciciosAtuais[0]; // reaproveita séries/reps/descanso/rir já configurados nesse dia
+      novosExercicios.push({ nome: be.nome, series: modelo.series, reps: modelo.reps, descanso: modelo.descanso, rir: modelo.rir, obs: '' });
+    });
+  });
+
+  if(!novosExercicios.length){
+    notif('Não encontrei exercícios alternativos suficientes no banco pros grupos musculares desse dia.','#f59e0b',true);
+    return;
+  }
+
+  window._fichaEditavel[nomeDia] = novosExercicios;
+  window._fichaTemAlteracoesNaoPublicadas = true;
+  notif(`🔄 "${nomeDia}" regenerado com ${novosExercicios.length} exercício(s) novo(s)! Busque os vídeos pelo "📚 Do Banco" se quiser trazer a mídia. Revise e publique.`,'#10b981',true);
   renderizarEditorPortalAba();
 }
 
@@ -7729,9 +7971,25 @@ async function gerarRotinaAlimentarBase(){
       !naoComeItens.some(item => (a.nome||'').toLowerCase().includes(item))
     );
   }
-  function sorteiaUm(cat){
+  function sorteiaUm(cat, preferenciaTexto){
     const pool = poolCategoria(cat);
     if(!pool.length) return null;
+    // Se o aluno mencionou uma preferência pra essa refeição, tenta achar no
+    // banco um alimento dessa categoria que bata com o que ele citou, antes
+    // de cair no sorteio aleatório — assim a rotina reflete o gosto dele.
+    // Extrai palavras individuais da frase livre (não só itens separados por
+    // vírgula), ignorando palavras muito curtas/comuns que não ajudam a identificar o alimento.
+    if(preferenciaTexto){
+      const PALAVRAS_IGNORAR = new Set(['de','da','do','das','dos','e','ou','com','sem','gosto','gosta','curto','curte','manhã','tarde','noite','muito','pouco','mais','menos','um','uma','uns','umas','no','na','nos','nas','pra','para','o','a']);
+      const palavras = preferenciaTexto.toLowerCase()
+        .split(/[^a-zà-úçã-õ0-9]+/i)
+        .map(s=>s.trim())
+        .filter(s => s.length>2 && !PALAVRAS_IGNORAR.has(s));
+      for(const palavra of palavras){
+        const encontrado = pool.find(a => (a.nome||'').toLowerCase().includes(palavra));
+        if(encontrado) return encontrado;
+      }
+    }
     return pool[Math.floor(Math.random()*pool.length)];
   }
   function paraItem(alimento){
@@ -7760,11 +8018,22 @@ async function gerarRotinaAlimentarBase(){
     {nome:'Suplementação', horario:'Pós-treino', pct:0.06, categorias:['Suplementos']},
   ];
 
+  // Mapeia cada refeição pro campo de preferência correspondente na anamnese
+  const CAMPO_PREFERENCIA_POR_REFEICAO = {
+    'Café da Manhã': 'nu-pref-cafe', 'Lanche da Manhã': 'nu-pref-lanchemanha',
+    'Almoço': 'nu-pref-almoco', 'Lanche da Tarde': 'nu-pref-lanchetarde',
+    'Jantar': 'nu-pref-jantar', 'Ceia': 'nu-pref-ceia',
+  };
+  let algumaPreferenciaUsada = false;
+
   function gerarUmDia(){
     return estrutura.map(ref => {
       const ehSuplemento = ref.nome === 'Suplementação';
+      const campoPref = CAMPO_PREFERENCIA_POR_REFEICAO[ref.nome];
+      const preferenciaTexto = campoPref ? (MOTOR_D?.nutricao?.[campoPref]||'') : '';
+      if(preferenciaTexto) algumaPreferenciaUsada = true;
       const alimentosEscolhidos = ref.categorias
-        .map(cat => sorteiaUm(cat))
+        .map(cat => sorteiaUm(cat, preferenciaTexto))
         .filter(Boolean)
         .map(paraItem);
       if(!alimentosEscolhidos.length) alimentosEscolhidos.push({ item:'', quantidade:'', calorias:'', substituicao:'' });
@@ -7789,7 +8058,8 @@ async function gerarRotinaAlimentarBase(){
   const nomesRestricao = { vegano:'vegano', vegetariano:'vegetariano', sem_gluten:'sem glúten', sem_lactose:'sem lactose', baixo_sodio:'baixo sódio' };
   const restricoesTexto = restricoes.length ? ` Restrições detectadas na anamnese: ${restricoes.map(r=>nomesRestricao[r]||r).join(', ')}.` : '';
   const naoComeTextoAviso = naoComeItens.length ? ` Excluído por "não como": ${naoComeItens.join(', ')}.` : '';
-  notif(`✅ Rotina gerada pra semana inteira, com base na anamnese atualizada! Meta: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura).${restricoesTexto}${naoComeTextoAviso}${avisoBanco} Revise e ajuste cada dia pelas abas acima.`,'#10b981',true);
+  const preferenciaTextoAviso = algumaPreferenciaUsada ? ' Preferências alimentares da anamnese foram consideradas onde havia alimento compatível no banco.' : '';
+  notif(`✅ Rotina gerada pra semana inteira, com base na anamnese atualizada! Meta: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura).${restricoesTexto}${naoComeTextoAviso}${preferenciaTextoAviso}${avisoBanco} Revise e ajuste cada dia pelas abas acima.`,'#10b981',true);
   renderRotinaAlimentar();
 }
 
