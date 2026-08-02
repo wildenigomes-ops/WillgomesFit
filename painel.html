@@ -3576,6 +3576,13 @@ async function publicarNoPortal(){
   if(!c.email){ notif('Cliente sem e-mail cadastrado','#ef4444',true); return; }
   if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
 
+  // Checagem preventiva: se o total de vídeos/GIFs estiver muito grande, a publicação
+  // pode dar timeout no banco de dados. Avisa antes de tentar, em vez de só falhar.
+  const tamanhoTotalMB = Object.values(gifCache).reduce((s,v)=>s+(v?.length||0),0) / 1024 / 1024 * 0.75; // base64 ~33% maior que o arquivo real
+  if(tamanhoTotalMB > 15){
+    if(!confirm(`Essa ficha tem ${Object.keys(gifCache).length} vídeo(s)/GIF(s) somando ~${Math.round(tamanhoTotalMB)}MB. Isso pode causar erro de timeout ao publicar. Quer tentar mesmo assim?`)) return;
+  }
+
   notif('⏳ Publicando ficha no portal...','#8b5cf6');
 
   try{
@@ -3602,14 +3609,11 @@ async function publicarNoPortal(){
 
     const nomeCliente = c.nome || c.email;
     const hoje = new Date().toLocaleDateString('pt-BR');
-    const portalAluno = await SB.from('portal_alunos').select('user_id').eq('email', c.email).limit(1);
-    const userId = portalAluno.data?.[0]?.user_id || null;
 
     console.log('[publicarNoPortal] publicando pra', c.email, '| dias:', Object.keys(treinoJson).filter(k=>k!=='_notas'), '| gifs:', Object.keys(gifCache).length);
 
     const { data: dataSalva, error } = await SB.from('portal_fichas').upsert({
       email: c.email,
-      user_id: userId,
       titulo: `Ficha de Treino — ${nomeCliente}`,
       resumo: `Treino personalizado para ${nomeCliente} · Gerado em ${hoje}`,
       treino_json: treinoJson,
@@ -3619,7 +3623,14 @@ async function publicarNoPortal(){
       publicado_por: 'Prof. Will Gomes'
     }, { onConflict: 'email' }).select();
 
-    if(error){ notif('Erro ao publicar: '+error.message,'#ef4444',true); console.error('publicarNoPortal:', error); return; }
+    if(error){
+      const msgAmigavel = error.code==='57014'
+        ? `A publicação demorou demais e foi cancelada pelo banco de dados — provavelmente porque tem vídeos grandes demais nessa ficha (você tem ${Object.keys(gifCache).length} vídeo/GIF anexados). Tente: 1) usar vídeos mais curtos/comprimidos, ou 2) publicar, esperar 1 minuto e tentar de novo (às vezes uma segunda tentativa passa). Se persistir, me avise.`
+        : 'Erro ao publicar: '+error.message;
+      notif(msgAmigavel,'#ef4444',true);
+      console.error('publicarNoPortal:', error);
+      return;
+    }
 
     // Verificação de verdade: confirma que a ficha realmente voltou do banco com o
     // conteúdo esperado, em vez de só confiar que "sem erro" significa "salvou".
@@ -4982,11 +4993,12 @@ function renderSeletorBancoLista(lista){
     const midiaCarregada = window._bancoExMidiaPreview?.[ex.id];
     const midia = midiaCarregada
       ? midiaTag(midiaCarregada, 'width:100%;height:80px;object-fit:cover;border-radius:8px 8px 0 0', '')
-      : `<div style="width:100%;height:80px;background:rgba(255,255,255,.04);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#555;font-size:1.3rem">🎬</div>`;
-    return `<div onclick="${handler}('${ex.id}')" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s;position:relative" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
-      <div style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);border-radius:20px;padding:2px 6px;font-size:.62rem">${generoBadge[ex.genero]||'⚪'}</div>
+      : `<div style="width:100%;height:80px;background:rgba(255,255,255,.05);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#555;font-size:1.5rem" title="Toque pra ver o vídeo depois de adicionar">🎬</div>`;
+    return `<div onclick="${handler}('${ex.id}')" style="cursor:pointer;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s;position:relative;min-height:110px" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,.7);border-radius:20px;padding:2px 6px;font-size:.7rem">${generoBadge[ex.genero]||'⚪'}</div>
       ${midia}
-      <div style="padding:7px 8px;font-size:.72rem;color:#fff;font-weight:600;line-height:1.3">${escHtml(ex.nome)}</div>
+      <div style="padding:9px 10px;font-size:.85rem;color:#fff;font-weight:700;line-height:1.35;word-break:break-word">${escHtml(ex.nome)}</div>
+      ${ex.categoria ? `<div style="padding:0 10px 8px;font-size:.68rem;color:#999">${escHtml(ex.categoria)}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -7294,7 +7306,14 @@ async function publicarNutricaoPortal(){
       publicado_por: 'Prof. Will Gomes'
     }, { onConflict: 'email', ignoreDuplicates: false }).select();
 
-    if(error){ notif('Erro ao publicar: '+error.message,'#ef4444',true); console.error('publicarNutricaoPortal:', error); return; }
+    if(error){
+      const msgAmigavel = error.code==='57014'
+        ? 'A publicação demorou demais e foi cancelada pelo banco de dados. Tente publicar de novo em cerca de 1 minuto. Se persistir, me avise.'
+        : 'Erro ao publicar: '+error.message;
+      notif(msgAmigavel,'#ef4444',true);
+      console.error('publicarNutricaoPortal:', error);
+      return;
+    }
 
     // Verificação de verdade: confirma que voltou do banco com o conteúdo esperado
     console.log('[publicarNutricaoPortal] resposta do Supabase:', dataSalva);
@@ -7751,10 +7770,8 @@ async function salvarLinhaProgresso(idx){
   } else {
     // registro manual ainda não salvo no banco
     const c = clienteAtual;
-    const { data: portalAluno } = await SB.from('portal_alunos').select('user_id').eq('email', c.email).limit(1);
     const { data, error } = await SB.from('portal_progresso').insert({
       email: c.email,
-      user_id: portalAluno?.[0]?.user_id || null,
       ...payload,
       criado_em: row.criado_em || new Date().toISOString()
     }).select();
