@@ -7416,10 +7416,45 @@ async function carregarNutriPortalAba(c){
 
 // ── ROTINA ALIMENTAR ESTRUTURADA (refeições, alimentos, calorias, substituições) ──
 
+// Busca a anamnese mais recente do cliente direto do Supabase e sincroniza o
+// MOTOR_D com ela — garante que a geração de rotina nunca usa dados de outro
+// cliente (por engano) nem uma versão desatualizada, mesmo se você tiver acabado
+// de editar a anamnese manualmente.
+async function sincronizarMotorComCliente(c){
+  if(!SB || !c?.email) return false;
+  try{
+    const { data } = await SB.from('questionarios').select('dados').eq('email', c.email).order('ts',{ascending:false}).limit(1);
+    const q = data?.[0]?.dados;
+    if(!q) return false;
+    c._questionario = q; // mantém o cache do cliente também atualizado
+    const cidx = clientes.findIndex(x=>x.id===c.id);
+    if(cidx>=0) clientes[cidx]._questionario = q;
+
+    MOTOR_D.cliente = {
+      'c-nome': c.nome||'—', 'c-email': c.email||'—', 'c-tel': c.whatsapp||'—',
+      'c-sexo': c.sexo||(q.cliente&&q.cliente['c-sexo'])||'—',
+      'c-nasc': q.cliente&&q.cliente['c-nasc']||'',
+      ...(q.cliente||{})
+    };
+    MOTOR_D.anamnese = q.anamnese || {};
+    MOTOR_D.nutricao = q.nutricao || {};
+    return true;
+  }catch(e){
+    console.warn('sincronizarMotorComCliente:', e);
+    return false;
+  }
+}
+
 async function gerarRotinaAlimentarBase(){
   const c = clienteAtual;
   if(!c){ notif('Selecione um cliente primeiro','#ef4444',true); return; }
-  if(!c._questionario){
+
+  // SEMPRE busca a anamnese mais atual antes de gerar — nunca confia em dados
+  // que possam ser de outro cliente ou de uma edição anterior à mais recente.
+  notif('⏳ Verificando anamnese atualizada...','#3b82f6');
+  const sincronizou = await sincronizarMotorComCliente(c);
+
+  if(!sincronizou && !c._questionario){
     notif('Este cliente ainda não respondeu o questionário — as metas de calorias não podem ser calculadas. Você ainda pode montar a rotina manualmente com "+ Adicionar refeição".','#f59e0b',true);
     return;
   }
@@ -7436,16 +7471,27 @@ async function gerarRotinaAlimentarBase(){
   if(!window._bancoAlimentos){ await carregarBancoAlimentos(); }
   const banco = window._bancoAlimentos || [];
 
-  // Detecta restrições mencionadas na anamnese, pra já filtrar alimentos compatíveis
+  // Detecta restrições mencionadas na anamnese ATUALIZADA — cobre mais variações
+  // de escrita e também nomes de alimentos específicos citados em "não como".
   const restricaoTexto = ((MOTOR_D?.nutricao?.['nu-rest']||'') + ' ' + (MOTOR_D?.nutricao?.['nu-nao']||'')).toLowerCase();
   const restricoes = [];
-  if(restricaoTexto.includes('vegan')) restricoes.push('vegano');
-  else if(restricaoTexto.includes('vegetarian')) restricoes.push('vegetariano');
-  if(restricaoTexto.includes('glúten')||restricaoTexto.includes('gluten')||restricaoTexto.includes('celíac')) restricoes.push('sem_gluten');
-  if(restricaoTexto.includes('lactose')||restricaoTexto.includes('leite')) restricoes.push('sem_lactose');
+  if(/vegan/.test(restricaoTexto)) restricoes.push('vegano');
+  else if(/vegetarian/.test(restricaoTexto)) restricoes.push('vegetariano');
+  if(/gl[uú]ten|cel[ií]ac/.test(restricaoTexto)) restricoes.push('sem_gluten');
+  if(/lactose|leite|latic[íi]nio/.test(restricaoTexto)) restricoes.push('sem_lactose');
+  if(/s[óo]dio|press[ãa]o|hipertens/.test(restricaoTexto)) restricoes.push('baixo_sodio');
+
+  // Alimentos específicos que o aluno disse que não come (nome, não categoria) —
+  // exclui pelo nome mesmo que não tenham uma tag de restrição cadastrada.
+  const naoComeTexto = (MOTOR_D?.nutricao?.['nu-nao']||'').toLowerCase();
+  const naoComeItens = naoComeTexto.split(/[,;]/).map(s=>s.trim()).filter(s=>s.length>2);
 
   function poolCategoria(cat){
-    return banco.filter(a => a.categoria===cat && restricoes.every(r=>(a.tags||[]).includes(r)));
+    return banco.filter(a =>
+      a.categoria===cat &&
+      restricoes.every(r=>(a.tags||[]).includes(r)) &&
+      !naoComeItens.some(item => (a.nome||'').toLowerCase().includes(item))
+    );
   }
   function sorteiaUm(cat){
     const pool = poolCategoria(cat);
@@ -7486,7 +7532,10 @@ async function gerarRotinaAlimentarBase(){
   });
 
   const avisoBanco = banco.length < 10 ? ' ⚠️ Seu Banco de Alimentos tem poucos itens ainda — considere clicar em "🌱 Popular com alimentos padrão" pra ter mais opções.' : '';
-  notif(`✅ Rotina gerada com alimentos do banco! Meta: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura).${avisoBanco} Revise e ajuste as quantidades.`,'#10b981');
+  const nomesRestricao = { vegano:'vegano', vegetariano:'vegetariano', sem_gluten:'sem glúten', sem_lactose:'sem lactose', baixo_sodio:'baixo sódio' };
+  const restricoesTexto = restricoes.length ? ` Restrições detectadas na anamnese: ${restricoes.map(r=>nomesRestricao[r]||r).join(', ')}.` : '';
+  const naoComeTextoAviso = naoComeItens.length ? ` Excluído por "não como": ${naoComeItens.join(', ')}.` : '';
+  notif(`✅ Rotina gerada com base na anamnese atualizada! Meta: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura).${restricoesTexto}${naoComeTextoAviso}${avisoBanco} Revise e ajuste as quantidades.`,'#10b981',true);
   renderRotinaAlimentar();
 }
 
