@@ -6785,7 +6785,13 @@ async function resetarSenhaPortal(){
   if(!SB || !clienteAtual) return;
   const c = clienteAtual;
   const novaSenha = gerarSenhaAleatoria();
-  await SB.from('portal_alunos').update({ senha_temp: novaSenha, senha_redefinida: false }).eq('email', c.email);
+  const { error } = await SB.from('portal_alunos').update({
+    senha_temp: novaSenha,
+    senha_custom: null,       // apaga a senha que o aluno tinha definido, senão ela continua valendo
+    senha_redefinida: false
+  }).eq('email', c.email);
+
+  if(error){ notif('Erro ao resetar: '+error.message,'#ef4444',true); console.error('resetarSenhaPortal:', error); return; }
 
   notif(`🔑 Nova senha: ${novaSenha}`, '#f59e0b', true);
   await carregarStatusPortal();
