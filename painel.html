@@ -3097,7 +3097,16 @@ async function renderizarEditorPortalAba(){
           if(error) console.warn('[renderizarEditorPortalAba] erro ao buscar ficha:', error);
           if(data?.[0]?.treino_json){
             const tj = data[0].treino_json;
-            if(data[0].gifs) Object.assign(gifCache, data[0].gifs);
+            if(data[0].gifs) Object.assign(gifCache, data[0].gifs); // retrocompatibilidade com fichas antigas
+            // Vídeos ficam numa tabela própria agora — cada um é uma linha, então
+            // publicar só precisa reenviar o que mudou, não tudo de novo.
+            try{
+              const { data: midias, error: erroMidias } = await SB.from('portal_ficha_midias')
+                .select('gif_key,midia').eq('email', clienteAtual.email);
+              if(!erroMidias && midias){
+                midias.forEach(m => { gifCache[m.gif_key] = m.midia; });
+              }
+            }catch(e){ console.warn('[renderizarEditorPortalAba] erro ao buscar mídias:', e); }
             exerciciosPorDia = {};
             Object.entries(tj).forEach(([k,v])=>{
               if(k!=='_notas' && Array.isArray(v)) exerciciosPorDia[k] = v;
@@ -3206,6 +3215,7 @@ async function buscarMidiasEmLotePosGeracao(exerciciosPorDia){
       const gifKey = 'gif__'+encodeURIComponent((row.nome||'').toLowerCase().trim());
       if(!gifCache[gifKey]){
         gifCache[gifKey] = row.midia;
+        marcarGifModificado(gifKey);
         algumaMidiaNova = true;
       }
       if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
@@ -3458,6 +3468,22 @@ function removerCombinadoExercicio(dIdx, eIdx){
   renderizarEditorPortalAba();
 }
 
+// ── RASTREAMENTO DE VÍDEOS MODIFICADOS (pra publicação incremental) ──────────
+// Em vez de reenviar TODOS os vídeos toda vez que publica, só envia os que
+// realmente mudaram nesta sessão de edição — os outros continuam como estão.
+function marcarGifModificado(gifKey){
+  if(!window._gifsModificados) window._gifsModificados = new Set();
+  if(!window._gifsRemovidos) window._gifsRemovidos = new Set();
+  window._gifsModificados.add(gifKey);
+  window._gifsRemovidos.delete(gifKey);
+}
+function marcarGifRemovido(gifKey){
+  if(!window._gifsModificados) window._gifsModificados = new Set();
+  if(!window._gifsRemovidos) window._gifsRemovidos = new Set();
+  window._gifsRemovidos.add(gifKey);
+  window._gifsModificados.delete(gifKey);
+}
+
 function anexarGifCombinado(input, gifKey, dIdx, eIdx){
   const file = input.files[0];
   if(!file) return;
@@ -3466,6 +3492,7 @@ function anexarGifCombinado(input, gifKey, dIdx, eIdx){
   const reader = new FileReader();
   reader.onload = e => {
     gifCache[gifKey] = e.target.result;
+    marcarGifModificado(gifKey);
     window._fichaTemAlteracoesNaoPublicadas = true;
     notif('✅ Vídeo do exercício combinado anexado!','#10b981');
     renderizarEditorPortalAba();
@@ -3475,6 +3502,7 @@ function anexarGifCombinado(input, gifKey, dIdx, eIdx){
 
 function removerGifCombinado(gifKey, dIdx, eIdx){
   delete gifCache[gifKey];
+  marcarGifRemovido(gifKey);
   window._fichaTemAlteracoesNaoPublicadas = true;
   notif('Vídeo do exercício combinado removido. ⚠️ Lembre de publicar pra confirmar.','#f59e0b',true);
   renderizarEditorPortalAba();
@@ -3521,6 +3549,7 @@ function anexarGifEx(input, gifKey, dIdx, eIdx){
   const reader = new FileReader();
   reader.onload = e => {
     gifCache[gifKey] = e.target.result;
+    marcarGifModificado(gifKey);
     window._fichaTemAlteracoesNaoPublicadas = true;
     notif('✅ Arquivo anexado!','#10b981');
     renderizarEditorPortalAba();
@@ -3530,6 +3559,7 @@ function anexarGifEx(input, gifKey, dIdx, eIdx){
 
 function removerGifEx(gifKey, dIdx, eIdx){
   delete gifCache[gifKey];
+  marcarGifRemovido(gifKey);
   window._fichaTemAlteracoesNaoPublicadas = true;
   notif('🗑 Vídeo/GIF removido da edição. ⚠️ Clique em "🚀 Publicar ficha atual" pra confirmar — se você sair sem publicar, a versão antiga continua salva e vai voltar a aparecer.','#f59e0b',true);
   renderizarEditorPortalAba();
@@ -3576,11 +3606,15 @@ async function publicarNoPortal(){
   if(!c.email){ notif('Cliente sem e-mail cadastrado','#ef4444',true); return; }
   if(!SB){ notif('Supabase não conectado','#ef4444',true); return; }
 
-  // Checagem preventiva: se o total de vídeos/GIFs estiver muito grande, a publicação
-  // pode dar timeout no banco de dados. Avisa antes de tentar, em vez de só falhar.
-  const tamanhoTotalMB = Object.values(gifCache).reduce((s,v)=>s+(v?.length||0),0) / 1024 / 1024 * 0.75; // base64 ~33% maior que o arquivo real
-  if(tamanhoTotalMB > 15){
-    if(!confirm(`Essa ficha tem ${Object.keys(gifCache).length} vídeo(s)/GIF(s) somando ~${Math.round(tamanhoTotalMB)}MB. Isso pode causar erro de timeout ao publicar. Quer tentar mesmo assim?`)) return;
+  const gifsModificados = window._gifsModificados || new Set();
+  const gifsRemovidos = window._gifsRemovidos || new Set();
+
+  // Checagem preventiva: agora só olha o que REALMENTE vai ser enviado (só o que
+  // mudou), não a ficha inteira — então isso só dispara se você mesmo anexou
+  // muita coisa grande de uma vez, não pelo total acumulado de publicações antigas.
+  const tamanhoModificadoMB = [...gifsModificados].reduce((s,k)=>s+((gifCache[k]?.length||0)),0) / 1024 / 1024 * 0.75;
+  if(tamanhoModificadoMB > 15){
+    if(!confirm(`Você anexou ${gifsModificados.size} vídeo(s)/GIF(s) novo(s) somando ~${Math.round(tamanhoModificadoMB)}MB nesta edição. Isso pode causar timeout. Quer tentar mesmo assim?`)) return;
   }
 
   notif('⏳ Publicando ficha no portal...','#8b5cf6');
@@ -3610,14 +3644,15 @@ async function publicarNoPortal(){
     const nomeCliente = c.nome || c.email;
     const hoje = new Date().toLocaleDateString('pt-BR');
 
-    console.log('[publicarNoPortal] publicando pra', c.email, '| dias:', Object.keys(treinoJson).filter(k=>k!=='_notas'), '| gifs:', Object.keys(gifCache).length);
+    console.log('[publicarNoPortal] publicando pra', c.email, '| dias:', Object.keys(treinoJson).filter(k=>k!=='_notas'), '| vídeos novos/mudados:', gifsModificados.size, '| removidos:', gifsRemovidos.size, '| total em cache:', Object.keys(gifCache).length);
 
+    // 1) Publica a ESTRUTURA da ficha (texto, leve, sempre rápido) — não manda
+    // mais os vídeos aqui dentro, então esse passo não trava mesmo com muito vídeo.
     const { data: dataSalva, error } = await SB.from('portal_fichas').upsert({
       email: c.email,
       titulo: `Ficha de Treino — ${nomeCliente}`,
       resumo: `Treino personalizado para ${nomeCliente} · Gerado em ${hoje}`,
       treino_json: treinoJson,
-      gifs: gifCache,
       total_gifs: Object.keys(gifCache).length,
       criado_em: new Date().toISOString(),
       publicado_por: 'Prof. Will Gomes'
@@ -3625,41 +3660,64 @@ async function publicarNoPortal(){
 
     if(error){
       const msgAmigavel = error.code==='57014'
-        ? `A publicação demorou demais e foi cancelada pelo banco de dados — provavelmente porque tem vídeos grandes demais nessa ficha (você tem ${Object.keys(gifCache).length} vídeo/GIF anexados). Tente: 1) usar vídeos mais curtos/comprimidos, ou 2) publicar, esperar 1 minuto e tentar de novo (às vezes uma segunda tentativa passa). Se persistir, me avise.`
+        ? 'A publicação da ficha demorou demais e foi cancelada. Tente de novo em 1 minuto — se persistir, me avise.'
         : 'Erro ao publicar: '+error.message;
       notif(msgAmigavel,'#ef4444',true);
       console.error('publicarNoPortal:', error);
       return;
     }
-
-    // Verificação de verdade: confirma que a ficha realmente voltou do banco com o
-    // conteúdo esperado, em vez de só confiar que "sem erro" significa "salvou".
-    console.log('[publicarNoPortal] resposta do Supabase após upsert:', dataSalva);
     if(!dataSalva || !dataSalva.length){
-      notif('⚠️ O Supabase não confirmou o salvamento (nenhuma linha retornada). A ficha pode NÃO ter sido publicada de verdade — tente de novo e, se persistir, verifique se a tabela portal_fichas tem uma restrição UNIQUE na coluna email.','#ef4444',true);
+      notif('⚠️ O Supabase não confirmou o salvamento da ficha. Tente de novo.','#ef4444',true);
       return;
     }
     const diasSalvos = Object.keys(dataSalva[0].treino_json||{}).filter(k=>k!=='_notas');
     const diasEsperados = Object.keys(treinoJson).filter(k=>k!=='_notas');
     if(diasSalvos.length !== diasEsperados.length){
-      notif('⚠️ A ficha foi salva, mas o conteúdo confirmado no banco é diferente do que você editou. Tente publicar de novo — se persistir, avise o suporte técnico com print desta mensagem.','#ef4444',true);
+      notif('⚠️ A ficha foi salva, mas o conteúdo confirmado é diferente do que você editou. Tente publicar de novo.','#ef4444',true);
       console.error('[publicarNoPortal] divergência: esperado', diasEsperados, 'salvo', diasSalvos);
       return;
     }
 
+    // 2) Envia só os vídeos que REALMENTE mudaram nesta edição — um de cada vez,
+    // pra um vídeo problemático não travar a publicação dos outros.
+    let falhasVideo = 0;
+    for(const gifKey of gifsModificados){
+      const midia = gifCache[gifKey];
+      if(!midia) continue;
+      try{
+        const { error: erroMidia } = await SB.from('portal_ficha_midias')
+          .upsert({ email: c.email, gif_key: gifKey, midia, atualizado_em: new Date().toISOString() }, { onConflict: 'email,gif_key' });
+        if(erroMidia){ falhasVideo++; console.error('[publicarNoPortal] falha ao salvar vídeo', gifKey, erroMidia); }
+      }catch(e){ falhasVideo++; console.error('[publicarNoPortal] erro inesperado no vídeo', gifKey, e); }
+    }
+
+    // 3) Remove os vídeos que foram excluídos nesta edição
+    for(const gifKey of gifsRemovidos){
+      try{ await SB.from('portal_ficha_midias').delete().eq('email', c.email).eq('gif_key', gifKey); }
+      catch(e){ console.warn('[publicarNoPortal] erro ao remover vídeo', gifKey, e); }
+    }
+
+    // Limpa o rastreamento — a partir daqui, esses vídeos já estão publicados
+    window._gifsModificados = new Set();
+    window._gifsRemovidos = new Set();
+
     const nGifs = Object.keys(gifCache).length;
     const statusEl = document.getElementById('portal-status-aba');
-    if(statusEl){
-      statusEl.style.display = 'block';
-    }
+    if(statusEl){ statusEl.style.display = 'block'; }
     window._fichaTemAlteracoesNaoPublicadas = false;
-    notif(`✅ Ficha publicada e confirmada no portal do aluno! ${nGifs} GIF(s) incluídos.`,'#8b5cf6');
+
+    if(falhasVideo>0){
+      notif(`⚠️ Ficha publicada, mas ${falhasVideo} vídeo(s) falharam ao salvar. Tente anexá-los de novo e publicar novamente.`,'#f59e0b',true);
+    } else {
+      notif(`✅ Ficha publicada e confirmada no portal do aluno! ${nGifs} vídeo(s)/GIF(s) no total.`,'#8b5cf6');
+    }
     carregarAbaPortal(c);
   }catch(e){
     console.error('publicarNoPortal — erro inesperado:', e);
     notif('Erro inesperado ao publicar: '+(e.message||e),'#ef4444',true);
   }
 }
+
 
 // ── GERAÇÃO AUTOMÁTICA DE ACESSO AO PORTAL NO CADASTRO ───────────────────────
 // ── CARREGAR ABA PORTAL QUANDO CLICADA ───────────────────────────────────────
@@ -5046,6 +5104,7 @@ async function lancarExercicioDoBanco(exId){
   if(midiaJaEmCache){
     const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
     gifCache[gifKey] = midiaJaEmCache;
+    marcarGifModificado(gifKey);
     renderizarEditorPortalAba();
     return;
   }
@@ -5055,6 +5114,7 @@ async function lancarExercicioDoBanco(exId){
     if(!error && data?.midia){
       const gifKey = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
       gifCache[gifKey] = data.midia;
+      marcarGifModificado(gifKey);
       if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
       window._bancoExMidiaPreview[exId] = data.midia;
       renderizarEditorPortalAba();
@@ -5082,6 +5142,7 @@ async function selecionarExercicioBancoParaCombinado(exId){
   const gifKey2 = 'gif__'+encodeURIComponent((ex.nome||'').toLowerCase().trim());
   if(midiaJaEmCache){
     gifCache[gifKey2] = midiaJaEmCache;
+    marcarGifModificado(gifKey2);
     renderizarEditorPortalAba();
     return;
   }
@@ -5090,6 +5151,7 @@ async function selecionarExercicioBancoParaCombinado(exId){
     const { data, error } = await SB.from('banco_exercicios').select('midia').eq('id', exId).single();
     if(!error && data?.midia){
       gifCache[gifKey2] = data.midia;
+      marcarGifModificado(gifKey2);
       if(!window._bancoExMidiaPreview) window._bancoExMidiaPreview = {};
       window._bancoExMidiaPreview[exId] = data.midia;
       renderizarEditorPortalAba();
