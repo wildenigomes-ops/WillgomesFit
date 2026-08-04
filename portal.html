@@ -188,7 +188,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;p
 #modo-treino.ativo{display:flex}
 
 /* HEADER DO MODO TREINO */
-.mt-header{background:#0d0d0d;border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mt-header{background:#0d0d0d;border-bottom:1px solid var(--border);padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .mt-logo{font-family:var(--font-d);font-size:1.1rem;letter-spacing:2px;color:var(--orange)}
 .mt-fechar{background:rgba(255,255,255,.08);border:1px solid var(--border);color:#aaa;padding:7px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer}
 
@@ -247,7 +247,7 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;p
 .mt-btn-serie:disabled{background:rgba(255,255,255,.08);color:#555;box-shadow:none;cursor:default}
 
 /* NAVEGAÇÃO ENTRE EXERCÍCIOS */
-.mt-nav{display:flex;gap:10px;padding:0 20px 20px}
+.mt-nav{display:flex;gap:10px;padding:0 20px calc(20px + env(safe-area-inset-bottom))}
 .mt-nav-btn{flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);color:#aaa;padding:12px;border-radius:12px;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s}
 .mt-nav-btn:hover{border-color:var(--orange);color:#fff}
 .mt-nav-btn.proximo{background:rgba(232,93,4,.1);border-color:rgba(232,93,4,.3);color:var(--orange)}
@@ -2316,6 +2316,12 @@ async function carregarConquistas(){
 }
 
 function fecharModoTreino(){
+  // Só pede confirmação se o aluno já tiver feito alguma série ou avançado de
+  // exercício — evita perder progresso por engano, mas não incomoda se ele só
+  // abriu e mudou de ideia sem fazer nada ainda.
+  const temProgresso = treinoAtivo && (treinoAtivo.seriesFeitas>0 || treinoAtivo.exIdx>0 || Object.keys(treinoAtivo.cargasDigitadas||{}).length>0);
+  if(temProgresso && !confirm('Você já registrou progresso nesse treino. Se sair agora, esse progresso desta sessão não fica salvo. Sair mesmo assim?')) return;
+
   clearInterval(timerDescanso);
   treinoAtivo = null;
   document.getElementById('modo-treino').classList.remove('ativo');
@@ -3408,6 +3414,7 @@ function abrirAguaPersonalizada(){
 
 async function removerAgua(id){
   if(!SB) return;
+  if(!confirm('Remover esse registro de água?')) return;
   try{
     const { error } = await SB.from('portal_agua').delete().eq('id', id);
     if(error){ notif('Erro ao remover: '+error.message,'#ef4444',true); return; }
@@ -3727,6 +3734,7 @@ function renderDiarioAlimentar(){
 
 async function removerItemDiario(id){
   if(!SB) return;
+  if(!confirm('Remover esse item do diário alimentar?')) return;
   try{
     const { error } = await SB.from('portal_diario_alimentar').delete().eq('id', id);
     if(error){ notif('Erro ao remover: '+error.message,'#ef4444',true); return; }
