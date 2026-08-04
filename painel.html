@@ -8060,15 +8060,37 @@ async function gerarRotinaAlimentarBase(){
   const naoComeTexto = (MOTOR_D?.nutricao?.['nu-nao']||'').toLowerCase();
   const naoComeItens = naoComeTexto.split(/[,;]/).map(s=>s.trim()).filter(s=>s.length>2);
 
-  function poolCategoria(cat){
-    return banco.filter(a =>
+  // Nem toda proteína/cereal faz sentido em qualquer refeição — feijão e carne
+  // bovina são normais no almoço/jantar, mas não fazem sentido no café da manhã
+  // pra realidade brasileira. Essas listas filtram o que é coerente em cada caso.
+  const REFEICOES_PRINCIPAIS = new Set(['Almoço','Jantar']);
+  const PROTEINAS_LEVES_PALAVRAS = ['ovo','iogurte','queijo','whey','peito de peru','presunto','requeijão','ricota','cottage','leite','queijo cottage','queijo minas','queijo branco'];
+  const CEREAIS_LEVES_PALAVRAS = ['pão','tapioca','aveia','cuscuz','granola','torrada','biscoito integral'];
+
+  function ehApropriadoParaRefeicao(alimento, cat, nomeRefeicao){
+    if(REFEICOES_PRINCIPAIS.has(nomeRefeicao)) return true; // almoço/jantar aceita qualquer coisa da categoria
+    const nome = (alimento.nome||'').toLowerCase();
+    if(cat==='Proteinas') return PROTEINAS_LEVES_PALAVRAS.some(p=>nome.includes(p));
+    if(cat==='Cereais') return CEREAIS_LEVES_PALAVRAS.some(p=>nome.includes(p)) || nome.includes('fruta'); // cereal sem bater com a lista ainda pode passar se for leve por natureza
+    return true; // outras categorias (Frutas, Laticinios, Vegetais, Suplementos) não têm essa restrição
+  }
+
+  function poolCategoria(cat, nomeRefeicao){
+    let pool = banco.filter(a =>
       a.categoria===cat &&
       restricoes.every(r=>(a.tags||[]).includes(r)) &&
       !naoComeItens.some(item => (a.nome||'').toLowerCase().includes(item))
     );
+    if(nomeRefeicao){
+      const filtrado = pool.filter(a => ehApropriadoParaRefeicao(a, cat, nomeRefeicao));
+      // Só aplica o filtro se sobrar opção — melhor mostrar algo "meio certo" do
+      // que não gerar nada nessa refeição por falta de itens leves cadastrados.
+      if(filtrado.length) pool = filtrado;
+    }
+    return pool;
   }
-  function sorteiaUm(cat, preferenciaTexto){
-    const pool = poolCategoria(cat);
+  function sorteiaUm(cat, preferenciaTexto, nomeRefeicao){
+    const pool = poolCategoria(cat, nomeRefeicao);
     if(!pool.length) return null;
     // Se o aluno mencionou uma preferência pra essa refeição, tenta achar no
     // banco um alimento dessa categoria que bata com o que ele citou, antes
@@ -8129,7 +8151,7 @@ async function gerarRotinaAlimentarBase(){
       const preferenciaTexto = campoPref ? (MOTOR_D?.nutricao?.[campoPref]||'') : '';
       if(preferenciaTexto) algumaPreferenciaUsada = true;
       const alimentosEscolhidos = ref.categorias
-        .map(cat => sorteiaUm(cat, preferenciaTexto))
+        .map(cat => sorteiaUm(cat, preferenciaTexto, ref.nome))
         .filter(Boolean)
         .map(paraItem);
       if(!alimentosEscolhidos.length) alimentosEscolhidos.push({ item:'', quantidade:'', calorias:'', substituicao:'' });
