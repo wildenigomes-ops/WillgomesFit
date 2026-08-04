@@ -561,6 +561,7 @@ select option,select optgroup{background:#1a1a1a;color:#fff}
           <button class="btn btn-orange" onclick="abrirNovoAlimentoBanco()" style="font-size:.8rem;padding:8px 16px">+ Novo Alimento</button>
         </div>
       </div>
+      <div id="aviso-alimentos-pendentes" style="display:none"></div>
       <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px">Cadastre alimentos com valores nutricionais reais (baseados na Tabela TACO/UNICAMP) e marque as restrições que cada um respeita. Ao montar a rotina alimentar de um aluno, o sistema já filtra pelas restrições da anamnese dele.</p>
 
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
@@ -2436,18 +2437,25 @@ function prescreverTreino(){
   const nu  = MOTOR_D.nutricao || {};
   const cl  = MOTOR_D.cliente  || {};
 
+  // Alguns campos da anamnese podem vir como lista (checkbox de múltipla escolha)
+  // em vez de texto simples — essa função normaliza os dois casos antes de usar.
+  const paraTextoMinusculo = (valor, padrao='') => {
+    if(Array.isArray(valor)) return valor.join(',').toLowerCase();
+    return String(valor || padrao).toLowerCase();
+  };
+
   const nivel  = an.nivel  || 'Iniciante';
-  const obj    = (an.objetivo || []).join(',').toLowerCase();
-  const equip  = (an['an-equip'] || 'Academia completa').toLowerCase();
-  const lesoes = (an['an-lesoes'] || '').toLowerCase();
-  const dores  = (an['an-dores']  || '').toLowerCase();
+  const obj    = paraTextoMinusculo(an.objetivo);
+  const equip  = paraTextoMinusculo(an['an-equip'], 'Academia completa');
+  const lesoes = paraTextoMinusculo(an['an-lesoes']);
+  const dores  = paraTextoMinusculo(an['an-dores']);
   const dias   = parseInt(an['an-dias']) || 4;
 
   // ── SEXO — determina foco e distribuição de volume ───────────────────────
   // Evidência: mulheres têm ~67% mais fibras tipo I nos membros inferiores
   // Glúteo máximo feminino responde melhor a volume maior (Contreras et al. 2015)
   // Homens: maior potencial de hipertrofia em peitoral, ombros e braços
-  const sexoRaw = (cl['c-sexo'] || '').toLowerCase();
+  const sexoRaw = paraTextoMinusculo(cl['c-sexo']);
   const isFem   = sexoRaw.includes('fem') || sexoRaw.includes('mulher') || sexoRaw === 'f';
   const sexo    = isFem ? 'F' : 'M';
 
@@ -3793,6 +3801,7 @@ function anexarGifCombinado(input, gifKey, dIdx, eIdx){
 }
 
 function removerGifCombinado(gifKey, dIdx, eIdx){
+  if(!confirm('Remover esse vídeo/GIF do exercício combinado?')) return;
   delete gifCache[gifKey];
   marcarGifRemovido(gifKey);
   window._fichaTemAlteracoesNaoPublicadas = true;
@@ -3828,6 +3837,8 @@ function removerExercicio(dIdx, eIdx){
   if(!window._fichaEditavel) return;
   const dias = Object.keys(window._fichaEditavel);
   if(!dias[dIdx]) return;
+  const nomeEx = window._fichaEditavel[dias[dIdx]][eIdx]?.nome || 'esse exercício';
+  if(!confirm(`Remover "${nomeEx}" da ficha?`)) return;
   window._fichaEditavel[dias[dIdx]].splice(eIdx, 1);
   window._fichaTemAlteracoesNaoPublicadas = true;
   renderizarEditorPortalAba();
@@ -3933,6 +3944,7 @@ function anexarGifEx(input, gifKey, dIdx, eIdx){
 }
 
 function removerGifEx(gifKey, dIdx, eIdx){
+  if(!confirm('Remover esse vídeo/GIF do exercício?')) return;
   delete gifCache[gifKey];
   marcarGifRemovido(gifKey);
   window._fichaTemAlteracoesNaoPublicadas = true;
@@ -3969,6 +3981,7 @@ function removerYoutubeEx(dIdx, eIdx){
   const dias = Object.keys(window._fichaEditavel);
   const ex = window._fichaEditavel[dias[dIdx]]?.[eIdx];
   if(!ex) return;
+  if(!confirm('Remover o link do YouTube desse exercício?')) return;
   delete ex.youtube_url;
   window._fichaTemAlteracoesNaoPublicadas = true;
   renderizarEditorPortalAba();
@@ -4114,6 +4127,7 @@ function anexarGif(input, gifKey){
 }
 
 function removerGif(gifKey){
+  if(!confirm('Remover esse vídeo/GIF?')) return;
   delete gifCache[gifKey];
   notif('GIF removido','#f59e0b');
   renderizarFichaPainel();
@@ -4423,6 +4437,7 @@ function preverMidiaBancoExercicio(input){
 }
 
 function removerMidiaBancoExercicio(){
+  if(!confirm('Remover esse arquivo anexado?')) return;
   window._bancoExMidiaAtual = null;
   atualizarPreviewMidiaBanco();
 }
@@ -4463,6 +4478,7 @@ function preverMidia2BancoExercicio(input){
 }
 
 function removerMidia2BancoExercicio(){
+  if(!confirm('Remover esse arquivo anexado?')) return;
   window._bancoExMidia2Atual = null;
   atualizarPreviewMidia2Banco();
 }
@@ -4575,10 +4591,32 @@ async function carregarBancoAlimentos(){
     }
     window._bancoAlimentos = data || [];
     renderTabelaBancoAlimentos(window._bancoAlimentos);
+    atualizarAvisoAlimentosPendentes();
   }catch(e){
     console.error('carregarBancoAlimentos — erro inesperado:', e);
     if(tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">Erro ao carregar.</td></tr>';
   }
+}
+
+// Compara a lista de alimentos padrão que existe no código com o que já está
+// sincronizado no Supabase, e avisa claramente se há novidades pra sincronizar
+// (isso é necessário porque adicionar alimentos ao código NÃO envia nada
+// automaticamente pro banco de dados — precisa clicar em "Popular" de novo).
+function atualizarAvisoAlimentosPendentes(){
+  const el = document.getElementById('aviso-alimentos-pendentes');
+  if(!el) return;
+  const existentes = new Set((window._bancoAlimentos||[]).map(a=>(a.nome||'').toLowerCase().trim()));
+  const pendentes = ALIMENTOS_PADRAO.filter(a => !existentes.has(a.nome.toLowerCase().trim()));
+
+  if(!pendentes.length){
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'block';
+  el.innerHTML = `<div style="background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.3);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <span style="font-size:.82rem;color:#fbbf24">⚠️ Existem <strong>${pendentes.length} alimento(s)</strong> na lista padrão do sistema que ainda não estão no seu banco (ex: ${pendentes.slice(0,3).map(a=>a.nome).join(', ')}${pendentes.length>3?'...':''}).</span>
+    <button onclick="popularBancoAlimentosPadrao()" style="background:rgba(234,179,8,.2);border:1px solid rgba(234,179,8,.4);color:#fbbf24;padding:6px 14px;border-radius:6px;font-size:.76rem;font-weight:700;cursor:pointer;white-space:nowrap">🌱 Sincronizar agora</button>
+  </div>`;
 }
 
 function renderTabelaBancoAlimentos(lista){
@@ -5127,8 +5165,6 @@ const ALIMENTOS_PADRAO = [
   {nome:'Mousse de maracujá',categoria:'Outro',porcao_padrao:'100g',calorias:160,proteina:3,carboidrato:20,gordura:7,tags:['vegetariano'],substituicoes:'Gelatina'},
   {nome:'Brigadeiro',categoria:'Outro',porcao_padrao:'1 unidade (15g)',calorias:60,proteina:0.8,carboidrato:9,gordura:2.5,tags:['vegetariano'],substituicoes:'—'},
   {nome:'Doce de leite',categoria:'Outro',porcao_padrao:'1 colher sopa (20g)',calorias:65,proteina:1.4,carboidrato:11,gordura:1.7,tags:['vegetariano'],substituicoes:'—'},
-  {nome:'Café coado (sem açúcar)',categoria:'Outro',porcao_padrao:'100ml',calorias:2,proteina:0.1,carboidrato:0.3,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Chá verde'},
-  {nome:'Café com leite',categoria:'Outro',porcao_padrao:'200ml',calorias:70,proteina:3.5,carboidrato:6,gordura:3.5,tags:['vegetariano'],substituicoes:'Café coado'},
   {nome:'Chá verde',categoria:'Outro',porcao_padrao:'200ml',calorias:1,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Café'},
   {nome:'Chá mate',categoria:'Outro',porcao_padrao:'200ml',calorias:2,proteina:0,carboidrato:0.5,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Chá verde'},
   {nome:'Chá de camomila',categoria:'Outro',porcao_padrao:'200ml',calorias:1,proteina:0,carboidrato:0,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'—'},
@@ -5361,17 +5397,9 @@ const ALIMENTOS_PADRAO = [
   {nome:'Tapioca simples',categoria:'Cereais',porcao_padrao:'1 unidade média (60g)',calorias:130,proteina:0.2,carboidrato:32,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Cuscuz nordestino, pão francês'},
   {nome:'Tapioca com queijo coalho',categoria:'Cereais',porcao_padrao:'1 unidade (100g)',calorias:230,proteina:8,carboidrato:33,gordura:7,tags:['vegetariano','sem_gluten'],substituicoes:'Tapioca simples'},
   {nome:'Cuscuz nordestino',categoria:'Cereais',porcao_padrao:'100g',calorias:112,proteina:2.5,carboidrato:24,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Tapioca, arroz'},
-  {nome:'Pão de queijo',categoria:'Cereais',porcao_padrao:'2 unidades (60g)',calorias:200,proteina:4,carboidrato:20,gordura:11,tags:['vegetariano','sem_gluten'],substituicoes:'Tapioca com queijo'},
-  {nome:'Pão francês',categoria:'Cereais',porcao_padrao:'1 unidade (50g)',calorias:135,proteina:4,carboidrato:28,gordura:1,tags:['vegetariano','vegano'],substituicoes:'Pão integral, tapioca'},
   {nome:'Farofa de mandioca',categoria:'Cereais',porcao_padrao:'2 colheres sopa (30g)',calorias:110,proteina:0.6,carboidrato:14,gordura:5.5,tags:['vegetariano'],substituicoes:'Arroz branco'},
   {nome:'Macaxeira (mandioca) cozida',categoria:'Cereais',porcao_padrao:'100g',calorias:125,proteina:0.6,carboidrato:30,gordura:0.3,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Batata doce, inhame'},
   {nome:'Macaxeira frita',categoria:'Cereais',porcao_padrao:'100g',calorias:220,proteina:1.5,carboidrato:35,gordura:8,tags:['vegetariano','vegano'],substituicoes:'Macaxeira cozida'},
-  {nome:'Carne de sol grelhada',categoria:'Proteinas',porcao_padrao:'100g',calorias:220,proteina:32,carboidrato:0,gordura:9,tags:['sem_gluten','sem_lactose'],substituicoes:'Picanha, carne seca'},
-  {nome:'Charque cozido',categoria:'Proteinas',porcao_padrao:'100g',calorias:250,proteina:35,carboidrato:0,gordura:11,tags:['sem_gluten','sem_lactose'],substituicoes:'Carne de sol'},
-  {nome:'Baião de dois',categoria:'Proteinas',porcao_padrao:'150g',calorias:230,proteina:9,carboidrato:32,gordura:7,tags:['sem_gluten'],substituicoes:'Arroz com feijão'},
-  {nome:'Vatapá',categoria:'Pratos regionais',porcao_padrao:'100g',calorias:180,proteina:6,carboidrato:12,gordura:12,tags:[],substituicoes:'Moqueca'},
-  {nome:'Moqueca de peixe',categoria:'Pratos regionais',porcao_padrao:'150g',calorias:210,proteina:22,carboidrato:6,gordura:11,tags:['sem_gluten','sem_lactose'],substituicoes:'Peixe grelhado'},
-  {nome:'Acarajé',categoria:'Pratos regionais',porcao_padrao:'1 unidade (100g)',calorias:290,proteina:8,carboidrato:22,gordura:19,tags:['vegetariano'],substituicoes:'Feijão de corda'},
   {nome:'Feijoada (sem acompanhamento)',categoria:'Pratos regionais',porcao_padrao:'150g',calorias:280,proteina:18,carboidrato:14,gordura:17,tags:['sem_gluten'],substituicoes:'Feijão carioca com carne magra'},
   {nome:'Paçoca',categoria:'Doces',porcao_padrao:'1 unidade (25g)',calorias:120,proteina:3.5,carboidrato:11,gordura:7,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Amendoim torrado'},
   {nome:'Rapadura',categoria:'Doces',porcao_padrao:'1 pedaço (20g)',calorias:75,proteina:0,carboidrato:19,gordura:0,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Açúcar mascavo'},
@@ -5386,7 +5414,6 @@ const ALIMENTOS_PADRAO = [
   {nome:'Pastel de feira (carne)',categoria:'Fast food',porcao_padrao:'1 unidade (80g)',calorias:280,proteina:9,carboidrato:26,gordura:16,tags:[],substituicoes:'Coxinha'},
   {nome:'Coxinha de frango',categoria:'Fast food',porcao_padrao:'1 unidade (90g)',calorias:250,proteina:10,carboidrato:22,gordura:14,tags:[],substituicoes:'Pastel'},
   {nome:'Empada de frango/palmito',categoria:'Fast food',porcao_padrao:'1 unidade (60g)',calorias:200,proteina:5,carboidrato:18,gordura:12,tags:[],substituicoes:'Coxinha'},
-  {nome:'Polenta frita',categoria:'Cereais',porcao_padrao:'100g',calorias:190,proteina:2.5,carboidrato:24,gordura:9,tags:['vegetariano'],substituicoes:'Angu, mandioca frita'},
   {nome:'Angu (polenta mole)',categoria:'Cereais',porcao_padrao:'100g',calorias:70,proteina:1.5,carboidrato:15,gordura:0.5,tags:['vegetariano','vegano','sem_gluten','sem_lactose'],substituicoes:'Purê de batata'},
 ];
 
@@ -7507,6 +7534,7 @@ async function renovarAcessoPortal(dias){
 async function resetarSenhaPortal(){
   if(!SB || !clienteAtual) return;
   const c = clienteAtual;
+  if(!confirm(`Resetar a senha de "${c.nome||c.email}"? A senha antiga (inclusive se ele já tiver trocado) deixa de funcionar.`)) return;
   const novaSenha = gerarSenhaAleatoria();
   const { error } = await SB.from('portal_alunos').update({
     senha_temp: novaSenha,
@@ -7764,6 +7792,8 @@ function removerExercicioDemo(dIdx, eIdx){
   if(!t) return;
   const dias = Object.keys(t);
   if(!dias[dIdx]) return;
+  const nomeEx = t[dias[dIdx]][eIdx]?.nome || 'esse exercício';
+  if(!confirm(`Remover "${nomeEx}" da degustação?`)) return;
   t[dias[dIdx]].splice(eIdx, 1);
   renderizarEditorDegustacao();
 }
@@ -7783,6 +7813,7 @@ function anexarGifDemo(input, gifKey){
 }
 
 function removerGifDemo(gifKey){
+  if(!confirm('Remover esse vídeo/GIF da degustação?')) return;
   delete gifsDegustacao[gifKey];
   notif('GIF removido','#f59e0b');
   renderizarEditorDegustacao();
@@ -8155,12 +8186,18 @@ function renderRotinaAlimentar(){
 
   let totalCaloriasAlimentos = 0;
   let totalMeta = 0;
+  let totalProteina = 0, totalCarbo = 0, totalGordura = 0;
 
   let html = '';
   rotina.forEach((ref, rIdx)=>{
     const totalRefeicao = (ref.alimentos||[]).reduce((s,a)=> s + (parseFloat(a.calorias)||0), 0);
     totalCaloriasAlimentos += totalRefeicao;
     totalMeta += parseFloat(ref.metaCalorias)||0;
+    (ref.alimentos||[]).forEach(a=>{
+      totalProteina += a._proteinaCalc ?? a._baseProteina ?? 0;
+      totalCarbo += a._carboCalc ?? a._baseCarbo ?? 0;
+      totalGordura += a._gorduraCalc ?? a._baseGordura ?? 0;
+    });
 
     html += `<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">
       <div style="background:rgba(16,185,129,.1);border-bottom:2px solid #10b981;padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -8184,14 +8221,28 @@ function renderRotinaAlimentar(){
       const macrosCalc = temCalculoAuto && (al._proteinaCalc!==undefined)
         ? `<div style="font-size:.66rem;color:#666;grid-column:1/-1;margin-top:-4px">🔄 calculado pra essa quantidade: ${al._proteinaCalc}g prot · ${al._carboCalc}g carbo · ${al._gorduraCalc}g gord</div>`
         : '';
-      html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:${macrosCalc?'2px':'8px'};align-items:center;padding-bottom:${macrosCalc?'2px':'0'}">
+      const multiplicadorAtual = temCalculoAuto ? Math.round((extrairNumeroQuantidade(al.quantidade)||al._baseGramas)/al._baseGramas*4)/4 : null;
+      const campoQuantidade = temCalculoAuto
+        ? `<div style="display:flex;align-items:center;gap:3px;flex:1;min-width:150px">
+            <button onclick="ajustarPorcaoAlimento(${rIdx},${aIdx},-0.25)" title="Diminuir porção" style="background:rgba(255,255,255,.06);border:1px solid var(--border);color:#fff;width:24px;height:26px;border-radius:5px;font-size:.85rem;cursor:pointer;flex-shrink:0">−</button>
+            <div style="flex:1;text-align:center;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);border-radius:5px;padding:5px 4px" title="Porção base do banco: ${al._baseGramas}${(al.quantidade||'').replace(/^[\d.,]+/,'')}">
+              <div style="font-size:.7rem;color:#34d399;font-weight:700;line-height:1.1">${multiplicadorAtual}x porção</div>
+              <div style="font-size:.62rem;color:#888;line-height:1.1">${escHtml(al.quantidade)}</div>
+            </div>
+            <button onclick="ajustarPorcaoAlimento(${rIdx},${aIdx},0.25)" title="Aumentar porção" style="background:rgba(255,255,255,.06);border:1px solid var(--border);color:#fff;width:24px;height:26px;border-radius:5px;font-size:.85rem;cursor:pointer;flex-shrink:0">+</button>
+          </div>`
+        : `<input type="text" value="${escHtml(al.quantidade)}" placeholder="Qtd (ex: 100g)"
+            onchange="atualizarAlimentoCampo(${rIdx},${aIdx},'quantidade',this.value)"
+            style="flex:1;min-width:80px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:#fff;font-size:.78rem;font-family:var(--font-b)"/>`;
+      html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:${macrosCalc?'2px':'8px'};align-items:center;padding-bottom:${macrosCalc?'2px':'0'}"
+          draggable="true" ondragstart="iniciarArrastoAlimento(event,${rIdx},${aIdx})" ondragover="permitirArrasto(event)"
+          ondrop="soltarAlimento(event,${rIdx},${aIdx})" ondragend="finalizarArrasto(event)" ondragenter="marcarAlvoArrastoEx(event,this)" ondragleave="desmarcarAlvoArrastoEx(event,this)">
+        <span style="cursor:grab;color:#555;font-size:.9rem;user-select:none;flex-shrink:0" title="Arraste pra reordenar dentro da refeição">⠿</span>
         <input type="text" value="${escHtml(al.item)}" placeholder="Alimento (ex: Arroz integral)"
           onchange="atualizarAlimentoCampo(${rIdx},${aIdx},'item',this.value)"
           style="flex:2;min-width:140px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:#fff;font-size:.78rem;font-family:var(--font-b)"/>
-        <input type="text" value="${escHtml(al.quantidade)}" placeholder="Qtd (ex: 100g)" title="${temCalculoAuto?'Mudar isso recalcula as calorias automaticamente':''}"
-          onchange="atualizarAlimentoCampo(${rIdx},${aIdx},'quantidade',this.value)"
-          style="flex:1;min-width:80px;background:rgba(255,255,255,.05);border:1px solid ${temCalculoAuto?'rgba(16,185,129,.4)':'var(--border)'};border-radius:5px;padding:6px 8px;color:#fff;font-size:.78rem;font-family:var(--font-b)"/>
-        <input type="number" value="${escHtml(al.calorias)}" placeholder="kcal" title="${temCalculoAuto?'Calculado automaticamente pela quantidade':'Editar aqui desliga o cálculo automático'}"
+        ${campoQuantidade}
+        <input type="number" value="${escHtml(al.calorias)}" placeholder="kcal" title="${temCalculoAuto?'Calculado automaticamente pela porção':'Editar aqui desliga o cálculo automático'}"
           onchange="atualizarAlimentoCampo(${rIdx},${aIdx},'calorias',this.value)"
           style="flex:1;min-width:70px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:#fbbf24;font-size:.78rem;font-family:var(--font-b);text-align:center"/>
         <input type="text" value="${escHtml(al.substituicao)}" placeholder="Substituições (ex: Batata doce 120g)"
@@ -8215,7 +8266,34 @@ function renderRotinaAlimentar(){
 
   el.innerHTML = html;
   if(resumoEl){
-    resumoEl.textContent = `Total do dia: ${totalCaloriasAlimentos} kcal preenchidas` + (totalMeta ? ` · Meta: ${totalMeta} kcal` : '');
+    let metasDia = null;
+    try{ metasDia = calcNutri(); }catch(e){ /* sem anamnese suficiente pra calcular metas — segue sem comparação */ }
+
+    const linhaMacro = (label, valor, meta, cor, unidade)=>{
+      const pct = meta ? Math.min(100, Math.round(valor/meta*100)) : 0;
+      const corBarra = !meta ? '#666' : pct<80 ? '#f59e0b' : pct>115 ? '#f87171' : '#34d399';
+      return `<div style="flex:1;min-width:110px">
+        <div style="display:flex;justify-content:space-between;font-size:.66rem;margin-bottom:3px">
+          <span style="color:#999">${label}</span>
+          <span style="color:${corBarra};font-weight:700">${Math.round(valor)}${unidade}${meta?` / ${Math.round(meta)}${unidade}`:''}</span>
+        </div>
+        <div style="background:rgba(255,255,255,.06);border-radius:20px;height:5px;overflow:hidden">
+          <div style="background:${corBarra};height:100%;width:${meta?pct:0}%;border-radius:20px"></div>
+        </div>
+      </div>`;
+    };
+
+    resumoEl.innerHTML = `<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:8px">
+      <div style="font-size:.66rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#34d399;margin-bottom:10px">⚖️ Balanço Nutricional — ${window._diaRotinaAtivo}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px">
+        ${linhaMacro('Calorias', totalCaloriasAlimentos, metasDia?.meta || totalMeta, '#fbbf24', ' kcal')}
+        ${linhaMacro('Proteína', totalProteina, metasDia?.prot, '#10b981', 'g')}
+        ${linhaMacro('Carboidrato', totalCarbo, metasDia?.carb, '#f59e0b', 'g')}
+        ${linhaMacro('Gordura', totalGordura, metasDia?.gord, '#a78bfa', 'g')}
+      </div>
+      ${!metasDia ? '<div style="font-size:.64rem;color:#666;margin-top:8px">ℹ️ Metas de macros não disponíveis (abra a aba Relatório desse cliente pelo menos uma vez pra calcular).</div>' : ''}
+      <div style="font-size:.6rem;color:#666;margin-top:6px">Proteína/carbo/gordura somam só alimentos que vieram do Banco (com valores nutricionais completos) — itens digitados manualmente contam só nas calorias.</div>
+    </div>`;
   }
 }
 
@@ -8223,12 +8301,7 @@ function atualizarRefeicaoCampo(rIdx, campo, valor){
   if(!window._rotinaAlimentar?.[rIdx]) return;
   window._rotinaAlimentar[rIdx][campo] = campo==='metaCalorias' ? (parseFloat(valor)||0) : valor;
   if(campo==='metaCalorias'){
-    const resumoEl = document.getElementById('rotina-calorias-resumo');
-    if(resumoEl){
-      const totalMeta = window._rotinaAlimentar.reduce((s,r)=>s+(parseFloat(r.metaCalorias)||0),0);
-      const totalAlim = window._rotinaAlimentar.reduce((s,r)=>s+(r.alimentos||[]).reduce((s2,a)=>s2+(parseFloat(a.calorias)||0),0),0);
-      resumoEl.textContent = `Total do dia: ${totalAlim} kcal preenchidas · Meta: ${totalMeta} kcal`;
-    }
+    renderRotinaAlimentar(); // atualiza o painel de balanço nutricional também
   }
 }
 
@@ -8236,6 +8309,23 @@ function atualizarRefeicaoCampo(rIdx, campo, valor){
 function extrairNumeroQuantidade(texto){
   const m = (texto||'').match(/^([\d.,]+)/);
   return m ? parseFloat(m[1].replace(',','.')) : null;
+}
+
+// Ajusta a porção pelos botões +/- (em passos de 0.25x), recalculando tudo
+// automaticamente — é a forma visual e rápida de mudar quantidade, alternativa
+// a digitar o texto manualmente.
+function ajustarPorcaoAlimento(rIdx, aIdx, delta){
+  const alimento = window._rotinaAlimentar?.[rIdx]?.alimentos?.[aIdx];
+  if(!alimento || !alimento._baseGramas) return;
+
+  const atual = extrairNumeroQuantidade(alimento.quantidade) || alimento._baseGramas;
+  const multiplicadorAtual = atual / alimento._baseGramas;
+  const novoMultiplicador = Math.max(0.25, Math.round((multiplicadorAtual + delta)*4)/4);
+  const novoValor = Math.round(alimento._baseGramas * novoMultiplicador * 10)/10;
+
+  // Mantém a mesma unidade que já estava escrita (g, unidade, colher etc.)
+  const sufixo = (alimento.quantidade||'').replace(/^[\d.,]+\s*/, '');
+  atualizarAlimentoCampo(rIdx, aIdx, 'quantidade', `${novoValor}${sufixo ? (sufixo.match(/^[a-zà-ú]/i) ? sufixo : ' '+sufixo) : 'g'}`);
 }
 
 function atualizarAlimentoCampo(rIdx, aIdx, campo, valor){
@@ -8288,16 +8378,48 @@ function adicionarAlimento(rIdx){
   renderRotinaAlimentar();
 }
 
+// ── ARRASTAR E SOLTAR — reordenar alimentos dentro da mesma refeição ────────
+window._arrastoAlimentoOrigem = null; // {rIdx, aIdx}
+
+function iniciarArrastoAlimento(event, rIdx, aIdx){
+  event.stopPropagation();
+  window._arrastoAlimentoOrigem = { rIdx, aIdx };
+  event.dataTransfer.effectAllowed = 'move';
+  try{ event.dataTransfer.setData('text/plain', `${rIdx}-${aIdx}`); }catch(e){}
+  event.currentTarget.style.opacity = '.4';
+}
+
+function soltarAlimento(event, rIdxDestino, aIdxDestino){
+  event.preventDefault();
+  event.stopPropagation();
+  const origem = window._arrastoAlimentoOrigem;
+  if(!origem || !window._rotinaAlimentar) return;
+  if(origem.rIdx !== rIdxDestino){
+    notif('Só é possível reordenar alimentos dentro da mesma refeição. Pra mover pra outra refeição, exclua e adicione de novo lá.','#f59e0b',true);
+    return;
+  }
+  if(origem.aIdx === aIdxDestino) return;
+
+  const lista = window._rotinaAlimentar[rIdxDestino].alimentos;
+  const [movido] = lista.splice(origem.aIdx, 1);
+  lista.splice(aIdxDestino, 0, movido);
+
+  window._arrastoAlimentoOrigem = null;
+  renderRotinaAlimentar();
+}
+
 function removerAlimento(rIdx, aIdx){
   console.log('[removerAlimento] rIdx:', rIdx, 'aIdx:', aIdx, '| existe:', !!window._rotinaAlimentar?.[rIdx]);
   if(!window._rotinaAlimentar?.[rIdx]){
     notif('Erro: refeição não encontrada. Recarregue a página.','#ef4444',true);
     return;
   }
-  if(!window._rotinaAlimentar[rIdx].alimentos?.[aIdx]){
+  const alimento = window._rotinaAlimentar[rIdx].alimentos?.[aIdx];
+  if(!alimento){
     notif('Erro: esse alimento já não existe mais nessa refeição.','#ef4444',true);
     return;
   }
+  if(!confirm(`Remover "${alimento.item||'esse alimento'}" da refeição?`)) return;
   window._rotinaAlimentar[rIdx].alimentos.splice(aIdx,1);
   renderRotinaAlimentar();
 }
