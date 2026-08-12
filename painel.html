@@ -1723,7 +1723,8 @@ const CAMPOS_ANAMNESE_EDITAVEL = {
   ],
   'Nutrição': [
     ['nu-obj','Objetivo nutricional'], ['nu-ativ','Nível de atividade'],
-    ['nu-rest','Restrição alimentar'], ['nu-nao','Não come'], ['nu-supl','Suplementos'],
+    ['nu-alerg','Alergias alimentares (grave — nunca inclua)'], ['nu-intoler','Intolerâncias alimentares'],
+    ['nu-rest','Restrição alimentar (preferência/estilo)'], ['nu-nao','Não come / Come'], ['nu-supl','Suplementos que já usa'],
   ],
   'Preferências por Refeição': [
     ['nu-pref-cafe','O que gosta no Café da Manhã'],
@@ -1782,7 +1783,7 @@ async function salvarEdicaoAnamnese(){
   if(!c || !SB) return;
 
   // Campos que originalmente eram lista (array) — reconstrói como array ao salvar
-  const CAMPOS_LISTA = new Set(['objetivo','an-equip','an-lesoes','nu-rest','nu-nao','nu-supl']);
+  const CAMPOS_LISTA = new Set(['objetivo','an-equip','an-lesoes','nu-rest','nu-nao','nu-supl','nu-alerg','nu-intoler']);
 
   const novoCliente = {}, novaAnamnese = {}, novaNutricao = {};
   Object.entries(CAMPOS_ANAMNESE_EDITAVEL).forEach(([secao, campos])=>{
@@ -2785,7 +2786,24 @@ function prescreverTreino(){
     `🥩 Proteína: 2.0–2.2g/kg/dia — testosterona + proteína otimizam síntese proteica muscular`,
   ];
 
-  const notas = [...notasBase, ...notasSexo,
+  // ── AJUSTE POR COMPOSIÇÃO CORPORAL (quando o aluno já registrou avaliação
+  // física no portal) — usa % de gordura real, não só peso/altura ──────────
+  const comp = MOTOR_D.composicaoCorporal;
+  const notasComposicao = [];
+  if(comp?.percentual_gordura_final){
+    const pg = comp.percentual_gordura_final;
+    const refAlto = isFem ? 32 : 25; // referência aproximada de %gordura elevado, ACE/ACSM
+    const refBaixo = isFem ? 21 : 14;
+    if(pg > refAlto && /emagrec/i.test(obj)){
+      notasComposicao.push(`⚖️ Composição corporal atual: ${pg}% de gordura (${comp.massa_magra_kg?`${comp.massa_magra_kg}kg de massa magra`:''}) — acima da faixa de referência. Priorize também condicionamento/cardio 2-3x/semana junto da musculação pra acelerar o déficit calórico sem perder massa magra.`);
+    } else if(pg < refBaixo && /hipertrof/i.test(obj)){
+      notasComposicao.push(`⚖️ Composição corporal atual: ${pg}% de gordura — já está numa faixa magra, bom momento pra focar puramente em volume de treino e superávit calórico controlado, sem necessidade de cardio extra.`);
+    } else {
+      notasComposicao.push(`⚖️ Composição corporal atual: ${pg}% de gordura${comp.massa_magra_kg?` · ${comp.massa_magra_kg}kg de massa magra`:''} — dentro de uma faixa razoável pro objetivo. Meta de proteína calculada usando a massa magra real, não só o peso total.`);
+    }
+  }
+
+  const notas = [...notasBase, ...notasSexo, ...notasComposicao,
     `Refs: ACSM 2026 Position Stand (Currier et al., Med Sci Sports Exerc) · Schoenfeld, Grgic & Krieger 2019 · Israetel/RP Strength · Calatayud et al. 2020 · Singer et al. 2024 · Wolf et al. 2025 · Helms et al. (RIR/RPE)`
   ];
 
@@ -6051,11 +6069,21 @@ function calcNutri(){
     : 10*p + 6.25*alt - 5*i - 161;
   const tdee=tmb*at;
   const meta=obj==='Emagrecimento'?tdee-500:obj==='Hipertrofia'?tdee+300:tdee;
-  const prot=obj==='Emagrecimento'?p*2.0:obj==='Hipertrofia'?p*1.9:p*1.6;
+
+  // Proteína por massa magra é mais precisa que por peso total, principalmente
+  // em quem tem % de gordura mais alto — evita "inflar" a meta de proteína por
+  // causa de peso que não é tecido magro. Usa a avaliação física mais recente
+  // se existir; senão, cai no cálculo por peso total de sempre.
+  const massaMagra = parseFloat(MOTOR_D.composicaoCorporal?.massa_magra_kg) || null;
+  const prot = massaMagra
+    ? (obj==='Emagrecimento' ? massaMagra*2.6 : obj==='Hipertrofia' ? massaMagra*2.4 : massaMagra*2.0)
+    : (obj==='Emagrecimento' ? p*2.0 : obj==='Hipertrofia' ? p*1.9 : p*1.6);
+
   const gord=p*0.8;
   const carb=Math.max(0,(meta-prot*4-gord*9)/4);
   return{tmb:Math.round(tmb),tdee:Math.round(tdee),meta:Math.round(meta),
-         prot:Math.round(prot),carb:Math.round(carb),gord:Math.round(gord)};
+         prot:Math.round(prot),carb:Math.round(carb),gord:Math.round(gord),
+         usouMassaMagra: !!massaMagra};
 }
 
 
@@ -6399,19 +6427,29 @@ async function carregarAvaliacaoFisicaCliente(c){
     }
 
     const html = lista.map((a,i)=>{
+      const percA = a.percentual_gordura_final ?? a.percentual_gordura_estimado;
       const anterior = lista[i+1];
+      const percAnterior = anterior ? (anterior.percentual_gordura_final ?? anterior.percentual_gordura_estimado) : null;
       let diffHtml = '';
-      if(anterior?.percentual_gordura_estimado!=null && a.percentual_gordura_estimado!=null){
-        const diff = Math.round((a.percentual_gordura_estimado - anterior.percentual_gordura_estimado)*10)/10;
+      if(percAnterior!=null && percA!=null){
+        const diff = Math.round((percA - percAnterior)*10)/10;
         const cor = diff<0 ? '#34d399' : diff>0 ? '#f87171' : '#888';
         diffHtml = ` <span style="color:${cor};font-size:.72rem">(${diff>0?'+':''}${diff}%)</span>`;
       }
+      const metodosHtml = (a.percentual_gordura_estimado!=null && a.percentual_gordura_rfm!=null)
+        ? `<div style="font-size:.68rem;color:#888;margin-top:4px">🧮 Marinha (US Navy): ${a.percentual_gordura_estimado}% · RFM: ${a.percentual_gordura_rfm}% → <strong style="color:#fbbf24">combinado: ${percA}%</strong></div>`
+        : '';
+      const massaHtml = (a.massa_magra_kg||a.massa_gorda_kg)
+        ? `<div style="font-size:.76rem;margin-top:6px">${a.peso_kg?`Peso: <strong style="color:#fff">${a.peso_kg}kg</strong> · `:''}${a.massa_magra_kg?`Massa magra: <strong style="color:#60a5fa">${a.massa_magra_kg}kg</strong>`:''}${a.massa_magra_kg&&a.massa_gorda_kg?' · ':''}${a.massa_gorda_kg?`Massa gorda: <strong style="color:#fbbf24">${a.massa_gorda_kg}kg</strong>`:''}</div>`
+        : '';
       return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-          <span style="font-size:.85rem;font-weight:800;color:#fbbf24">${a.percentual_gordura_estimado!=null ? a.percentual_gordura_estimado+'% gordura (estimado)' : 'Sem estimativa'}${diffHtml}</span>
+          <span style="font-size:.85rem;font-weight:800;color:#fbbf24">${percA!=null ? percA+'% gordura (estimado)' : 'Sem estimativa'}${diffHtml}</span>
           <span style="font-size:.68rem;color:var(--muted)">${new Date(a.criado_em).toLocaleDateString('pt-BR')}</span>
         </div>
-        <div style="font-size:.74rem;color:#ccc;display:flex;flex-wrap:wrap;gap:10px">
+        ${metodosHtml}
+        ${massaHtml}
+        <div style="font-size:.74rem;color:#ccc;display:flex;flex-wrap:wrap;gap:10px;margin-top:6px">
           <span>Altura: ${a.altura_cm}cm</span>
           <span>Pescoço: ${a.pescoco_cm}cm</span>
           <span>Cintura: ${a.cintura_cm}cm</span>
@@ -8012,6 +8050,15 @@ async function sincronizarMotorComCliente(c){
     };
     MOTOR_D.anamnese = q.anamnese || {};
     MOTOR_D.nutricao = q.nutricao || {};
+
+    // Busca a avaliação física (composição corporal) mais recente que o aluno
+    // registrou no portal — usada pra calcular meta de proteína com mais
+    // precisão (por massa magra, não só peso total) e ajustar a ficha de treino.
+    try{
+      const { data: aval } = await SB.from('portal_avaliacao_fisica').select('*').eq('email', c.email).order('criado_em',{ascending:false}).limit(1);
+      MOTOR_D.composicaoCorporal = aval?.[0] || null;
+    }catch(e){ MOTOR_D.composicaoCorporal = null; }
+
     return true;
   }catch(e){
     console.warn('sincronizarMotorComCliente:', e);
@@ -8047,18 +8094,62 @@ async function gerarRotinaAlimentarBase(){
 
   // Detecta restrições mencionadas na anamnese ATUALIZADA — cobre mais variações
   // de escrita e também nomes de alimentos específicos citados em "não como".
-  const restricaoTexto = ((MOTOR_D?.nutricao?.['nu-rest']||'') + ' ' + (MOTOR_D?.nutricao?.['nu-nao']||'')).toLowerCase();
+  const restricaoTexto = ((MOTOR_D?.nutricao?.['nu-rest']||'') + ' ' + (MOTOR_D?.nutricao?.['nu-nao']||'') + ' ' + (MOTOR_D?.nutricao?.['nu-alerg']||'') + ' ' + (MOTOR_D?.nutricao?.['nu-intoler']||'')).toLowerCase();
   const restricoes = [];
   if(/vegan/.test(restricaoTexto)) restricoes.push('vegano');
   else if(/vegetarian/.test(restricaoTexto)) restricoes.push('vegetariano');
-  if(/gl[uú]ten|cel[ií]ac/.test(restricaoTexto)) restricoes.push('sem_gluten');
+  if(/gl[uú]ten|cel[ií]ac|trigo/.test(restricaoTexto)) restricoes.push('sem_gluten');
   if(/lactose|leite|latic[íi]nio/.test(restricaoTexto)) restricoes.push('sem_lactose');
   if(/s[óo]dio|press[ãa]o|hipertens/.test(restricaoTexto)) restricoes.push('baixo_sodio');
 
-  // Alimentos específicos que o aluno disse que não come (nome, não categoria) —
-  // exclui pelo nome mesmo que não tenham uma tag de restrição cadastrada.
+  // Responde "sim" de forma segura (aceita "Sim", "sim, controlada", etc., mas
+  // nunca confunde com "Não" por conter a letra S em outro lugar do texto).
+  const respostaAfirmativa = valor => /^\s*sim/i.test(String(valor||'').trim());
+
+  // Vai além do texto livre — cruza direto com os campos específicos da
+  // anamnese sobre condições de saúde, que também devem influenciar a geração.
+  const temHipertensao = respostaAfirmativa(MOTOR_D?.anamnese?.['an-hipertensao']);
+  const temDiabetes = respostaAfirmativa(MOTOR_D?.anamnese?.['an-diabetes']);
+  if(temHipertensao && !restricoes.includes('baixo_sodio')) restricoes.push('baixo_sodio');
+
+  // Categorias inteiras a evitar por causa de condições de saúde — mesmo que
+  // um item específico não tenha a tag certa, a categoria toda já é arriscada.
+  const categoriasEvitar = [];
+  if(temHipertensao) categoriasEvitar.push('Embutidos','Fast food');
+  if(temDiabetes) categoriasEvitar.push('Doces','Fast food');
+
+  // Se o objetivo nutricional específico não foi preenchido, usa o objetivo
+  // geral de treino como referência (evita gerar sem noção nenhuma de meta).
+  const objetivoNutricional = MOTOR_D?.nutricao?.['nu-obj'] || (Array.isArray(MOTOR_D?.anamnese?.objetivo) ? MOTOR_D.anamnese.objetivo.join(', ') : MOTOR_D?.anamnese?.objetivo) || '';
+
+  // Alergia é a exclusão mais séria — bloqueia pelo nome do alimento com
+  // prioridade máxima. Além disso, mapeia alérgenos comuns pra excluir também
+  // alimentos "parentes" que a pessoa pode nem ter citado explicitamente
+  // (ex: alérgico a "camarão" também deve evitar outros frutos do mar).
+  const ALERGENOS_RELACIONADOS = {
+    'amendoim': ['amendoim','paçoca','pé-de-moleque'],
+    'camarão': ['camarão','frutos do mar','marisco','lula','polvo'],
+    'frutos do mar': ['camarão','frutos do mar','marisco','lula','polvo'],
+    'castanha': ['castanha','noz','amêndoa','avelã','pistache','nozes'],
+    'noz': ['castanha','noz','amêndoa','avelã','pistache','nozes'],
+    'soja': ['soja','tofu','shoyu'],
+    'ovo': ['ovo'],
+    'peixe': ['peixe','tilápia','salmão','atum','sardinha','bacalhau'],
+  };
+  const alergTexto = (MOTOR_D?.nutricao?.['nu-alerg']||'').toLowerCase();
+  const intolerTexto = (MOTOR_D?.nutricao?.['nu-intoler']||'').toLowerCase();
   const naoComeTexto = (MOTOR_D?.nutricao?.['nu-nao']||'').toLowerCase();
-  const naoComeItens = naoComeTexto.split(/[,;]/).map(s=>s.trim()).filter(s=>s.length>2);
+
+  // Junta tudo que precisa ser excluído pelo NOME do alimento — "não como",
+  // alergia e intolerância, cada um contribuindo com seus próprios itens.
+  let naoComeItens = [naoComeTexto, alergTexto, intolerTexto]
+    .join(',').split(/[,;]/).map(s=>s.trim()).filter(s=>s.length>2);
+
+  // Expande com os "parentes" de alérgenos comuns citados na alergia
+  Object.entries(ALERGENOS_RELACIONADOS).forEach(([chave, relacionados])=>{
+    if(alergTexto.includes(chave)) naoComeItens.push(...relacionados);
+  });
+  naoComeItens = [...new Set(naoComeItens)]; // remove duplicatas
 
   // Nem toda proteína/cereal faz sentido em qualquer refeição — feijão e carne
   // bovina são normais no almoço/jantar, mas não fazem sentido no café da manhã
@@ -8075,7 +8166,8 @@ async function gerarRotinaAlimentarBase(){
     return true; // outras categorias (Frutas, Laticinios, Vegetais, Suplementos) não têm essa restrição
   }
 
-  function poolCategoria(cat, nomeRefeicao){
+  function poolCategoria(cat, nomeRefeicao, conflitaFn){
+    if(categoriasEvitar.includes(cat)) return []; // categoria inteira bloqueada por condição de saúde
     let pool = banco.filter(a =>
       a.categoria===cat &&
       restricoes.every(r=>(a.tags||[]).includes(r)) &&
@@ -8087,10 +8179,16 @@ async function gerarRotinaAlimentarBase(){
       // que não gerar nada nessa refeição por falta de itens leves cadastrados.
       if(filtrado.length) pool = filtrado;
     }
+    if(conflitaFn){
+      const semConflito = pool.filter(a => !conflitaFn(a.nome));
+      // Mesma lógica: só aplica se sobrar opção, senão mostra algo mesmo que
+      // não seja o ideal, em vez de deixar a refeição totalmente vazia.
+      if(semConflito.length) pool = semConflito;
+    }
     return pool;
   }
-  function sorteiaUm(cat, preferenciaTexto, nomeRefeicao){
-    const pool = poolCategoria(cat, nomeRefeicao);
+  function sorteiaUm(cat, preferenciaTexto, nomeRefeicao, conflitaFn){
+    const pool = poolCategoria(cat, nomeRefeicao, conflitaFn);
     if(!pool.length) return null;
     // Se o aluno mencionou uma preferência pra essa refeição, tenta achar no
     // banco um alimento dessa categoria que bata com o que ele citou, antes
@@ -8136,6 +8234,45 @@ async function gerarRotinaAlimentarBase(){
     {nome:'Suplementação', horario:'Pós-treino', pct:0.06, categorias:['Suplementos']},
   ];
 
+  // ── SUPLEMENTOS: prioriza o que o aluno já usa, sugere pelo objetivo, e evita
+  // o que atrapalha condição de saúde ou o próprio objetivo ──────────────────
+  const objetivoTexto = objetivoNutricional.toLowerCase();
+  const SUPLEMENTOS_POR_OBJETIVO = {
+    hipertrofia:    ['whey', 'creatina', 'maltodextrina', 'dextrose', 'beta-alanina', 'hipercal'],
+    massa:          ['whey', 'creatina', 'maltodextrina', 'dextrose', 'hipercal'],
+    emagrec:        ['whey isolado', 'termog', 'carnitina', 'cafeína', 'bcaa'],
+    definiç:        ['whey isolado', 'termog', 'carnitina', 'cafeína', 'bcaa'],
+    secar:          ['whey isolado', 'termog', 'carnitina', 'cafeína', 'bcaa'],
+    performance:    ['cafeína', 'beta-alanina', 'creatina', 'isotônico'],
+    resistência:    ['cafeína', 'beta-alanina', 'isotônico'],
+    saúde:          ['multivitamínico', 'ômega', 'vitamina d'],
+    manutenç:       ['multivitamínico', 'ômega', 'whey'],
+  };
+  // Suplementos que conflitam com objetivo de emagrecimento (hipercalóricos vão
+  // contra o déficit calórico) — evita sugerir isso mesmo que exista no banco.
+  const emQuerEmagrecer = /emagrec|defini|secar|redu[çc][ãa]o/.test(objetivoTexto);
+  const SUPLEMENTOS_EVITAR_EMAGRECIMENTO = ['hipercal', 'ganho de massa', 'mass gainer'];
+  // Suplementos com muito açúcar de absorção rápida — problemáticos pra diabéticos
+  const SUPLEMENTOS_EVITAR_DIABETES = ['maltodextrina', 'dextrose', 'waxy maize', 'hipercal'];
+  // Suplementos estimulantes em excesso — cautela extra pra hipertensos
+  const SUPLEMENTOS_EVITAR_HIPERTENSAO = ['pré-treino', 'pre-treino', 'termogênico forte'];
+
+  function suplementoConflitaComPerfil(nomeAlimento){
+    const n = (nomeAlimento||'').toLowerCase();
+    if(emQuerEmagrecer && SUPLEMENTOS_EVITAR_EMAGRECIMENTO.some(p=>n.includes(p))) return true;
+    if(temDiabetes && SUPLEMENTOS_EVITAR_DIABETES.some(p=>n.includes(p))) return true;
+    if(temHipertensao && SUPLEMENTOS_EVITAR_HIPERTENSAO.some(p=>n.includes(p))) return true;
+    return false;
+  }
+
+  // Descobre qual grupo de sugestão de suplemento combina com o objetivo do aluno
+  function textoSugestaoSuplemento(){
+    const jaUsa = MOTOR_D?.nutricao?.['nu-supl'] || '';
+    if(jaUsa.trim()) return jaUsa; // prioridade máxima: o que ele já disse que usa
+    const chaveObjetivo = Object.keys(SUPLEMENTOS_POR_OBJETIVO).find(k => objetivoTexto.includes(k));
+    return chaveObjetivo ? SUPLEMENTOS_POR_OBJETIVO[chaveObjetivo].join(', ') : '';
+  }
+
   // Mapeia cada refeição pro campo de preferência correspondente na anamnese
   const CAMPO_PREFERENCIA_POR_REFEICAO = {
     'Café da Manhã': 'nu-pref-cafe', 'Lanche da Manhã': 'nu-pref-lanchemanha',
@@ -8148,10 +8285,10 @@ async function gerarRotinaAlimentarBase(){
     return estrutura.map(ref => {
       const ehSuplemento = ref.nome === 'Suplementação';
       const campoPref = CAMPO_PREFERENCIA_POR_REFEICAO[ref.nome];
-      const preferenciaTexto = campoPref ? (MOTOR_D?.nutricao?.[campoPref]||'') : '';
-      if(preferenciaTexto) algumaPreferenciaUsada = true;
+      const preferenciaTexto = ehSuplemento ? textoSugestaoSuplemento() : (campoPref ? (MOTOR_D?.nutricao?.[campoPref]||'') : '');
+      if(preferenciaTexto && !ehSuplemento) algumaPreferenciaUsada = true;
       const alimentosEscolhidos = ref.categorias
-        .map(cat => sorteiaUm(cat, preferenciaTexto, ref.nome))
+        .map(cat => sorteiaUm(cat, preferenciaTexto, ref.nome, ehSuplemento ? suplementoConflitaComPerfil : null))
         .filter(Boolean)
         .map(paraItem);
       if(!alimentosEscolhidos.length) alimentosEscolhidos.push({ item:'', quantidade:'', calorias:'', substituicao:'' });
@@ -8175,9 +8312,13 @@ async function gerarRotinaAlimentarBase(){
   const avisoBanco = banco.length < 10 ? ' ⚠️ Seu Banco de Alimentos tem poucos itens ainda — considere clicar em "🌱 Popular com alimentos padrão" pra ter mais opções.' : '';
   const nomesRestricao = { vegano:'vegano', vegetariano:'vegetariano', sem_gluten:'sem glúten', sem_lactose:'sem lactose', baixo_sodio:'baixo sódio' };
   const restricoesTexto = restricoes.length ? ` Restrições detectadas na anamnese: ${restricoes.map(r=>nomesRestricao[r]||r).join(', ')}.` : '';
-  const naoComeTextoAviso = naoComeItens.length ? ` Excluído por "não como": ${naoComeItens.join(', ')}.` : '';
+  const alergiaTextoAviso = alergTexto.trim() ? ` ⚠️ Alergia registrada — alimentos relacionados foram excluídos com prioridade máxima.` : '';
+  const naoComeTextoAviso = naoComeItens.length ? ` Excluído por "não como"/alergia/intolerância: ${naoComeItens.join(', ')}.` : '';
   const preferenciaTextoAviso = algumaPreferenciaUsada ? ' Preferências alimentares da anamnese foram consideradas onde havia alimento compatível no banco.' : '';
-  notif(`✅ Rotina gerada pra semana inteira, com base na anamnese atualizada! Meta: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura).${restricoesTexto}${naoComeTextoAviso}${preferenciaTextoAviso}${avisoBanco} Revise e ajuste cada dia pelas abas acima.`,'#10b981',true);
+  const condicoesTexto = [temHipertensao?'hipertensão (baixo sódio, sem embutidos/fast food, sem estimulante pesado)':null, temDiabetes?'diabetes (sem doces/fast food, sem suplemento açucarado)':null].filter(Boolean);
+  const condicoesTextoAviso = condicoesTexto.length ? ` Ajustado por condição de saúde: ${condicoesTexto.join(' · ')}.` : '';
+  const suplTextoAviso = MOTOR_D?.nutricao?.['nu-supl']?.trim() ? ' Suplementação priorizou o que o aluno já disse que usa.' : (Object.keys(SUPLEMENTOS_POR_OBJETIVO).some(k=>objetivoTexto.includes(k)) ? ' Suplementação sugerida com base no objetivo (nenhum suplemento em uso informado).' : '');
+  notif(`✅ Rotina gerada pra semana inteira, com base na anamnese atualizada! Meta: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura)${objetivoNutricional?` · Objetivo: ${objetivoNutricional}`:''}.${restricoesTexto}${alergiaTextoAviso}${naoComeTextoAviso}${condicoesTextoAviso}${preferenciaTextoAviso}${suplTextoAviso}${avisoBanco} Revise e ajuste cada dia pelas abas acima.`,'#10b981',true);
   renderRotinaAlimentar();
 }
 

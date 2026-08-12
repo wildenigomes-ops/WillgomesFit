@@ -932,6 +932,15 @@ nav{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;p
           </div>
 
           <div class="avaliacao-campo" style="margin-bottom:16px">
+            <label style="font-size:.78rem;color:#fff;font-weight:600">Peso</label>
+            <div style="font-size:.7rem;color:#888;margin-bottom:6px">Usado pra calcular sua massa magra e massa gorda em kg.</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="aval-peso" placeholder="70" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:#fff;font-size:.9rem"/>
+              <span style="color:#888;font-size:.8rem">kg</span>
+            </div>
+          </div>
+
+          <div class="avaliacao-campo" style="margin-bottom:16px">
             <label style="font-size:.78rem;color:#fff;font-weight:600">Pescoço</label>
             <div style="font-size:.7rem;color:#888;margin-bottom:6px">Logo abaixo do "gogó" (laringe), fita na horizontal.</div>
             <div style="display:flex;align-items:center;gap:8px">
@@ -3502,6 +3511,31 @@ function calcularPercentualGorduraMarinha(sexo, alturaCm, pescocoCm, cinturaCm, 
   }
 }
 
+// RFM (Relative Fat Mass) — fórmula mais recente (Woolcott & Bergman, 2018),
+// usa só altura e cintura. Estudos mostram correlação forte com DEXA, às vezes
+// até melhor que a da Marinha em algumas populações — por isso usamos as DUAS
+// e combinamos, em vez de confiar 100% em uma só.
+function calcularPercentualGorduraRFM(sexo, alturaCm, cinturaCm){
+  if(!alturaCm || !cinturaCm) return null;
+  const base = sexo==='feminino' ? 76 : 64;
+  const valor = base - (20 * (alturaCm/cinturaCm));
+  return valor>0 && valor<70 ? Math.round(valor*10)/10 : null;
+}
+
+// Combina as duas estimativas numa só, mais confiável do que qualquer uma
+// isolada — se só uma fórmula deu resultado válido, usa só essa.
+function combinarPercentuaisGordura(marinha, rfm){
+  if(marinha && rfm) return Math.round((marinha+rfm)/2 * 10)/10;
+  return marinha || rfm || null;
+}
+
+function calcularMassaMagraGorda(pesoKg, percentualGordura){
+  if(!pesoKg || !percentualGordura) return { magra:null, gorda:null };
+  const gorda = Math.round(pesoKg * (percentualGordura/100) * 10)/10;
+  const magra = Math.round((pesoKg - gorda) * 10)/10;
+  return { magra, gorda };
+}
+
 function inicializarSexoAvaliacao(){
   // Tenta pré-selecionar com base no cadastro, se já souber
   const sexoCadastro = (dadosCliente?.sexo||dadosCliente?.genero||'').toLowerCase();
@@ -3515,6 +3549,7 @@ async function salvarAvaliacaoFisica(){
 
   const sexo = window._avaliacaoSexoAtual;
   const altura = parseFloat(document.getElementById('aval-altura').value);
+  const peso = parseFloat(document.getElementById('aval-peso').value) || parseFloat(dadosCliente?.peso) || null;
   const pescoco = parseFloat(document.getElementById('aval-pescoco').value);
   const cintura = parseFloat(document.getElementById('aval-cintura').value);
   const quadril = parseFloat(document.getElementById('aval-quadril').value) || null;
@@ -3527,8 +3562,11 @@ async function salvarAvaliacaoFisica(){
   if(!altura || !pescoco || !cintura){ notif('Preencha altura, pescoço e cintura pra calcular a estimativa','#ef4444',true); return; }
   if(sexo==='feminino' && !quadril){ notif('Pra mulheres, o quadril também é obrigatório na fórmula','#ef4444',true); return; }
 
-  const percEstimado = calcularPercentualGorduraMarinha(sexo, altura, pescoco, cintura, quadril);
+  const percMarinha = calcularPercentualGorduraMarinha(sexo, altura, pescoco, cintura, quadril);
+  const percRFM = calcularPercentualGorduraRFM(sexo, altura, cintura);
+  const percEstimado = combinarPercentuaisGordura(percMarinha, percRFM);
   if(!percEstimado){ notif('Não foi possível calcular com esses valores — confira as medidas digitadas.','#ef4444',true); return; }
+  const { magra, gorda } = calcularMassaMagraGorda(peso, percEstimado);
 
   try{
     const { error } = await SB.from('portal_avaliacao_fisica').insert({
@@ -3536,11 +3574,17 @@ async function salvarAvaliacaoFisica(){
       data: dataParaChaveISO(new Date()),
       sexo, altura_cm: altura, pescoco_cm: pescoco, cintura_cm: cintura, quadril_cm: quadril,
       peito_cm: peito, braco_cm: braco, coxa_cm: coxa, panturrilha_cm: panturrilha,
-      percentual_gordura_estimado: percEstimado,
+      peso_kg: peso,
+      percentual_gordura_estimado: percMarinha,
+      percentual_gordura_rfm: percRFM,
+      percentual_gordura_final: percEstimado,
+      massa_magra_kg: magra,
+      massa_gorda_kg: gorda,
       criado_em: new Date().toISOString()
     });
     if(error){ notif('Erro ao salvar: '+error.message,'#ef4444',true); return; }
-    notif(`✅ Avaliação salva! Estimativa: ${percEstimado}% de gordura.`,'#10b981');
+    const detalheMetodos = percMarinha && percRFM ? ` (Marinha: ${percMarinha}% · RFM: ${percRFM}% · combinado)` : '';
+    notif(`✅ Avaliação salva! Estimativa: ${percEstimado}% de gordura${detalheMetodos}.${magra?` Massa magra: ${magra}kg.`:''}`,'#10b981',true);
     carregarAvaliacaoFisica();
   }catch(e){
     console.error('salvarAvaliacaoFisica — erro inesperado:', e);
@@ -3565,9 +3609,11 @@ async function carregarAvaliacaoFisica(){
 
     const resultWrap = document.getElementById('avaliacao-resultado-wrap');
     if(lista.length && resultWrap){
+      const ultima = lista[0];
+      const percPrincipal = ultima.percentual_gordura_final ?? ultima.percentual_gordura_estimado;
       resultWrap.style.display = 'block';
-      document.getElementById('avaliacao-resultado-perc').textContent = lista[0].percentual_gordura_estimado+'%';
-      document.getElementById('avaliacao-resultado-data').textContent = new Date(lista[0].criado_em).toLocaleDateString('pt-BR');
+      document.getElementById('avaliacao-resultado-perc').textContent = percPrincipal+'%';
+      document.getElementById('avaliacao-resultado-data').textContent = new Date(ultima.criado_em).toLocaleDateString('pt-BR');
     }
 
     if(!el) return;
@@ -3576,19 +3622,27 @@ async function carregarAvaliacaoFisica(){
       return;
     }
     el.innerHTML = lista.map((a,i)=>{
+      const percA = a.percentual_gordura_final ?? a.percentual_gordura_estimado;
       const anterior = lista[i+1];
+      const percAnterior = anterior ? (anterior.percentual_gordura_final ?? anterior.percentual_gordura_estimado) : null;
       let diffHtml = '';
-      if(anterior?.percentual_gordura_estimado!=null){
-        const diff = Math.round((a.percentual_gordura_estimado - anterior.percentual_gordura_estimado)*10)/10;
+      if(percAnterior!=null){
+        const diff = Math.round((percA - percAnterior)*10)/10;
         const cor = diff<0 ? '#34d399' : diff>0 ? '#f87171' : '#888';
         diffHtml = ` <span style="color:${cor};font-size:.72rem">(${diff>0?'+':''}${diff}%)</span>`;
       }
+      const metodosHtml = (a.percentual_gordura_estimado!=null && a.percentual_gordura_rfm!=null)
+        ? `<div style="font-size:.66rem;color:#666;margin-top:4px">Marinha: ${a.percentual_gordura_estimado}% · RFM: ${a.percentual_gordura_rfm}% (combinado abaixo)</div>` : '';
+      const massaHtml = (a.massa_magra_kg||a.massa_gorda_kg)
+        ? `<div style="font-size:.72rem;color:#999;margin-top:6px">${a.massa_magra_kg?`Massa magra: <strong style="color:#60a5fa">${a.massa_magra_kg}kg</strong>`:''}${a.massa_magra_kg&&a.massa_gorda_kg?' · ':''}${a.massa_gorda_kg?`Massa gorda: <strong style="color:#fbbf24">${a.massa_gorda_kg}kg</strong>`:''}</div>` : '';
       return `<div style="background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-          <span style="font-size:.9rem;font-weight:800;color:#34d399">${a.percentual_gordura_estimado}%${diffHtml}</span>
+          <span style="font-size:.9rem;font-weight:800;color:#34d399">${percA}%${diffHtml}</span>
           <span style="font-size:.7rem;color:#888">${new Date(a.criado_em).toLocaleDateString('pt-BR')}</span>
         </div>
-        <div style="font-size:.72rem;color:#999;display:flex;flex-wrap:wrap;gap:10px">
+        ${metodosHtml}
+        ${massaHtml}
+        <div style="font-size:.72rem;color:#999;display:flex;flex-wrap:wrap;gap:10px;margin-top:6px">
           <span>Cintura: ${a.cintura_cm}cm</span>
           <span>Pescoço: ${a.pescoco_cm}cm</span>
           ${a.quadril_cm?`<span>Quadril: ${a.quadril_cm}cm</span>`:''}
