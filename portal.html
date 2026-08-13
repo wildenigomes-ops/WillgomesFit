@@ -1978,6 +1978,10 @@ function renderizarExercicioAtivo(){
           <div class="mt-timer-label">⏱ Descanse antes da próxima série</div>
           <div class="mt-timer-val" id="mt-timer-val">—</div>
           <div class="mt-timer-bar"><div class="mt-timer-fill" id="mt-timer-fill" style="width:100%"></div></div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+            <button class="mt-timer-ajuste" onclick="ajustarTimerDescanso(-15)" style="background:rgba(255,255,255,.08);border:1px solid var(--border);color:#ccc;padding:8px 14px;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer">-15s</button>
+            <button class="mt-timer-ajuste" onclick="ajustarTimerDescanso(15)" style="background:rgba(255,255,255,.08);border:1px solid var(--border);color:#ccc;padding:8px 14px;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer">+15s</button>
+          </div>
           <button class="mt-timer-pular" onclick="pularDescanso()">Pular descanso →</button>
         </div>
         <button class="mt-btn-serie" id="mt-btn-serie" onclick="concluirSerie()" ${seriesFeitas>=numSeries?'disabled':''}>
@@ -2022,6 +2026,9 @@ function concluirSerie(){
   renderizarExercicioAtivo();
 }
 
+// Estado do timer fica acessível fora da função pra permitir ajuste em tempo real
+window._estadoTimerDescanso = null; // { restante, total }
+
 function iniciarTimerDescanso(segundos){
   clearInterval(timerDescanso);
   const wrap  = document.getElementById('mt-timer-wrap');
@@ -2033,31 +2040,61 @@ function iniciarTimerDescanso(segundos){
   wrap.classList.add('visivel');
   if(btn) btn.disabled = true;
 
-  let restante = segundos;
-  const total = segundos;
+  window._estadoTimerDescanso = { restante: segundos, total: segundos };
 
   function tick(){
-    const m = Math.floor(restante/60);
-    const s = restante%60;
+    const estado = window._estadoTimerDescanso;
+    if(!estado) return;
+    const m = Math.floor(estado.restante/60);
+    const s = estado.restante%60;
     if(val) val.textContent = (m>0?m+'m ':'')+String(s).padStart(2,'0')+'s';
-    if(fill) fill.style.width = Math.round((restante/total)*100)+'%';
-    if(val) val.classList.toggle('urgente', restante<=10);
-    if(restante<=0){
+    if(fill) fill.style.width = Math.round((estado.restante/estado.total)*100)+'%';
+    if(val) val.classList.toggle('urgente', estado.restante<=10);
+    if(estado.restante<=0){
       clearInterval(timerDescanso);
       wrap.classList.remove('visivel');
       if(btn){ btn.disabled=false; btn.textContent='✓ SÉRIE FEITA'; }
-      // Vibrar se disponível
-      if(navigator.vibrate) navigator.vibrate([200,100,200]);
+      alertarFimDescanso();
+      window._estadoTimerDescanso = null;
       return;
     }
-    restante--;
+    estado.restante--;
   }
   tick();
   timerDescanso = setInterval(tick, 1000);
 }
 
+// Ajusta o tempo restante do timer em andamento, sem reiniciar do zero
+function ajustarTimerDescanso(deltaSegundos){
+  const estado = window._estadoTimerDescanso;
+  if(!estado) return;
+  estado.restante = Math.max(0, estado.restante + deltaSegundos);
+  estado.total = Math.max(estado.total, estado.restante); // a barra não passa de 100%
+}
+
+// Avisa que o descanso acabou de duas formas — vibração (Android) E som (funciona
+// no iPhone também, onde navigator.vibrate simplesmente não existe/não faz nada).
+function alertarFimDescanso(){
+  if(navigator.vibrate) navigator.vibrate([200,100,200]);
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.15].forEach(delay=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.25, ctx.currentTime+delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+0.14);
+      osc.start(ctx.currentTime+delay);
+      osc.stop(ctx.currentTime+delay+0.15);
+    });
+  }catch(e){ console.warn('Não foi possível tocar o som de alerta:', e); }
+}
+
 function pularDescanso(){
   clearInterval(timerDescanso);
+  window._estadoTimerDescanso = null;
   const wrap = document.getElementById('mt-timer-wrap');
   const btn  = document.getElementById('mt-btn-serie');
   if(wrap) wrap.classList.remove('visivel');
