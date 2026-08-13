@@ -1805,7 +1805,8 @@ const CAMPOS_ANAMNESE_EDITAVEL = {
   ],
   'Treino e Objetivos': [
     ['objetivo','Objetivos'], ['nivel','Nível'], ['an-dias','Dias/semana'], ['an-dur','Duração'],
-    ['an-equip','Equipamentos'], ['an-hipertensao','Hipertensão'], ['an-diabetes','Diabetes'],
+    ['an-equip','Equipamentos'], ['an-outras-atividades','Outras atividades físicas (corrida, jiu-jítsu, futebol etc. + frequência)'],
+    ['an-hipertensao','Hipertensão'], ['an-diabetes','Diabetes'],
     ['an-problemascardiacos','Prob. cardíacos'], ['an-problemasarticulares','Prob. articulares'],
     ['an-problemasdecoluna','Prob. coluna'], ['an-liberacao','Liberação médica'],
     ['an-lesoes','Lesões'], ['an-meds','Medicamentos'], ['an-dores','Dores/limitações'],
@@ -2553,6 +2554,31 @@ function prescreverTreino(){
   const dores  = paraTextoMinusculo(an['an-dores']);
   const dias   = parseInt(an['an-dias']) || 4;
 
+  // ── CARGA GLOBAL DE TREINAMENTO — outras atividades físicas também geram
+  // fadiga e disputam recuperação com a musculação. Não dá pra prescrever o
+  // mesmo volume pra alguém que só faz academia e pra alguém que também corre
+  // ou luta jiu-jítsu várias vezes por semana.
+  const outrasAtividadesTexto = paraTextoMinusculo(an['an-outras-atividades']);
+  const ATIVIDADES_ALTA_DEMANDA = ['jiu-jítsu','jiu jitsu','jiujitsu','futebol','crossfit','luta','muay thai','judô','judo','corrida','maratona'];
+  const ATIVIDADES_MODERADAS = ['caminhada','ciclismo','bike','natação','pilates','yoga'];
+  // Tenta extrair quantas vezes por semana (ex: "corrida 3x semana", "jiu-jítsu 4 vezes")
+  const matchFrequenciaAtividade = outrasAtividadesTexto.match(/(\d+)\s*(?:x|vezes)/);
+  const vezesAtividadeExterna = matchFrequenciaAtividade ? parseInt(matchFrequenciaAtividade[1]) : (outrasAtividadesTexto ? 2 : 0); // assume 2x se mencionou mas não disse frequência
+  const temAtividadeAltaDemanda = ATIVIDADES_ALTA_DEMANDA.some(a=>outrasAtividadesTexto.includes(a));
+  const temAtividadeModerada = !temAtividadeAltaDemanda && ATIVIDADES_MODERADAS.some(a=>outrasAtividadesTexto.includes(a));
+
+  // Fator de redução do volume MÁXIMO (MAV/MRV) — não mexe no MEV (mínimo
+  // efetivo), porque isso continua sendo necessário pro estímulo funcionar.
+  let fatorCargaExterna = 1.0;
+  if(temAtividadeAltaDemanda){
+    fatorCargaExterna = vezesAtividadeExterna>=4 ? 0.75 : vezesAtividadeExterna>=2 ? 0.85 : 0.92;
+  } else if(temAtividadeModerada){
+    fatorCargaExterna = vezesAtividadeExterna>=4 ? 0.90 : 0.95;
+  }
+  const notaCargaExterna = fatorCargaExterna<1
+    ? `⚡ Carga global ajustada: o aluno também pratica${outrasAtividadesTexto?` "${an['an-outras-atividades']}"`:' outras atividades intensas'}, então o volume máximo de musculação foi reduzido em ${Math.round((1-fatorCargaExterna)*100)}% pra não comprometer a recuperação.`
+    : null;
+
   // ── SEXO — determina foco e distribuição de volume ───────────────────────
   // Evidência: mulheres têm ~67% mais fibras tipo I nos membros inferiores
   // Glúteo máximo feminino responde melhor a volume maior (Contreras et al. 2015)
@@ -2570,6 +2596,12 @@ function prescreverTreino(){
     'MuitoAvancado': { series:'4–5', reps:'4–12',  desc:'120s', rir:'0–2', mev:16, mav:22, mrv:30 },
   };
   const p = nivelMap[nivel] || nivelMap['Iniciante'];
+  // Aplica a redução por carga externa aqui — só no volume MÁXIMO (MAV/MRV),
+  // o mínimo efetivo (MEV) continua igual porque é o que garante o estímulo.
+  if(fatorCargaExterna < 1){
+    p.mav = Math.round(p.mav * fatorCargaExterna);
+    p.mrv = Math.round(p.mrv * fatorCargaExterna);
+  }
 
   // ── AJUSTE POR OBJETIVO ───────────────────────────────────────────────────
   let repsObj = p.reps, seriesObj = p.series, descObj = p.desc;
@@ -2657,6 +2689,16 @@ function prescreverTreino(){
     return resultado;
   }
 
+  // Progressão dupla: quando o aluno alcançar o topo da faixa de reps em TODAS
+  // as séries com técnica adequada, aumenta a carga moderadamente e volta pro
+  // início da faixa. É simples, mensurável e não depende de "achismo".
+  function gerarRegraProgressao(repsRange){
+    const m = String(repsRange).match(/(\d+)[–-](\d+)/);
+    if(!m) return `Ao completar todas as séries com boa técnica, aumente levemente a carga.`;
+    const [,minRep,maxRep] = m;
+    return `Progressão dupla: ao completar ${maxRep} repetições em TODAS as séries com técnica adequada, aumente a carga (~2,5-5%) e volte pra ${minRep} reps na próxima sessão.`;
+  }
+
   // ── MONTAGEM DE BLOCO ─────────────────────────────────────────────────────
   // Suporte a reps customizados por grupo (ex: repsInfFem para pernas/glúteos feminino)
   function montarBloco(id, nome, cor, grupos){
@@ -2687,6 +2729,7 @@ function prescreverTreino(){
           descanso: descObj,
           rir:      rir,
           obs:      ins || `Amplitude completa. RIR ${rir}.`,
+          progressao: gerarRegraProgressao(repsUsar),
         });
       });
     });
@@ -2904,7 +2947,35 @@ function prescreverTreino(){
     }
   }
 
-  const notas = [...notasBase, ...notasSexo, ...notasComposicao,
+  const notasCargaExterna = notaCargaExterna ? [notaCargaExterna] : [];
+
+  // ── DETECÇÃO DE FADIGA — usa o histórico real de check-in (energia, dor,
+  // sono) que o aluno registrou antes/depois dos treinos, não só palpite.
+  const notasFadiga = [];
+  const checkins = MOTOR_D.historicoCheckin || [];
+  if(checkins.length >= 4){
+    const preChecks = checkins.filter(c=>c.momento==='pre');
+    const posChecks = checkins.filter(c=>c.momento==='pos');
+    const mediaEnergia = preChecks.length ? preChecks.reduce((s,c)=>s+(c.energia||3),0)/preChecks.length : null;
+    const mediaDor = posChecks.length ? posChecks.reduce((s,c)=>s+(c.dor_muscular||2),0)/posChecks.length : null;
+    const mediaSono = preChecks.length ? preChecks.reduce((s,c)=>s+(c.qualidade_sono||3),0)/preChecks.length : null;
+
+    const sinaisFadiga = [];
+    if(mediaEnergia!==null && mediaEnergia < 2.5) sinaisFadiga.push('energia baixa antes dos treinos');
+    if(mediaDor!==null && mediaDor > 3.5) sinaisFadiga.push('dor muscular persistente alta');
+    if(mediaSono!==null && mediaSono < 2.5) sinaisFadiga.push('sono ruim com frequência');
+
+    if(sinaisFadiga.length >= 2){
+      // Múltiplos sinais consistentes — reduz volume temporariamente (deload leve)
+      p.mav = Math.round(p.mav * 0.85);
+      p.mrv = Math.round(p.mrv * 0.85);
+      notasFadiga.push(`😴 Sinais de fadiga acumulada detectados no histórico recente (${sinaisFadiga.join(', ')}) — volume reduzido temporariamente (~15%) nessa geração. Considere avaliar sono/rotina do aluno e reavaliar em 1-2 semanas.`);
+    } else if(sinaisFadiga.length === 1){
+      notasFadiga.push(`👀 Sinal de atenção no histórico recente: ${sinaisFadiga[0]}. Volume mantido, mas vale observar a evolução.`);
+    }
+  }
+
+  const notas = [...notasBase, ...notasSexo, ...notasComposicao, ...notasCargaExterna, ...notasFadiga,
     `Refs: ACSM 2026 Position Stand (Currier et al., Med Sci Sports Exerc) · Schoenfeld, Grgic & Krieger 2019 · Israetel/RP Strength · Calatayud et al. 2020 · Singer et al. 2024 · Wolf et al. 2025 · Helms et al. (RIR/RPE)`
   ];
 
@@ -3655,6 +3726,56 @@ async function confirmarGeracaoAutomaticaTreino(){
   window._fichaTemAlteracoesNaoPublicadas = true;
   notif(`✅ Treino gerado! ${Object.keys(novaFicha).length} dia(s) · Nível ${nivelEscolhido} · Método: ${METODOS_TREINO[metodoEscolhido].nome}. Revise e clique em "Publicar ficha atual".`,'#10b981',true);
   renderizarEditorPortalAba();
+  mostrarCamadaProfissional(treinos, { nivel: nivelEscolhido, dias: diasEscolhido, metodo: metodoEscolhido });
+}
+
+// "Camada do profissional" — resumo interno estruturado da prescrição, pra
+// você auditar rapidamente as decisões do motor sem precisar reler cada
+// exercício. Não é isso que o aluno vê — é uma ferramenta sua.
+function mostrarCamadaProfissional(treinos, contexto){
+  const notasGeradas = treinos._notas || [];
+  const volumeInfo = calcularVolumePorGrupoMuscular();
+  const totalExercicios = Object.values(window._fichaEditavel||{}).flat().length;
+  const proximaRevisao = new Date();
+  proximaRevisao.setDate(proximaRevisao.getDate() + 35); // ~5 semanas
+
+  const existente = document.getElementById('camada-profissional-overlay');
+  if(existente) existente.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'camada-profissional-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card)">
+        <div style="font-size:.95rem;font-weight:800;color:#fff">📋 Camada do Profissional</div>
+        <button onclick="document.getElementById('camada-profissional-overlay').remove()" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:18px 20px;font-size:.82rem;color:#ccc;line-height:1.7">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+          <div><span style="color:#888">Nível:</span> <strong style="color:#fff">${contexto.nivel}</strong></div>
+          <div><span style="color:#888">Frequência:</span> <strong style="color:#fff">${contexto.dias}x/semana</strong></div>
+          <div><span style="color:#888">Método:</span> <strong style="color:#fff">${METODOS_TREINO[contexto.metodo]?.nome||contexto.metodo}</strong></div>
+          <div><span style="color:#888">Total de exercícios:</span> <strong style="color:#fff">${totalExercicios}</strong></div>
+        </div>
+
+        <div style="font-size:.68rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#60a5fa;margin-bottom:8px">⚠️ Alertas e observações do motor</div>
+        <ul style="margin:0 0 16px;padding-left:18px">
+          ${notasGeradas.map(n=>`<li style="margin-bottom:6px">${n}</li>`).join('') || '<li style="color:#666">Nenhum alerta específico nessa geração.</li>'}
+        </ul>
+
+        <div style="font-size:.68rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#60a5fa;margin-bottom:8px">📊 Volume semanal por grupo (resumo rápido)</div>
+        <div style="font-size:.76rem;color:#999;margin-bottom:16px">${volumeInfo ? Object.entries(volumeInfo.volume).filter(([,v])=>v.series>0).map(([g,v])=>`${g}: ${v.series} séries`).join(' · ') : 'Abra a aba Treino do cliente pra ver o painel completo de volume.'}</div>
+
+        <div style="font-size:.68rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#60a5fa;margin-bottom:8px">📅 Próxima revisão sugerida</div>
+        <div style="font-size:.82rem;color:#fff;margin-bottom:16px">${proximaRevisao.toLocaleDateString('pt-BR')} (~5 semanas — reavalie progressão de carga e sinais de fadiga antes de decidir manter, progredir ou trocar o bloco).</div>
+
+        <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:10px 12px;font-size:.72rem;color:#c4b5fd">
+          Esse resumo é uma ferramenta de auditoria interna — o aluno não vê isso, só a ficha simplificada no portal.
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
 }
 
 // Aplica o método de treino escolhido por cima da estrutura já gerada — ajusta
@@ -4075,6 +4196,23 @@ async function trocarExercicioPorSimilar(dIdx, eIdx){
   const dias = Object.keys(window._fichaEditavel);
   const exAtual = window._fichaEditavel[dias[dIdx]]?.[eIdx];
   if(!exAtual) return;
+
+  // Antes de trocar, confere se esse exercício está progredindo bem no
+  // histórico de carga do aluno — trocar algo que já está funcionando não é
+  // ideal, então avisa (sem bloquear) antes de prosseguir.
+  if(SB && clienteAtual?.email){
+    try{
+      const { data: cargas } = await SB.from('portal_cargas').select('*').eq('email', clienteAtual.email).ilike('exercicio_nome', exAtual.nome).order('criado_em',{ascending:true}).limit(10);
+      if(cargas && cargas.length >= 3){
+        const primeira = parseFloat(cargas[0].peso_kg)||0;
+        const ultima = parseFloat(cargas[cargas.length-1].peso_kg)||0;
+        if(ultima > primeira){
+          const progrediu = Math.round((ultima-primeira)*10)/10;
+          if(!confirm(`⚠️ "${exAtual.nome}" está progredindo bem no histórico desse aluno (foi de ${primeira}kg pra ${ultima}kg). Trocar mesmo assim?`)) return;
+        }
+      }
+    }catch(e){ console.warn('Checagem de progressão falhou (seguindo com a troca):', e); }
+  }
 
   if(!window._bancoExercicios){ await carregarBancoExercicios(); }
   const bancoInfo = (window._bancoExercicios||[]).find(be => (be.nome||'').toLowerCase().trim() === (exAtual.nome||'').toLowerCase().trim());
@@ -7920,11 +8058,156 @@ async function sincronizarMotorComCliente(c){
       MOTOR_D.composicaoCorporal = aval?.[0] || null;
     }catch(e){ MOTOR_D.composicaoCorporal = null; }
 
+    // Busca os check-ins recentes (dor/esforço/sono que o aluno registrou antes
+    // e depois dos treinos) — usado pra detectar sinais de fadiga acumulada
+    // antes de gerar uma nova ficha, em vez de ignorar como se nada tivesse acontecido.
+    try{
+      const { data: checkins } = await SB.from('portal_checkin').select('*').eq('email', c.email).order('criado_em',{ascending:false}).limit(8);
+      MOTOR_D.historicoCheckin = checkins || [];
+    }catch(e){ MOTOR_D.historicoCheckin = []; }
+
     return true;
   }catch(e){
     console.warn('sincronizarMotorComCliente:', e);
     return false;
   }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// MOTOR INTEGRADO: A ALIMENTAÇÃO CONVERSA COM O TREINO
+// Classifica a demanda metabólica de cada dia da semana com base na ficha de
+// treino REAL do aluno (não trata todo dia como igual), e ajusta calorias e
+// carboidratos de cada dia conforme essa demanda.
+// ══════════════════════════════════════════════════════════════════════════
+
+// Distribui os "TREINO A/B/C..." da ficha ao longo dos 7 dias da semana, de
+// forma razoavelmente espaçada (nunca dois treinos difíceis seguidos sem
+// necessidade). É uma estimativa — a ficha de treino não amarra dia da
+// semana a um treino específico, então assumimos um padrão comum.
+const PADRAO_DISTRIBUICAO_SEMANA = {
+  1: [1,0,0,0,0,0,0], 2: [1,0,0,1,0,0,0], 3: [1,0,1,0,1,0,0],
+  4: [1,1,0,1,1,0,0], 5: [1,1,1,0,1,1,0], 6: [1,1,1,1,1,1,0], 7: [1,1,1,1,1,1,1],
+};
+
+function distribuirTreinoNaSemana(){
+  const diasTreinoNomes = Object.keys(window._fichaEditavel||{}).filter(k=>k!=='_notas' && (window._fichaEditavel[k]||[]).length>0);
+  const numDias = diasTreinoNomes.length || parseInt(MOTOR_D?.anamnese?.['an-dias']) || 4;
+  const padrao = PADRAO_DISTRIBUICAO_SEMANA[Math.min(7,Math.max(1,numDias))] || PADRAO_DISTRIBUICAO_SEMANA[4];
+
+  const mapa = {}; // { 'Segunda': 'TREINO A', 'Terça': null (descanso), ... }
+  let ponteiro = 0;
+  DIAS_SEMANA.forEach((dia, i) => {
+    if(padrao[i] && diasTreinoNomes.length){
+      mapa[dia] = diasTreinoNomes[ponteiro % diasTreinoNomes.length];
+      ponteiro++;
+    } else {
+      mapa[dia] = null;
+    }
+  });
+  return mapa;
+}
+
+// Classifica a demanda de cada dia (D0 descanso → D3 treino pesado / D4 cardio)
+// olhando o volume real de séries da ficha, não só se "tem treino ou não".
+function classificarDemandaDia(nomeTreino){
+  if(!nomeTreino) return 'D0';
+  const exercicios = window._fichaEditavel?.[nomeTreino] || [];
+  if(!exercicios.length) return 'D0';
+
+  const bancoPorNome = {};
+  (window._bancoExercicios||[]).forEach(be=>{ bancoPorNome[(be.nome||'').toLowerCase().trim()] = be.categoria; });
+
+  const categorias = exercicios.map(ex => bancoPorNome[(ex.nome||'').toLowerCase().trim()]).filter(Boolean);
+  const majoritariamenteCardio = categorias.length>0 && categorias.filter(c=>c==='Cardio').length / categorias.length > 0.6;
+  if(majoritariamenteCardio) return 'D4';
+
+  const totalSeries = exercicios.reduce((s,ex)=>s+(parseInt(ex.series)||3),0);
+  if(totalSeries < 12) return 'D1';
+  if(totalSeries <= 22) return 'D2';
+  return 'D3';
+}
+
+function classificarDemandaSemanal(){
+  const mapaDiaTreino = distribuirTreinoNaSemana();
+  const porDia = {};
+  DIAS_SEMANA.forEach(dia => { porDia[dia] = classificarDemandaDia(mapaDiaTreino[dia]); });
+  return { mapaDiaTreino, porDia };
+}
+
+// Ajusta calorias e carboidratos conforme a demanda do dia — proteína fica
+// praticamente constante (necessidade diária não muda tanto dia a dia),
+// carboidrato é o que mais varia (combustível pro treino), gordura preenche o resto.
+const MULT_KCAL_POR_DEMANDA  = { D0: 0.93, D1: 0.97, D2: 1.00, D3: 1.08, D4: 1.05 };
+const MULT_CARBO_POR_DEMANDA = { D0: 0.75, D1: 0.90, D2: 1.00, D3: 1.25, D4: 1.15 };
+
+function ajustarMetasPorDemanda(metasBase, demanda){
+  const multKcal = MULT_KCAL_POR_DEMANDA[demanda] ?? 1;
+  const multCarbo = MULT_CARBO_POR_DEMANDA[demanda] ?? 1;
+  const novaMeta = Math.round(metasBase.meta * multKcal);
+  const novaProt = metasBase.prot; // proteína constante
+  const novoCarbo = Math.round(metasBase.carb * multCarbo);
+  const restante = novaMeta - novaProt*4 - novoCarbo*4;
+  const novaGordura = Math.max(20, Math.round(restante/9)); // nunca deixa gordura em zero/negativo
+  return { meta: novaMeta, prot: novaProt, carb: novoCarbo, gord: novaGordura };
+}
+
+// Marca a refeição mais próxima do treino como pré/pós — assume treino no
+// fim da tarde/início da noite (padrão mais comum pra quem trabalha em
+// horário comercial), então Lanche da Tarde = pré-treino e Jantar = pós-treino.
+function marcarRefeicoesPrePosTreino(refeicoesDoDia){
+  refeicoesDoDia.forEach(ref=>{
+    if(ref.nome === 'Lanche da Tarde') ref.observacao = (ref.observacao ? ref.observacao+' ' : '') + '🏋️ Refeição pré-treino: priorize carboidrato de fácil digestão.';
+    if(ref.nome === 'Jantar') ref.observacao = (ref.observacao ? ref.observacao+' ' : '') + '💪 Refeição pós-treino: essa é a prioridade de proteína + carboidrato pra recuperação.';
+  });
+}
+
+// Evita repetir o MESMO alimento em excesso na semana (ex: frango em toda
+// refeição de proteína) — se um item aparecer 4+ vezes na semana pro mesmo
+// papel (mesma categoria+refeição), tenta trocar por outra opção do banco.
+function aplicarVariedadeSemanal(rotinaPorDia){
+  const contagem = {}; // chave: "refeição|categoria-aproximada|nome" -> quantas vezes usado
+  const TODOS_DIAS = Object.values(rotinaPorDia);
+
+  TODOS_DIAS.forEach(refeicoes=>{
+    (refeicoes||[]).forEach(ref=>{
+      (ref.alimentos||[]).forEach(al=>{
+        if(!al.item) return;
+        const chave = ref.nome+'|'+al.item.toLowerCase();
+        contagem[chave] = (contagem[chave]||0) + 1;
+      });
+    });
+  });
+
+  const repetidosDemais = Object.entries(contagem).filter(([,n])=>n>=4).map(([k])=>k);
+  if(!repetidosDemais.length) return;
+
+  const banco = window._bancoAlimentos || [];
+  let trocasFeitas = 0;
+  TODOS_DIAS.forEach(refeicoes=>{
+    (refeicoes||[]).forEach(ref=>{
+      (ref.alimentos||[]).forEach(al=>{
+        if(!al.item) return;
+        const chave = ref.nome+'|'+al.item.toLowerCase();
+        if(repetidosDemais.includes(chave) && trocasFeitas < 6 && Math.random()<0.5){
+          const categoriaAtual = banco.find(b=>b.nome.toLowerCase()===al.item.toLowerCase())?.categoria;
+          const alternativas = banco.filter(b=>b.categoria===categoriaAtual && b.nome.toLowerCase()!==al.item.toLowerCase());
+          if(alternativas.length){
+            const nova = alternativas[Math.floor(Math.random()*alternativas.length)];
+            al.item = nova.nome;
+            al.calorias = nova.calorias;
+            al.quantidade = nova.porcao_padrao;
+            al._baseGramas = extrairNumeroQuantidade(nova.porcao_padrao) || 100;
+            al._baseCalorias = nova.calorias || 0;
+            al._baseProteina = nova.proteina || 0;
+            al._baseCarbo = nova.carboidrato || 0;
+            al._baseGordura = nova.gordura || 0;
+            trocasFeitas++;
+          }
+        }
+      });
+    });
+  });
 }
 
 async function gerarRotinaAlimentarBase(){
@@ -7950,8 +8233,28 @@ async function gerarRotinaAlimentarBase(){
     return;
   }
 
+  // ── MÓDULO DE PROTEÇÃO — MEDICAÇÃO DE EMAGRECIMENTO (GLP-1) ────────────────
+  // Ozempic/Mounjaro/Wegovy e similares reduzem muito o apetite — o risco real
+  // não é comer demais, é comer de menos e perder massa magra. Em vez de
+  // reduzir ainda mais as calorias, aplicamos um piso de segurança e reforçamos
+  // proteína, e avisamos que merece supervisão do profissional responsável.
+  const medsTexto = (MOTOR_D?.anamnese?.['an-meds']||'').toLowerCase();
+  const usaGLP1 = /ozempic|wegovy|mounjaro|saxenda|semaglutid|tirzepatid|liraglutid|victoza|rybelsus/.test(medsTexto);
+  let avisoGLP1 = '';
+  if(usaGLP1){
+    const pesoAtual = parseFloat(MOTOR_D?.avaliacao?.['av-peso']) || parseFloat(dadosCliente?.peso) || 70;
+    const pisoSeguranca = Math.max(metas.tmb, pesoAtual * 20); // nunca abaixo do metabolismo basal
+    if(metas.meta < pisoSeguranca){
+      console.log(`[GLP-1] Meta ajustada de ${metas.meta} pra ${Math.round(pisoSeguranca)} kcal (piso de segurança)`);
+      metas.meta = Math.round(pisoSeguranca);
+    }
+    metas.prot = Math.round(Math.max(metas.prot, pesoAtual * 1.8)); // reforça proteína pra proteger massa magra
+    avisoGLP1 = ' ⚕️ Uso de medicação de emagrecimento detectado — apliquei um piso calórico de segurança e reforcei a proteína pra proteger a massa magra. Isso NÃO substitui acompanhamento médico/nutricional — reforce com o aluno.';
+  }
+
   if(!window._bancoAlimentos){ await carregarBancoAlimentos(); }
   const banco = window._bancoAlimentos || [];
+  if(!window._bancoExercicios){ await carregarBancoExercicios(); }
 
   // Detecta restrições mencionadas na anamnese ATUALIZADA — cobre mais variações
   // de escrita e também nomes de alimentos específicos citados em "não como".
@@ -8142,7 +8445,8 @@ async function gerarRotinaAlimentarBase(){
   };
   let algumaPreferenciaUsada = false;
 
-  function gerarUmDia(){
+  function gerarUmDia(metasDoDia){
+    metasDoDia = metasDoDia || metas;
     return estrutura.map(ref => {
       const ehSuplemento = ref.nome === 'Suplementação';
       const campoPref = CAMPO_PREFERENCIA_POR_REFEICAO[ref.nome];
@@ -8158,16 +8462,33 @@ async function gerarRotinaAlimentarBase(){
         horario: ref.horario,
         // Suplemento usa a dose padrão do produto (ex: "1 scoop"), não faz sentido
         // "escalar" suplemento pela meta calórica do dia como as refeições normais
-        metaCalorias: ehSuplemento ? (alimentosEscolhidos[0]?.calorias || 0) : Math.round(metas.meta * ref.pct),
+        metaCalorias: ehSuplemento ? (alimentosEscolhidos[0]?.calorias || 0) : Math.round(metasDoDia.meta * ref.pct),
         alimentos: alimentosEscolhidos
       };
     });
   }
 
+  // ── CLASSIFICAÇÃO DE DEMANDA POR DIA — a alimentação passa a "conversar"
+  // com o treino real do aluno, em vez de tratar todo dia como igual ────────
+  const demandaInfo = classificarDemandaSemanal();
+  window._demandaDiaAtual = demandaInfo; // guarda pra exibir/depurar depois
+
   // Gera pra semana inteira de uma vez — cada dia sorteia opções diferentes dentro
   // das mesmas restrições, então o aluno não come exatamente igual todo dia.
+  // As calorias/carboidratos de cada dia são ajustados pela demanda real do
+  // treino daquele dia (D0 descanso até D3 treino pesado / D4 cardio).
   window._rotinaAlimentarPorDia = {};
-  DIAS_SEMANA.forEach(d => { window._rotinaAlimentarPorDia[d] = gerarUmDia(); });
+  DIAS_SEMANA.forEach(d => {
+    const demanda = demandaInfo.porDia[d] || 'D2';
+    const metasAjustadas = ajustarMetasPorDemanda(metas, demanda);
+    window._rotinaAlimentarPorDia[d] = gerarUmDia(metasAjustadas);
+    // Marca a refeição pré e pós-treino nos dias de treino, pra dar prioridade
+    // de carboidrato/proteína ao redor da sessão
+    if(demanda !== 'D0'){
+      marcarRefeicoesPrePosTreino(window._rotinaAlimentarPorDia[d]);
+    }
+  });
+  aplicarVariedadeSemanal(window._rotinaAlimentarPorDia);
   atualizarReferenciaRotinaAtiva();
 
   const avisoBanco = banco.length < 10 ? ' ⚠️ Seu Banco de Alimentos tem poucos itens ainda — considere clicar em "🌱 Popular com alimentos padrão" pra ter mais opções.' : '';
@@ -8179,7 +8500,10 @@ async function gerarRotinaAlimentarBase(){
   const condicoesTexto = [temHipertensao?'hipertensão (baixo sódio, sem embutidos/fast food, sem estimulante pesado)':null, temDiabetes?'diabetes (sem doces/fast food, sem suplemento açucarado)':null].filter(Boolean);
   const condicoesTextoAviso = condicoesTexto.length ? ` Ajustado por condição de saúde: ${condicoesTexto.join(' · ')}.` : '';
   const suplTextoAviso = MOTOR_D?.nutricao?.['nu-supl']?.trim() ? ' Suplementação priorizou o que o aluno já disse que usa.' : (Object.keys(SUPLEMENTOS_POR_OBJETIVO).some(k=>objetivoTexto.includes(k)) ? ' Suplementação sugerida com base no objetivo (nenhum suplemento em uso informado).' : '');
-  notif(`✅ Rotina gerada pra semana inteira, com base na anamnese atualizada! Meta: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura)${objetivoNutricional?` · Objetivo: ${objetivoNutricional}`:''}.${restricoesTexto}${alergiaTextoAviso}${naoComeTextoAviso}${condicoesTextoAviso}${preferenciaTextoAviso}${suplTextoAviso}${avisoBanco} Revise e ajuste cada dia pelas abas acima.`,'#10b981',true);
+  const nomesDemanda = { D0:'descanso', D1:'leve', D2:'moderado', D3:'treino pesado', D4:'cardio' };
+  const resumoDemanda = DIAS_SEMANA.map(d=>`${d.slice(0,3)}:${nomesDemanda[demandaInfo.porDia[d]]||'?'}`).join(' · ');
+  const periodizacaoTextoAviso = ` 📅 Calorias/carboidratos ajustados por dia conforme a demanda do treino real: ${resumoDemanda}.`;
+  notif(`✅ Rotina gerada pra semana inteira, com base na anamnese atualizada! Meta base: ${metas.meta} kcal/dia (${metas.prot}g proteína · ${metas.carb}g carbo · ${metas.gord}g gordura)${objetivoNutricional?` · Objetivo: ${objetivoNutricional}`:''}.${restricoesTexto}${alergiaTextoAviso}${naoComeTextoAviso}${condicoesTextoAviso}${preferenciaTextoAviso}${suplTextoAviso}${avisoGLP1}${periodizacaoTextoAviso}${avisoBanco} Revise e ajuste cada dia pelas abas acima.`,'#10b981',true);
   renderRotinaAlimentar();
 }
 
